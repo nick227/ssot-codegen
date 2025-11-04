@@ -1,5 +1,6 @@
-// E-commerce Example: Full-featured online store
-// Production-ready schema for e-commerce platform
+// E-commerce Example: IMPROVED VERSION
+// Production-ready schema with critical e-commerce features
+// Includes: Coupons, Stock Reservation, Refunds, Enhanced Cart, SEO
 
 generator client {
   provider = "prisma-client-js"
@@ -10,7 +11,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// Customer/User model
+/// Customer/User model with authentication
 /// @route /customers
 /// @auth required
 model Customer {
@@ -19,8 +20,24 @@ model Customer {
   firstName       String
   lastName        String
   phone           String?
+  
+  // Authentication
+  passwordHash    String
   emailVerified   Boolean   @default(false)
+  emailVerifyToken String?
+  lastLoginAt     DateTime?
+  
+  // Status
   isActive        Boolean   @default(true)
+  
+  // Preferences
+  marketingOptIn  Boolean   @default(false)
+  language        String    @default("en")
+  currency        String    @default("USD")
+  
+  // Loyalty
+  loyaltyPoints   Int       @default(0)
+  
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   
@@ -29,8 +46,10 @@ model Customer {
   cart            Cart?
   reviews         Review[]
   wishlist        WishlistItem[]
+  productAlerts   ProductAlert[]
   
   @@index([email])
+  @@index([isActive])
 }
 
 /// Physical/Billing address
@@ -46,17 +65,19 @@ model Address {
   state           String
   postalCode      String
   country         String    @default("US")
+  phone           String?
   isDefault       Boolean   @default(false)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   
   customer        Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  orders          Order[]
+  shippingOrders  Order[]   @relation("ShippingAddress")
+  billingOrders   Order[]   @relation("BillingAddress")
   
   @@index([customerId])
 }
 
-/// Product catalog
+/// Product catalog with SEO
 /// @route /products
 /// @auth optional
 model Product {
@@ -66,16 +87,45 @@ model Product {
   slug            String    @unique
   description     String
   shortDescription String?
+  
+  // Pricing
   price           Decimal   @db.Decimal(10, 2)
   compareAtPrice  Decimal?  @db.Decimal(10, 2)
   costPrice       Decimal?  @db.Decimal(10, 2)
+  
+  // Inventory
   stock           Int       @default(0)
   lowStockThreshold Int     @default(10)
+  reservedStock   Int       @default(0)
+  
+  // Physical attributes
   weight          Decimal?  @db.Decimal(8, 2)
+  length          Decimal?  @db.Decimal(8, 2)
+  width           Decimal?  @db.Decimal(8, 2)
+  height          Decimal?  @db.Decimal(8, 2)
+  
+  // SEO
+  metaTitle       String?   @db.VarChar(60)
+  metaDescription String?   @db.VarChar(160)
+  metaKeywords    String?
+  
+  // Configuration
+  condition       ProductCondition @default(NEW)
+  minOrderQty     Int       @default(1)
+  maxOrderQty     Int?
+  
+  // Status
   isActive        Boolean   @default(true)
   isFeatured      Boolean   @default(false)
+  
+  // Availability
+  availableFrom   DateTime?
+  availableUntil  DateTime?
+  
+  // Relationships
   categoryId      Int
   brandId         Int?
+  
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   
@@ -88,13 +138,18 @@ model Product {
   reviews         Review[]
   tags            ProductTag[]
   wishlistItems   WishlistItem[]
+  stockReservations StockReservation[]
+  stockHistory    StockHistory[]
+  productAlerts   ProductAlert[]
   
   @@index([slug])
   @@index([categoryId])
   @@index([sku])
+  @@index([isActive, isFeatured, createdAt])
+  @@index([categoryId, isActive])
 }
 
-/// Product categories
+/// Product categories with hierarchy
 /// @route /categories
 /// @auth optional
 model Category {
@@ -158,45 +213,91 @@ model ProductVariant {
   name            String
   priceAdjustment Decimal   @default(0) @db.Decimal(10, 2)
   stock           Int       @default(0)
+  reservedStock   Int       @default(0)
   attributes      Json      // { "size": "L", "color": "Red" }
   isActive        Boolean   @default(true)
   createdAt       DateTime  @default(now())
   
   product         Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  cartItems       CartItem[]
+  stockReservations StockReservation[]
   
   @@index([productId])
   @@index([sku])
 }
 
-/// Shopping cart
+/// Shopping cart with expiry
 /// @route /cart
 /// @auth required
 model Cart {
   id              Int       @id @default(autoincrement())
   customerId      Int       @unique
+  expiresAt       DateTime?
+  completedAt     DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   
   customer        Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
   items           CartItem[]
+  reservations    StockReservation[]
 }
 
-/// Cart items
+/// Cart items with variant and price snapshot
 model CartItem {
   id              Int       @id @default(autoincrement())
   cartId          Int
   productId       Int
+  variantId       Int?
   quantity        Int       @default(1)
+  unitPrice       Decimal   @db.Decimal(10, 2)
   addedAt         DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
   
   cart            Cart      @relation(fields: [cartId], references: [id], onDelete: Cascade)
   product         Product   @relation(fields: [productId], references: [id])
+  variant         ProductVariant? @relation(fields: [variantId], references: [id])
   
-  @@unique([cartId, productId])
+  @@unique([cartId, productId, variantId])
   @@index([cartId])
 }
 
-/// Customer orders
+/// Stock reservation during checkout
+model StockReservation {
+  id              Int       @id @default(autoincrement())
+  productId       Int
+  variantId       Int?
+  quantity        Int
+  cartId          Int?
+  orderId         Int?
+  expiresAt       DateTime
+  createdAt       DateTime  @default(now())
+  
+  product         Product   @relation(fields: [productId], references: [id])
+  variant         ProductVariant? @relation(fields: [variantId], references: [id])
+  cart            Cart?     @relation(fields: [cartId], references: [id])
+  order           Order?    @relation(fields: [orderId], references: [id])
+  
+  @@index([productId])
+  @@index([expiresAt])
+}
+
+/// Track stock changes for audit
+model StockHistory {
+  id              Int       @id @default(autoincrement())
+  productId       Int
+  change          Int
+  reason          StockChangeReason
+  orderId         Int?
+  notes           String?
+  createdAt       DateTime  @default(now())
+  createdBy       Int?
+  
+  product         Product   @relation(fields: [productId], references: [id])
+  
+  @@index([productId, createdAt])
+}
+
+/// Customer orders with detailed tracking
 /// @route /orders
 /// @auth required
 model Order {
@@ -204,33 +305,61 @@ model Order {
   orderNumber     String    @unique
   customerId      Int
   status          OrderStatus @default(PENDING)
+  
+  // Pricing
   subtotal        Decimal   @db.Decimal(10, 2)
   tax             Decimal   @db.Decimal(10, 2)
   shipping        Decimal   @db.Decimal(10, 2)
   discount        Decimal   @default(0) @db.Decimal(10, 2)
   total           Decimal   @db.Decimal(10, 2)
+  
+  // Addresses
   shippingAddressId Int
   billingAddressId  Int?
+  
+  // Coupon
+  couponId        Int?
+  couponCode      String?
+  
+  // Tracking
   notes           String?
+  ipAddress       String?
+  estimatedDelivery DateTime?
+  
+  // Status timestamps
+  confirmedAt     DateTime?
+  packedAt        DateTime?
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
+  cancelledAt     DateTime?
+  
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   
   customer        Customer  @relation(fields: [customerId], references: [id])
-  shippingAddress Address   @relation(fields: [shippingAddressId], references: [id])
+  shippingAddress Address   @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
+  billingAddress  Address?  @relation("BillingAddress", fields: [billingAddressId], references: [id])
+  coupon          Coupon?   @relation(fields: [couponId], references: [id])
   items           OrderItem[]
   payment         Payment?
   shipment        Shipment?
+  refunds         Refund[]
+  reservations    StockReservation[]
   
   @@index([customerId])
   @@index([orderNumber])
   @@index([status])
+  @@index([customerId, createdAt(sort: Desc)])
 }
 
-/// Order line items
+/// Order line items with product snapshot
 model OrderItem {
   id              Int       @id @default(autoincrement())
   orderId         Int
   productId       Int
+  productName     String
+  productSku      String
+  variantName     String?
   quantity        Int
   unitPrice       Decimal   @db.Decimal(10, 2)
   subtotal        Decimal   @db.Decimal(10, 2)
@@ -238,8 +367,34 @@ model OrderItem {
   
   order           Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product         Product   @relation(fields: [productId], references: [id])
+  refundItems     RefundItem[]
   
   @@index([orderId])
+}
+
+/// Discount coupons
+/// @route /coupons
+/// @auth admin
+model Coupon {
+  id              Int       @id @default(autoincrement())
+  code            String    @unique
+  description     String?
+  discountType    DiscountType
+  discountValue   Decimal   @db.Decimal(10, 2)
+  minPurchase     Decimal?  @db.Decimal(10, 2)
+  maxDiscount     Decimal?  @db.Decimal(10, 2)
+  usageLimit      Int?
+  usageCount      Int       @default(0)
+  validFrom       DateTime
+  validUntil      DateTime?
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  orders          Order[]
+  
+  @@index([code])
+  @@index([isActive, validFrom, validUntil])
 }
 
 /// Payment transactions
@@ -260,6 +415,7 @@ model Payment {
   order           Order     @relation(fields: [orderId], references: [id])
   
   @@index([status])
+  @@index([transactionId])
 }
 
 /// Shipment tracking
@@ -281,26 +437,79 @@ model Shipment {
   @@index([trackingNumber])
 }
 
-/// Product reviews
+/// Refund tracking
+/// @route /refunds
+/// @auth admin
+model Refund {
+  id              Int       @id @default(autoincrement())
+  orderId         Int
+  refundNumber    String    @unique
+  reason          RefundReason
+  amount          Decimal   @db.Decimal(10, 2)
+  status          RefundStatus @default(PENDING)
+  refundMethod    PaymentMethod
+  notes           String?
+  processedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  order           Order     @relation(fields: [orderId], references: [id])
+  items           RefundItem[]
+  
+  @@index([orderId])
+  @@index([refundNumber])
+  @@index([status])
+}
+
+/// Refund line items
+model RefundItem {
+  id              Int       @id @default(autoincrement())
+  refundId        Int
+  orderItemId     Int
+  quantity        Int
+  amount          Decimal   @db.Decimal(10, 2)
+  
+  refund          Refund    @relation(fields: [refundId], references: [id], onDelete: Cascade)
+  orderItem       OrderItem @relation(fields: [orderItemId], references: [id])
+  
+  @@index([refundId])
+}
+
+/// Product reviews with images
 /// @route /reviews
 /// @auth required
 model Review {
   id              Int       @id @default(autoincrement())
   productId       Int
   customerId      Int
-  rating          Int       // 1-5
+  rating          Int
   title           String?
   content         String
   isVerified      Boolean   @default(false)
   isApproved      Boolean   @default(false)
+  helpfulCount    Int       @default(0)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   
   product         Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
   customer        Customer  @relation(fields: [customerId], references: [id])
+  images          ReviewImage[]
   
   @@unique([productId, customerId])
   @@index([productId])
+  @@index([productId, isApproved, createdAt(sort: Desc)])
+}
+
+/// Review images
+model ReviewImage {
+  id              Int       @id @default(autoincrement())
+  reviewId        Int
+  imageUrl        String
+  createdAt       DateTime  @default(now())
+  
+  review          Review    @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  
+  @@index([reviewId])
 }
 
 /// Product tags
@@ -341,10 +550,34 @@ model WishlistItem {
   @@index([customerId])
 }
 
+/// Product availability alerts
+model ProductAlert {
+  id              Int       @id @default(autoincrement())
+  customerId      Int
+  productId       Int
+  alertType       AlertType
+  triggered       Boolean   @default(false)
+  triggeredAt     DateTime?
+  createdAt       DateTime  @default(now())
+  
+  customer        Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  product         Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@unique([customerId, productId, alertType])
+  @@index([productId, alertType, triggered])
+}
+
 // Enums
 enum AddressType {
   SHIPPING
   BILLING
+}
+
+enum ProductCondition {
+  NEW
+  REFURBISHED
+  USED_LIKE_NEW
+  USED_GOOD
 }
 
 enum OrderStatus {
@@ -383,5 +616,42 @@ enum ShipmentStatus {
   DELIVERED
   FAILED
   RETURNED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  FREE_SHIPPING
+}
+
+enum RefundReason {
+  DEFECTIVE
+  WRONG_ITEM
+  NOT_AS_DESCRIBED
+  CHANGED_MIND
+  DUPLICATE_ORDER
+  OTHER
+}
+
+enum RefundStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PROCESSING
+  COMPLETED
+}
+
+enum StockChangeReason {
+  SALE
+  RETURN
+  ADJUSTMENT
+  RESTOCK
+  DAMAGED
+  LOST
+}
+
+enum AlertType {
+  BACK_IN_STOCK
+  PRICE_DROP
 }
 

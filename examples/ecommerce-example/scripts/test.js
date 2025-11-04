@@ -34,15 +34,23 @@ const coreModels = [
   'Cart', 'Order', 'Payment', 'Shipment', 'Review'
 ];
 
+const newCriticalModels = [
+  'Coupon', 'StockReservation', 'StockHistory', 'Refund', 'RefundItem'
+];
+
+const newEnhancementModels = [
+  'ReviewImage', 'ProductAlert'
+];
+
 const supportModels = [
   'ProductImage', 'ProductVariant', 'CartItem', 'OrderItem',
   'ProductTag', 'Tag', 'WishlistItem'
 ];
 
-const allModels = [...coreModels, ...supportModels];
+const allModels = [...coreModels, ...newCriticalModels, ...newEnhancementModels, ...supportModels];
 
 // Test 1: All model directories generated
-test('All 17 model directories exist', () => {
+test('All 24 model directories exist (improved schema)', () => {
   allModels.forEach(model => {
     const modelPath = resolve(genDir, `contracts/${model.toLowerCase()}`);
     assert(existsSync(modelPath), `${model} directory should exist at ${modelPath}`);
@@ -123,7 +131,7 @@ test('Manifest tracks all generated files', () => {
   
   assert(manifest.schemaHash, 'Should have schemaHash');
   assert(manifest.toolVersion === '0.4.0', 'Should have correct version');
-  assert(manifest.outputs.length >= 170, `Should track 170+ files (got ${manifest.outputs.length})`);
+  assert(manifest.outputs.length >= 240, `Should track 240+ files (got ${manifest.outputs.length})`);
 });
 
 // Test 10: Import quality
@@ -146,9 +154,24 @@ test('Category with hierarchical support generated', () => {
   assert(existsSync(resolve(genDir, 'services/category')), 'Category service should exist');
 });
 
-console.log(`\n📊 E-commerce Example: ${passed} passed, ${failed} failed`);
-console.log(`📦 Generated ${allModels.length} models`);
-console.log(`🛒 Complete online store ready to use!`);
+// Test 13: NEW - Critical features
+test('Critical e-commerce features generated', () => {
+  assert(existsSync(resolve(genDir, 'contracts/coupon')), 'Coupon system should exist');
+  assert(existsSync(resolve(genDir, 'contracts/stockreservation')), 'Stock reservation should exist');
+  assert(existsSync(resolve(genDir, 'contracts/refund')), 'Refund system should exist');
+  assert(existsSync(resolve(genDir, 'contracts/stockhistory')), 'Stock history should exist');
+});
+
+// Test 14: NEW - Enhancement features
+test('Enhancement features generated', () => {
+  assert(existsSync(resolve(genDir, 'contracts/reviewimage')), 'Review images should exist');
+  assert(existsSync(resolve(genDir, 'contracts/productalert')), 'Product alerts should exist');
+});
+
+console.log(`\n📊 E-commerce Example (IMPROVED): ${passed} passed, ${failed} failed`);
+console.log(`📦 Generated ${allModels.length} models (24 total)`);
+console.log(`🎯 Includes: Coupons, Stock Reservation, Refunds, SEO, Alerts`);
+console.log(`🛒 PRODUCTION-READY online store!`);
 
 if (failed > 0) {
   process.exit(1);

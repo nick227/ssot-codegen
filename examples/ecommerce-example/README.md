@@ -17,7 +17,7 @@ Production-ready e-commerce platform schema with all essential features for buil
 - ✅ Brand management
 - ✅ Product tagging
 
-## Schema Overview (17 Models)
+## Schema Overview (24 Models - Production Ready)
 
 ### Customer Management
 - **Customer**: User accounts and profiles
@@ -49,44 +49,84 @@ Production-ready e-commerce platform schema with all essential features for buil
 ## Features Included
 
 ### Customer Features
-✅ Registration and authentication  
-✅ Multiple shipping addresses  
-✅ Order history  
-✅ Product reviews  
-✅ Wishlist  
-✅ Shopping cart persistence
+✅ Registration and authentication with password hashing  
+✅ Email verification system  
+✅ Multiple shipping/billing addresses  
+✅ Order history with detailed tracking  
+✅ Product reviews with photos  
+✅ Wishlist functionality  
+✅ Shopping cart with expiry  
+✅ Loyalty points system  
+✅ Marketing preferences (GDPR compliant)  
+✅ Multi-language and currency support
 
 ### Product Features
-✅ SKU management  
-✅ Pricing with compare-at-price  
-✅ Inventory tracking with low stock alerts  
-✅ Product variants (size, color, etc.)  
-✅ Multiple product images  
-✅ Product categorization  
-✅ Brand association  
-✅ Product tags  
-✅ Featured products
+✅ SKU management with variants  
+✅ Pricing with compare-at-price and cost tracking  
+✅ **Stock reservation** to prevent overselling  
+✅ **Inventory audit trail** for all changes  
+✅ Product variants (size, color, etc.) in cart  
+✅ Multiple product images with primary selection  
+✅ Hierarchical product categorization  
+✅ Brand association with details  
+✅ Product tagging system  
+✅ Featured products  
+✅ **SEO metadata** (title, description, keywords)  
+✅ Product dimensions for shipping  
+✅ Product condition (new, refurbished, used)  
+✅ Min/max order quantities  
+✅ Availability date ranges  
+✅ **Back-in-stock alerts**
 
 ### Order Features
 ✅ Order number generation  
-✅ Order status workflow  
+✅ **Detailed status tracking** (confirmed, packed, shipped, delivered)  
+✅ **Status timestamps** for each stage  
 ✅ Tax and shipping calculation  
-✅ Discount support  
+✅ **Coupon/discount support**  
 ✅ Multiple address types  
-✅ Order notes
+✅ Order notes  
+✅ IP tracking for fraud prevention  
+✅ Estimated delivery dates
 
 ### Payment Features
-✅ Multiple payment methods  
-✅ Payment status tracking  
+✅ Multiple payment methods (6 types)  
+✅ Payment status workflow  
 ✅ Gateway integration ready  
 ✅ Transaction ID storage  
-✅ Refund support
+✅ **Complete refund system**  
+✅ Partial refunds support  
+✅ Refund reason tracking
 
 ### Shipping Features
 ✅ Carrier tracking  
 ✅ Tracking number  
-✅ Shipment status updates  
-✅ Delivery confirmation
+✅ Shipment status updates (7 states)  
+✅ Delivery confirmation  
+✅ Delivery timestamps
+
+### Marketing & Promotions
+✅ **Coupon system** (percentage, fixed, free shipping)  
+✅ Usage limits and tracking  
+✅ Minimum purchase requirements  
+✅ Date range validity  
+✅ Coupon redemption tracking
+
+### Inventory Management
+✅ **Real-time stock reservation**  
+✅ **Auto-release** expired reservations  
+✅ **Stock history audit trail**  
+✅ Multiple change reasons tracking  
+✅ Low stock threshold alerts
+
+### Reviews & Engagement
+✅ Product reviews with ratings (1-5)  
+✅ **Customer review photos**  
+✅ Verified purchase badges  
+✅ Review approval workflow  
+✅ Helpful voting system  
+✅ **Product availability alerts**  
+✅ **Price drop notifications**
 
 ## Quick Start
 

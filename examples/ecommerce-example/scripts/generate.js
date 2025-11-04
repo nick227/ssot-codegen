@@ -20,17 +20,24 @@ const models = [
   'ProductVariant',
   'Cart',
   'CartItem',
+  'StockReservation',
+  'StockHistory',
   'Order',
   'OrderItem',
+  'Coupon',
   'Payment',
   'Shipment',
+  'Refund',
+  'RefundItem',
   'Review',
+  'ReviewImage',
   'Tag',
   'ProductTag',
-  'WishlistItem'
+  'WishlistItem',
+  'ProductAlert'
 ];
 
-console.log(`[ecommerce-example] Generating ${models.length} models...`);
+console.log(`[ecommerce-example] Generating ${models.length} models (IMPROVED SCHEMA)...`);
 
 await runGenerator({
   outDir: resolve(projectRoot, 'gen'),
@@ -39,15 +46,20 @@ await runGenerator({
 
 console.log('[ecommerce-example] Generation complete!');
 console.log('[ecommerce-example] Generated features:');
-console.log('  ✅ Customer management with addresses');
-console.log('  ✅ Product catalog with variants and images');
+console.log('  ✅ Customer management with authentication');
+console.log('  ✅ Product catalog with SEO and variants');
 console.log('  ✅ Categories and brands with hierarchy');
-console.log('  ✅ Shopping cart system');
-console.log('  ✅ Order processing with status tracking');
+console.log('  ✅ Shopping cart with variant support');
+console.log('  ✅ Order processing with detailed tracking');
 console.log('  ✅ Payment gateway integration');
 console.log('  ✅ Shipment tracking');
-console.log('  ✅ Product reviews and ratings');
+console.log('  ✅ Product reviews with images');
 console.log('  ✅ Wishlist functionality');
 console.log('  ✅ Product tagging system');
-console.log('\n🎉 Ready to build your online store!');
+console.log('  🎯 Coupon/discount system');
+console.log('  🎯 Stock reservation (prevent overselling)');
+console.log('  🎯 Complete refunds & returns');
+console.log('  🎯 Inventory audit trail');
+console.log('  🎯 Back-in-stock alerts');
+console.log('\n🎉 PRODUCTION-READY online store!');
 
