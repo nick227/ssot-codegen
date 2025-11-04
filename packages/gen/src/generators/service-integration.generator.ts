@@ -14,29 +14,39 @@ import {
 } from '../service-linker.js'
 
 /**
- * Generate controller for service integration
+ * Generate controller for service integration (using BaseServiceController)
  * 
- * Creates controller methods that call user's service and handle errors
+ * Creates minimal controller methods using base class
  */
 export function generateServiceController(annotation: ServiceAnnotation): string {
   const serviceName = getServiceExportName(annotation)
-  const modelLower = annotation.model.name.toLowerCase()
   
-  const controllerMethods = annotation.methods.map(methodName => {
-    return generateServiceControllerMethod(annotation, methodName)
+  const controllerSetup = `const controller = new BaseServiceController({ serviceName: '${annotation.name}' })`
+  
+  const methodExports = annotation.methods.map(methodName => {
+    const httpMethod = inferHTTPMethod(methodName)
+    const statusCode = httpMethod === 'get' ? 200 : 201
+    
+    return `/**
+ * ${methodName}
+ * @generated from @service ${annotation.name}
+ */
+export const ${methodName} = controller.wrap(
+  '${methodName}',
+  ${serviceName}.${methodName}${statusCode !== 201 ? `,\n  { statusCode: ${statusCode} }` : ''}
+)`
   }).join('\n\n')
   
   return `// @generated
 // Service Integration Controller for ${annotation.name}
-// Wires user-implemented service to HTTP layer
+// Using BaseServiceController to eliminate boilerplate
 
-import type { Request, Response } from 'express'
-import type { AuthRequest } from '@/auth/jwt'
+import { BaseServiceController } from '@gen/base'
 import { ${serviceName} } from '@/services/${annotation.name}.service.js'
-import { logger } from '@/logger'
-import { ZodError } from 'zod'
 
-${controllerMethods}
+${controllerSetup}
+
+${methodExports}
 `
 }
 
