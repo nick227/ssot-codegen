@@ -1,47 +1,19 @@
 #!/usr/bin/env node
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
-import { runGenerator } from '@ssot-codegen/gen';
+import { fileURLToPath } from 'node:url'
+import { dirname, resolve } from 'node:path'
+import { generateFromSchema } from '../../../packages/gen/dist/index-new.js'
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const projectRoot = resolve(__dirname, '..');
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+const projectRoot = resolve(__dirname, '..')
 
-console.log('[ecommerce-example] Generating code for e-commerce platform...');
-console.log('[ecommerce-example] This is a complete online store in a box!');
+console.log('[ecommerce-example] Generating code for e-commerce platform...')
+console.log('[ecommerce-example] This is a complete online store in a box!')
 
-const models = [
-  'Customer',
-  'Address',
-  'Product',
-  'Category',
-  'Brand',
-  'ProductImage',
-  'ProductVariant',
-  'Cart',
-  'CartItem',
-  'StockReservation',
-  'StockHistory',
-  'Order',
-  'OrderItem',
-  'Coupon',
-  'Payment',
-  'Shipment',
-  'Refund',
-  'RefundItem',
-  'Review',
-  'ReviewImage',
-  'Tag',
-  'ProductTag',
-  'WishlistItem',
-  'ProductAlert'
-];
-
-console.log(`[ecommerce-example] Generating ${models.length} models (IMPROVED SCHEMA)...`);
-
-await runGenerator({
-  outDir: resolve(projectRoot, 'gen'),
-  models
+await generateFromSchema({
+  schemaPath: resolve(projectRoot, 'prisma/schema.prisma'),
+  output: resolve(projectRoot, 'gen'),
+  framework: 'express',
 });
 
 console.log('[ecommerce-example] Generation complete!');
