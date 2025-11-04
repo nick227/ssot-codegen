@@ -19,6 +19,9 @@ import { generateRoutes } from './generators/route-generator.js'
 import { generateEnhancedService } from './generators/service-generator-enhanced.js'
 import { generateEnhancedController } from './generators/controller-generator-enhanced.js'
 import { generateEnhancedRoutes, shouldGenerateRoutes } from './generators/route-generator-enhanced.js'
+// Service integration for complex workflows (AI agents, file uploads, etc.)
+import { parseServiceAnnotation, getServiceExportName } from './service-linker.js'
+import { generateServiceController, generateServiceRoutes, generateServiceScaffold } from './generators/service-integration.generator.js'
 
 export interface CodeGeneratorConfig {
   framework: 'express' | 'fastify'
@@ -67,7 +70,10 @@ function generateModelCode(
   const modelLower = model.name.toLowerCase()
   const useEnhanced = config.useEnhancedGenerators ?? true  // Default to enhanced
   
-  // Generate DTOs
+  // Check for @service annotation (service integration pattern)
+  const serviceAnnotation = parseServiceAnnotation(model)
+  
+  // Generate DTOs (always needed)
   const dtos = generateAllDTOs(model)
   const dtoMap = new Map<string, string>()
   dtoMap.set(`${modelLower}.create.dto.ts`, dtos.create)
@@ -76,7 +82,7 @@ function generateModelCode(
   dtoMap.set(`${modelLower}.query.dto.ts`, dtos.query)
   files.contracts.set(model.name, dtoMap)
   
-  // Generate Validators
+  // Generate Validators (always needed)
   const validators = generateAllValidators(model)
   const validatorMap = new Map<string, string>()
   validatorMap.set(`${modelLower}.create.zod.ts`, validators.create)
@@ -89,6 +95,26 @@ function generateModelCode(
     ? generateEnhancedService(model, schema)
     : generateService(model)
   files.services.set(`${modelLower}.service.ts`, service)
+  
+  // If this model has @service annotation, generate service integration
+  if (serviceAnnotation) {
+    console.log(`[ssot-codegen] Generating service integration for: ${serviceAnnotation.name} (methods: ${serviceAnnotation.methods.join(', ')})`)
+    
+    // Generate service integration controller
+    const serviceController = generateServiceController(serviceAnnotation)
+    files.controllers.set(`${serviceAnnotation.name}.controller.ts`, serviceController)
+    
+    // Generate service integration routes
+    const serviceRoutes = generateServiceRoutes(serviceAnnotation)
+    files.routes.set(`${serviceAnnotation.name}.routes.ts`, serviceRoutes)
+    
+    // Generate service scaffold if file doesn't exist
+    // Note: This will be written to src/services/ by index-new.ts
+    const scaffold = generateServiceScaffold(serviceAnnotation)
+    files.services.set(`${serviceAnnotation.name}.service.scaffold.ts`, scaffold)
+    
+    return  // Service integration replaces standard CRUD controller/routes
+  }
   
   // Check if this is a junction table (for skipping routes/controllers)
   const isJunction = useEnhanced && !shouldGenerateRoutes(model, schema)

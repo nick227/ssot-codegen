@@ -1,0 +1,186 @@
+// AI Chat Example - Service Integration Showcase
+// This schema demonstrates the @service annotation pattern for complex orchestration
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// USER MANAGEMENT
+// ============================================================================
+
+model User {
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  username      String    @unique
+  passwordHash  String
+  apiKey        String?   @unique  // For API access
+  credits       Int       @default(100)  // AI usage credits
+  role          UserRole  @default(USER)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  conversations Conversation[]
+  messages      Message[]
+  prompts       AIPrompt[]
+}
+
+enum UserRole {
+  USER
+  PREMIUM
+  ADMIN
+}
+
+// ============================================================================
+// CONVERSATION MANAGEMENT (Standard CRUD)
+// ============================================================================
+
+model Conversation {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  title       String   @default("New Conversation")
+  model       String   @default("gpt-4")  // AI model used
+  systemPrompt String? @db.Text  // Custom system instructions
+  isArchived  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages    Message[]
+  
+  @@index([userId, createdAt])
+}
+
+// ============================================================================
+// MESSAGE STORAGE (Standard CRUD)
+// ============================================================================
+
+model Message {
+  id             Int      @id @default(autoincrement())
+  conversationId Int
+  userId         Int
+  role           MessageRole
+  content        String   @db.Text
+  tokens         Int?
+  createdAt      DateTime @default(now())
+  
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([conversationId, createdAt])
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+// ============================================================================
+// AI PROMPT PROCESSING (SERVICE INTEGRATION PATTERN)
+// ============================================================================
+
+/// @service ai-agent
+/// @provider openai
+/// @methods sendMessage, streamMessage, regenerateResponse, getUsageStats
+/// @rateLimit 20/minute
+/// @description AI conversation orchestration service
+/// Handles: prompt processing, AI API calls, response streaming, cost tracking
+model AIPrompt {
+  id            Int          @id @default(autoincrement())
+  userId        Int
+  conversationId Int?
+  prompt        String       @db.Text
+  model         String       @default("gpt-4")
+  temperature   Float        @default(0.7)
+  maxTokens     Int?
+  status        PromptStatus @default(PENDING)
+  metadata      Json?        // Custom metadata (function calls, tools, etc.)
+  createdAt     DateTime     @default(now())
+  processingStartedAt DateTime?
+  processingEndedAt   DateTime?
+  
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  response      AIResponse?
+  
+  @@index([userId, status, createdAt])
+  @@index([conversationId])
+}
+
+enum PromptStatus {
+  PENDING      // Queued for processing
+  PROCESSING   // Currently calling AI API
+  COMPLETED    // Successfully completed
+  FAILED       // Failed with error
+  RATE_LIMITED // Hit rate limit, retry later
+}
+
+/// @linkedTo AIPrompt
+/// @description Stores AI responses with full metadata
+model AIResponse {
+  id            Int      @id @default(autoincrement())
+  promptId      Int      @unique
+  response      String   @db.Text
+  model         String
+  finishReason  String?  // stop, length, content_filter, etc.
+  
+  // Token usage tracking
+  promptTokens     Int
+  completionTokens Int
+  totalTokens      Int
+  
+  // Cost tracking
+  cost          Decimal  @db.Decimal(10, 6)
+  
+  // Performance tracking
+  duration      Int      // milliseconds
+  apiLatency    Int?     // Time spent waiting for AI API
+  
+  createdAt     DateTime @default(now())
+  
+  prompt        AIPrompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  
+  @@index([createdAt])
+}
+
+// ============================================================================
+// USAGE TRACKING (Standard CRUD with analytics methods)
+// ============================================================================
+
+/// @analytics dailyUsage, costByModel, topUsers
+model UsageLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  model     String
+  tokens    Int
+  cost      Decimal  @db.Decimal(10, 6)
+  type      String   // 'chat', 'completion', 'embedding'
+  createdAt DateTime @default(now())
+  
+  @@index([userId, createdAt])
+  @@index([model, createdAt])
+}
+
+// ============================================================================
+// SYSTEM CONFIGURATION (Admin only)
+// ============================================================================
+
+model AIModelConfig {
+  id               Int      @id @default(autoincrement())
+  modelName        String   @unique
+  provider         String   // 'openai', 'anthropic', 'google'
+  isActive         Boolean  @default(true)
+  costPer1kPromptTokens    Decimal @db.Decimal(10, 6)
+  costPer1kCompletionTokens Decimal @db.Decimal(10, 6)
+  maxTokens        Int      @default(4096)
+  supportsStreaming Boolean @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
