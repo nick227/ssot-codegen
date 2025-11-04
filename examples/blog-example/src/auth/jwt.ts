@@ -22,10 +22,10 @@ export interface AuthRequest extends Request {
  */
 export const generateAccessToken = (payload: JWTPayload): string => {
   return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: JWT_EXPIRES_IN,
+    expiresIn: JWT_EXPIRES_IN as string,
     issuer: 'ssot-api',
     audience: 'api-users',
-  })
+  } as jwt.SignOptions)
 }
 
 /**
@@ -36,10 +36,10 @@ export const generateRefreshToken = (payload: JWTPayload): string => {
     { userId: payload.userId },
     JWT_SECRET,
     {
-      expiresIn: JWT_REFRESH_EXPIRES_IN,
+      expiresIn: JWT_REFRESH_EXPIRES_IN as string,
       issuer: 'ssot-api',
       audience: 'api-users',
-    }
+    } as jwt.SignOptions
   )
 }
 

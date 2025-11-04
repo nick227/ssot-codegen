@@ -24,13 +24,22 @@ export const wrapController = (modelName: string, methodName: string) => {
   return async (req: Request, res: Response) => {
     try {
       // Check cache first
-      let module = controllerCache.get(modelName)
+      let module: ControllerModule | undefined = controllerCache.get(modelName)
       
       if (!module) {
         // Dynamic import with caching
-        module = await import(`@gen/controllers/${modelName}`)
+        const imported = await import(`@gen/controllers/${modelName}`)
+        module = imported as ControllerModule
         controllerCache.set(modelName, module)
         logger.debug({ modelName }, 'Controller module loaded and cached')
+      }
+      
+      if (!module) {
+        logger.error({ modelName }, 'Failed to load controller module')
+        return res.status(500).json({
+          error: 'Internal Server Error',
+          message: `Controller module ${modelName} not found`
+        })
       }
       
       const method = module[methodName]

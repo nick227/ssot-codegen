@@ -1,13 +1,9 @@
 import crypto from 'node:crypto'
-import { promisify } from 'node:util'
-
-const scrypt = promisify(crypto.scrypt)
-const randomBytes = promisify(crypto.randomBytes)
 
 // Configuration
 const SALT_LENGTH = 32
 const KEY_LENGTH = 64
-const SCRYPT_OPTIONS = {
+const SCRYPT_OPTIONS: crypto.ScryptOptions = {
   N: 16384, // CPU/memory cost (2^14)
   r: 8,     // Block size
   p: 1,     // Parallelization
@@ -22,15 +18,15 @@ export async function hashPassword(password: string): Promise<string> {
   }
 
   // Generate random salt
-  const salt = await randomBytes(SALT_LENGTH)
+  const salt = crypto.randomBytes(SALT_LENGTH)
 
-  // Hash password
-  const derivedKey = (await scrypt(
-    password,
-    salt,
-    KEY_LENGTH,
-    SCRYPT_OPTIONS
-  )) as Buffer
+  // Hash password using promise-based scrypt
+  const derivedKey = await new Promise<Buffer>((resolve, reject) => {
+    crypto.scrypt(password, salt, KEY_LENGTH, SCRYPT_OPTIONS, (err, key) => {
+      if (err) reject(err)
+      else resolve(key as Buffer)
+    })
+  })
 
   // Combine salt and hash
   return `${salt.toString('hex')}:${derivedKey.toString('hex')}`
@@ -53,13 +49,13 @@ export async function verifyPassword(
     const salt = Buffer.from(saltHex, 'hex')
     const originalKey = Buffer.from(keyHex, 'hex')
 
-    // Hash provided password with same salt
-    const derivedKey = (await scrypt(
-      password,
-      salt,
-      KEY_LENGTH,
-      SCRYPT_OPTIONS
-    )) as Buffer
+    // Hash provided password with same salt using promise-based scrypt
+    const derivedKey = await new Promise<Buffer>((resolve, reject) => {
+      crypto.scrypt(password, salt, KEY_LENGTH, SCRYPT_OPTIONS, (err, key) => {
+        if (err) reject(err)
+        else resolve(key as Buffer)
+      })
+    })
 
     // Timing-safe comparison
     return crypto.timingSafeEqual(originalKey, derivedKey)
