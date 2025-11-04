@@ -4,6 +4,8 @@ import crypto from 'node:crypto'
 import { normalize, Normalized } from '@ssot-codegen/core'
 import { PathsConfig, filePath, esmImport } from './path-resolver.js'
 
+export * from './project-scaffold.js'
+
 export interface GeneratorConfig {
   output?: string
   schemaText?: string
@@ -157,7 +159,12 @@ const emitTsConfigPaths = (cfg: PathsConfig, rootDir: string) => {
 
 export interface GeneratorInput {
   dmmf: unknown
-  config: GeneratorConfig
+  config: GeneratorConfig & {
+    projectName?: string
+    description?: string
+    framework?: 'express' | 'fastify'
+    scaffold?: boolean
+  }
 }
 
 export const runGenerator = async (input: GeneratorInput) => {

@@ -9,9 +9,19 @@ const projectRoot = resolve(__dirname, '..');
 
 console.log('[demo-example] Generating code for Todo model...');
 
+// POC: Create stub DMMF with just model names
+const stubDMMF = {
+  models: [
+    { name: 'Todo', fields: [] }
+  ]
+};
+
 await runGenerator({
-  outDir: resolve(projectRoot, 'gen'),
-  models: ['Todo']
+  dmmf: stubDMMF,
+  config: {
+    output: resolve(projectRoot, 'gen'),
+    schemaText: 'model Todo { id Int @id }'
+  }
 });
 
 console.log('[demo-example] Generation complete!');
