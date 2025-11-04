@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import type { PathsConfig } from './path-resolver.js'
+import { resolveDependencies, type DependencyConfig } from './dependencies/index.js'
 
 const ensureDir = (p: string) => fs.mkdirSync(p, { recursive: true })
 const write = (file: string, content: string) => { 
@@ -15,59 +16,57 @@ export interface ScaffoldConfig {
   models: string[]
   framework: 'express' | 'fastify'
   useTypeScript: boolean
+  
+  // NEW: Flexible dependency configuration
+  dependencies?: DependencyConfig
 }
 
 export const generatePackageJson = (cfg: ScaffoldConfig) => {
+  // Use flexible dependency system
+  const depConfig: DependencyConfig = cfg.dependencies || {
+    profile: 'standard',  // Default to standard profile
+    framework: {
+      name: cfg.framework,
+      plugins: ['core', 'security']
+    }
+  }
+  
+  // Resolve dependencies
+  const resolved = resolveDependencies(depConfig)
+  
+  // Merge with Prisma-specific scripts
+  const scripts = {
+    ...resolved.scripts,
+    generate: 'prisma generate && node scripts/generate.js',
+    'db:push': 'prisma db push',
+    'db:migrate': 'prisma migrate dev',
+    'db:studio': 'prisma studio',
+  }
+  
   const pkg = {
     name: cfg.projectName,
     version: '1.0.0',
-    type: 'module',
+    type: 'module' as const,
     description: cfg.description || `Generated API with ${cfg.models.length} models`,
-    scripts: {
-      dev: 'tsx watch src/server.ts',
-      build: 'tsc',
-      start: 'node dist/server.js',
-      generate: 'prisma generate && node scripts/generate.js',
-      'db:push': 'prisma db push',
-      'db:migrate': 'prisma migrate dev',
-      'db:studio': 'prisma studio',
-      lint: 'tsc --noEmit',
-      test: 'node --test'
+    packageManager: 'pnpm@9.0.0',
+    engines: {
+      node: '>=18.0.0'
     },
-    dependencies: {
-      '@prisma/client': '^5.20.0',
-      'zod': '^3.23.8',
-      'dotenv': '^16.4.5',
-      'cors': '^2.8.5',
-      'helmet': '^7.1.0',
-      ...(cfg.framework === 'express' 
-        ? { 
-            'express': '^4.19.2',
-            'express-async-errors': '^3.1.1'
-          }
-        : {
-            'fastify': '^4.28.1',
-            '@fastify/cors': '^9.0.1'
-          }
-      )
-    },
-    devDependencies: {
-      'typescript': '^5.4.0',
-      'tsx': '^4.7.1',
-      'prisma': '^5.20.0',
-      '@types/node': '^20.11.0',
-      ...(cfg.framework === 'express' 
-        ? {
-            '@types/express': '^4.17.21',
-            '@types/cors': '^2.8.17'
-          }
-        : {}
-      )
-    }
+    scripts,
+    dependencies: resolved.runtime,
+    devDependencies: resolved.dev,
+    // Add metadata comment
+    _generatedBy: `ssot-codegen with ${resolved.metadata.profile} profile`
   }
 
   const pkgPath = path.join(cfg.projectRoot, 'package.json')
   write(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
+  
+  console.log(`[scaffold] Generated package.json with ${resolved.metadata.profile} profile`)
+  if (resolved.metadata.features.length > 0) {
+    console.log(`[scaffold] Features enabled: ${resolved.metadata.features.join(', ')}`)
+  }
+  
   return pkgPath
 }
 

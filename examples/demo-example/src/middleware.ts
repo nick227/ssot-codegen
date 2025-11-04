@@ -3,9 +3,9 @@ import { ZodError } from 'zod'
 
 export const errorHandler = (
   err: Error,
-  _req: Request,
+  req: Request,
   res: Response,
-  _next: NextFunction
+  next: NextFunction
 ) => {
   console.error(err)
 
@@ -17,7 +17,7 @@ export const errorHandler = (
   }
 
   const statusCode = (err as any).statusCode || 500
-  return res.status(statusCode).json({
+  res.status(statusCode).json({
     error: err.message || 'Internal Server Error',
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   })

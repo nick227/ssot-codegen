@@ -1,6 +1,6 @@
 # demo-example
 
-Ultra-light demo: Single table Todo with one API route
+Ultra-light demo with flexible dependencies
 
 ## 🚀 Quick Start
 

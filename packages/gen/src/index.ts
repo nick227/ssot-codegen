@@ -5,6 +5,7 @@ import { normalize, Normalized } from '@ssot-codegen/core'
 import { PathsConfig, filePath, esmImport } from './path-resolver.js'
 
 export * from './project-scaffold.js'
+export * from './dependencies/index.js'
 
 export interface GeneratorConfig {
   output?: string

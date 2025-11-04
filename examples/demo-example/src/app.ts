@@ -15,7 +15,7 @@ export const createApp = () => {
   app.use(express.urlencoded({ extended: true }))
 
   // Health check
-  app.get('/health', (_req, res) => {
+  app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() })
   })
 
