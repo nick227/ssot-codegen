@@ -103,6 +103,8 @@ export type ${model.name}QueryInput = z.infer<typeof ${model.name}QuerySchema>
  */
 function generateWhereField(field: ParsedField): string | null {
   const fieldName = field.name
+  const isNullable = !field.isRequired
+  const nullCheck = isNullable ? ',\n      isNull: z.boolean().optional()' : ''
   
   switch (field.type) {
     case 'String':
@@ -110,7 +112,7 @@ function generateWhereField(field: ParsedField): string | null {
       contains: z.string().optional(),
       startsWith: z.string().optional(),
       endsWith: z.string().optional(),
-      equals: z.string().optional()
+      equals: z.string().optional()${nullCheck}
     }).optional()`
     
     case 'Int':
@@ -122,7 +124,7 @@ function generateWhereField(field: ParsedField): string | null {
       gt: z.number().optional(),
       gte: z.number().optional(),
       lt: z.number().optional(),
-      lte: z.number().optional()
+      lte: z.number().optional()${nullCheck}
     }).optional()`
     
     case 'Boolean':
@@ -134,12 +136,16 @@ function generateWhereField(field: ParsedField): string | null {
       gt: z.coerce.date().optional(),
       gte: z.coerce.date().optional(),
       lt: z.coerce.date().optional(),
-      lte: z.coerce.date().optional()
+      lte: z.coerce.date().optional()${nullCheck}
     }).optional()`
     
     default:
       if (field.kind === 'enum') {
-        return `    ${fieldName}: z.nativeEnum(${field.type}).optional()`
+        const enumFilter = `    ${fieldName}: z.nativeEnum(${field.type}).optional()`
+        return isNullable ? `    ${fieldName}: z.union([
+      z.nativeEnum(${field.type}),
+      z.object({ isNull: z.boolean() })
+    ]).optional()` : enumFilter
       }
       // Skip other types (Json, Bytes, etc.)
       return null

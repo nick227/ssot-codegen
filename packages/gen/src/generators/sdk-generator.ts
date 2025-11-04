@@ -27,7 +27,7 @@ import type {
   ${model.name}ReadDTO,
   ${model.name}QueryDTO
 } from '@gen/contracts/${modelLower}'
-import { BaseModelClient } from '@ssot-codegen/sdk-runtime'
+import { BaseModelClient, type ListResponse } from '@ssot-codegen/sdk-runtime'
 import type { BaseAPIClient, QueryOptions } from '@ssot-codegen/sdk-runtime'
 
 /**

@@ -142,7 +142,7 @@ export function getServiceExportName(annotation: ServiceAnnotation): string {
 /**
  * Convert kebab-case to camelCase
  */
-function toCamelCase(str: string): string {
+export function toCamelCase(str: string): string {
   return str
     .split('-')
     .map((word, index) => 

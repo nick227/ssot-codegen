@@ -25,6 +25,7 @@ import { parseServiceAnnotation, getServiceExportName, type ServiceAnnotation } 
 import { generateServiceController, generateServiceRoutes, generateServiceScaffold } from './generators/service-integration.generator.js'
 // SDK generation for frontend clients
 import { generateModelSDK, generateMainSDK, generateSDKVersion } from './generators/sdk-generator.js'
+import { generateServiceSDK, generateMainSDKWithServices } from './generators/sdk-service-generator.js'
 // OPTIMIZATION: Pre-analysis utilities
 import { analyzeModel, type ModelAnalysis } from './utils/relationship-analyzer.js'
 
@@ -204,24 +205,54 @@ function generateModelCode(
 }
 
 /**
- * Generate SDK clients for all models
+ * Generate SDK clients for all models and services
  */
 function generateSDKClients(
   schema: ParsedSchema,
   files: GeneratedFiles,
   cache: AnalysisCache
 ): void {
-  // Generate model clients (skip junction tables)
+  const modelClients: Array<{ name: string; className: string }> = []
+  const serviceClients: Array<{ name: string; className: string; annotation: ServiceAnnotation }> = []
+  
+  // Generate model clients (skip junction tables and service-annotated models)
   for (const model of schema.models) {
     const analysis = cache.modelAnalysis.get(model.name)
+    const serviceAnnotation = cache.serviceAnnotations.get(model.name)
+    
     if (analysis?.isJunctionTable) continue  // Skip junction tables
+    if (serviceAnnotation) continue  // Skip service-annotated models (handled separately)
     
     const modelClient = generateModelSDK(model, schema)
     files.sdk.set(`models/${model.name.toLowerCase()}.client.ts`, modelClient)
+    
+    modelClients.push({
+      name: model.name.toLowerCase(),
+      className: `${model.name}Client`
+    })
   }
   
-  // Generate main SDK factory
-  const mainSDK = generateMainSDK(schema.models, schema)
+  // Generate service integration clients
+  for (const [modelName, serviceAnnotation] of cache.serviceAnnotations) {
+    const serviceClient = generateServiceSDK(serviceAnnotation)
+    files.sdk.set(`services/${serviceAnnotation.name}.client.ts`, serviceClient)
+    
+    const serviceName = serviceAnnotation.name.split('-').map((word, idx) => 
+      idx === 0 ? word.toLowerCase() : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    ).join('')
+    const className = serviceName.charAt(0).toUpperCase() + serviceName.slice(1) + 'Client'
+    
+    serviceClients.push({
+      name: serviceAnnotation.name,
+      className,
+      annotation: serviceAnnotation
+    })
+  }
+  
+  // Generate main SDK factory with both model and service clients
+  const mainSDK = serviceClients.length > 0
+    ? generateMainSDKWithServices(modelClients, serviceClients)
+    : generateMainSDK(schema.models, schema)
   files.sdk.set('index.ts', mainSDK)
   
   // Generate version file (will be populated with hash later)

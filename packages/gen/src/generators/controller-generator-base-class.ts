@@ -34,7 +34,7 @@ function generateExpressBaseClassController(
   const modelLower = model.name.toLowerCase()
   const idType = model.idField?.type === 'String' ? 'string' : 'number'
   
-  const imports = generateImports(model, modelLower)
+  const imports = generateImports(model, modelLower, analysis)
   const crudSetup = generateCRUDSetup(model, modelLower, idType)
   const crudExports = generateCRUDExports(model, modelLower)
   const domainMethods = generateDomainMethodExports(model, analysis, modelLower, idType)
@@ -51,14 +51,27 @@ ${crudExports}${domainMethods}
 }
 
 /**
- * Generate imports
+ * Generate imports (conditional based on domain methods)
  */
-function generateImports(model: ParsedModel, modelLower: string): string {
-  return `import {
-  BaseCRUDController,
+function generateImports(model: ParsedModel, modelLower: string, analysis: ReturnType<typeof analyzeModel>): string {
+  // Check if we need helper functions
+  const needsHelpers = 
+    analysis.specialFields.slug ||
+    analysis.specialFields.published ||
+    analysis.specialFields.views ||
+    analysis.specialFields.approved ||
+    analysis.specialFields.deletedAt ||
+    analysis.specialFields.parentId
+  
+  const helperImports = needsHelpers
+    ? `,
   createDomainMethodController,
   createVoidDomainMethodController,
-  createListMethodController
+  createListMethodController`
+    : ''
+  
+  return `import {
+  BaseCRUDController${helperImports}
 } from '@gen/base'
 import { ${modelLower}Service } from '@gen/services/${modelLower}'
 import {
