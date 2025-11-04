@@ -458,6 +458,11 @@ function generateThreadingMethod(
 ): string {
   const includeStmt = generateSummaryInclude(analysis)
   
+  // Build includes for threading (replies + any auto-includes)
+  const threadingInclude = includeStmt 
+    ? includeStmt.replace(/,\s*include:\s*{/, ',').replace(/}\s*$/, '') 
+    : ''
+  
   return `  /**
    * Get ${model.name} with nested children (threading)
    */
@@ -469,7 +474,7 @@ function generateThreadingMethod(
           include: {
             replies: true  // One level of nesting
           }
-        }${includeStmt.replace(/^\s*,\s*include:\s*{/, '').replace(/}\s*$/, '')}
+        }${threadingInclude}
       }
     })
   },

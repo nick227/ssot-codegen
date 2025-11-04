@@ -1,4 +1,4 @@
-import { Router } from 'express'
+import { Router, type Router as RouterType } from 'express'
 import { z } from 'zod'
 import type { Response } from 'express'
 import { generateTokens, verifyToken, type AuthRequest } from './jwt.js'
@@ -6,7 +6,7 @@ import { hashPassword, verifyPassword, validatePasswordStrength } from './passwo
 import prisma from '../db.js'
 import { logger } from '../logger.js'
 
-export const authRouter = Router()
+export const authRouter: RouterType = Router()
 
 // Validation schemas
 const registerSchema = z.object({

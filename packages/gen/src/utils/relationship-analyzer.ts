@@ -210,8 +210,9 @@ export function generateSummaryInclude(analysis: ModelAnalysis): string {
       }
       
       if (targetFields.length > 1) {
+        const selectFields = targetFields.map(f => `${f}: true`).join(', ')
         return `        ${rel.field.name}: {
-          select: { ${targetFields.join(', ')} }
+          select: { ${selectFields} }
         }`
       }
       return `        ${rel.field.name}: true`
