@@ -15,14 +15,34 @@ async function seed() {
   try {
     // Clear existing data
     console.log('🗑️  Clearing existing data...')
-    await prisma.todo.deleteMany()
-    await prisma.user.deleteMany()
+    // Check which models exist in schema
+    const modelNames = Object.keys(prisma).filter(key => 
+      typeof (prisma as any)[key] === 'object' && 
+      (prisma as any)[key].deleteMany
+    )
+    
+    // Try both Todo and todo
+    if ('todo' in prisma) {
+      await (prisma as any).todo.deleteMany()
+    }
+    if ('user' in prisma) {
+      await (prisma as any).user.deleteMany()
+    }
+    if ('Todo' in prisma) {
+      await (prisma as any).Todo.deleteMany()
+    }
+    if ('User' in prisma) {
+      await (prisma as any).User.deleteMany()
+    }
 
     // Create users
     console.log('👥 Creating users...')
     const password = await hashPassword('Demo123!@#')
 
-    const alice = await prisma.user.create({
+    // Use correct model name (User or user)
+    const userModel = 'user' in prisma ? (prisma as any).user : (prisma as any).User
+
+    const alice = await userModel.create({
       data: {
         email: 'alice@demo.com',
         name: 'Alice Johnson',
@@ -30,7 +50,7 @@ async function seed() {
       },
     })
 
-    const bob = await prisma.user.create({
+    const bob = await userModel.create({
       data: {
         email: 'bob@demo.com',
         name: 'Bob Smith',
@@ -38,7 +58,7 @@ async function seed() {
       },
     })
 
-    const charlie = await prisma.user.create({
+    const charlie = await userModel.create({
       data: {
         email: 'charlie@demo.com',
         name: 'Charlie Brown',
@@ -50,7 +70,9 @@ async function seed() {
 
     // Create todos for Alice
     console.log('📝 Creating todos...')
-    await prisma.todo.create({
+    const todoModel = 'todo' in prisma ? (prisma as any).todo : (prisma as any).Todo
+
+    await todoModel.create({
       data: {
         title: 'Complete project documentation',
         description: 'Write comprehensive docs for the new API',
@@ -59,7 +81,7 @@ async function seed() {
       },
     })
 
-    await prisma.todo.create({
+    await todoModel.create({
       data: {
         title: 'Review pull requests',
         description: 'Review and merge pending PRs',
@@ -68,7 +90,7 @@ async function seed() {
       },
     })
 
-    await prisma.todo.create({
+    await todoModel.create({
       data: {
         title: 'Prepare presentation',
         description: 'Create slides for tech talk',
@@ -78,7 +100,7 @@ async function seed() {
     })
 
     // Create todos for Bob
-    await prisma.todo.create({
+    await todoModel.create({
       data: {
         title: 'Fix authentication bug',
         description: 'Investigate and fix JWT expiration issue',
@@ -87,7 +109,7 @@ async function seed() {
       },
     })
 
-    await prisma.todo.create({
+    await todoModel.create({
       data: {
         title: 'Update dependencies',
         description: 'npm update and test',
@@ -96,7 +118,7 @@ async function seed() {
       },
     })
 
-    await prisma.todo.create({
+    await todoModel.create({
       data: {
         title: 'Write unit tests',
         description: 'Add tests for new features',
@@ -106,7 +128,7 @@ async function seed() {
     })
 
     // Create todos for Charlie
-    await prisma.todo.create({
+    await todoModel.create({
       data: {
         title: 'Deploy to staging',
         description: 'Deploy latest changes to staging environment',
@@ -115,7 +137,7 @@ async function seed() {
       },
     })
 
-    await prisma.todo.create({
+    await todoModel.create({
       data: {
         title: 'Database backup',
         description: 'Configure automated backups',
@@ -124,7 +146,7 @@ async function seed() {
       },
     })
 
-    await prisma.todo.create({
+    await todoModel.create({
       data: {
         title: 'Monitor performance',
         description: 'Review application metrics and optimize',
@@ -133,7 +155,7 @@ async function seed() {
       },
     })
 
-    await prisma.todo.create({
+    await todoModel.create({
       data: {
         title: 'Team meeting',
         description: 'Discuss Q4 roadmap',

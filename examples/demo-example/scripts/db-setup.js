@@ -228,13 +228,30 @@ async function setupDatabase() {
       await createMysqlDatabase(config) // CREATE IF NOT EXISTS handles checking
     }
 
-    // Generate and display DATABASE_URL for Prisma
+    // Generate and set DATABASE_URL for Prisma
     const databaseUrl = buildDatabaseUrl(config)
     
+    // Write DATABASE_URL to .env if not already there
+    const { readFileSync, writeFileSync } = await import('node:fs')
+    const envPath = '.env'
+    let envContent = ''
+    
+    try {
+      envContent = readFileSync(envPath, 'utf8')
+    } catch {
+      // File doesn't exist, that's OK
+    }
+
+    if (!envContent.includes('DATABASE_URL=')) {
+      // Add DATABASE_URL to .env
+      const newLine = `\n# Auto-generated DATABASE_URL\nDATABASE_URL="${databaseUrl}"\n`
+      writeFileSync(envPath, envContent + newLine, 'utf8')
+      console.log('\n✅ Added DATABASE_URL to .env file')
+    }
+    
     console.log('\n✅ Database setup complete!')
-    console.log('\n📝 Add this to your .env file:')
-    console.log(`DATABASE_URL="${databaseUrl}"`)
-    console.log('\nOr keep using component-based configuration.')
+    console.log(`\n📝 DATABASE_URL: ${databaseUrl}`)
+    console.log('\nPrisma can now connect to the database.')
     
   } catch (error) {
     console.error('\n❌ Database setup failed:', error.message)
