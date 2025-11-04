@@ -123,7 +123,7 @@ function generateModelCode(
   const isJunction = useEnhanced && analysis?.isJunctionTable
   
   if (isJunction) {
-    console.log(`[ssot-codegen] Junction table detected: ${model.name} - generating DTOs/validators only`)
+    // Note: Junction table warning is logged by the caller (index-new.ts) via logger
     
     // Generate DTOs (useful for type system even for junction tables)
     const dtos = generateAllDTOs(model)
