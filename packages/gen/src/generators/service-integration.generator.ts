@@ -283,10 +283,16 @@ import OpenAI from 'openai'`,
 import Anthropic from '@anthropic-ai/sdk'`,
     's3': `// TODO: Install AWS SDK: npm install @aws-sdk/client-s3
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3'`,
+    'cloudflare': `// TODO: Install Cloudflare SDK: npm install @cloudflare/workers-types @aws-sdk/client-s3
+// Cloudflare R2 is S3-compatible
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'`,
     'stripe': `// TODO: Install Stripe SDK: npm install stripe
 import Stripe from 'stripe'`,
     'sendgrid': `// TODO: Install SendGrid SDK: npm install @sendgrid/mail
-import sgMail from '@sendgrid/mail'`
+import sgMail from '@sendgrid/mail'`,
+    'google': `// TODO: Install Google Auth SDK: npm install google-auth-library
+import { OAuth2Client } from 'google-auth-library'`
   }
   
   return imports[provider.toLowerCase()] || `// Provider: ${provider}`
@@ -315,12 +321,27 @@ const s3 = new S3Client({
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!
   }
 })`,
+    'cloudflare': `// Initialize Cloudflare R2 client (S3-compatible)
+const r2 = new S3Client({
+  region: 'auto',
+  endpoint: process.env.CLOUDFLARE_R2_ENDPOINT!, // https://your-account-id.r2.cloudflarestorage.com
+  credentials: {
+    accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY!
+  }
+})`,
     'stripe': `// Initialize Stripe client
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-11-20.acacia'
 })`,
     'sendgrid': `// Initialize SendGrid
-sgMail.setApiKey(process.env.SENDGRID_API_KEY!)`
+sgMail.setApiKey(process.env.SENDGRID_API_KEY!)`,
+    'google': `// Initialize Google OAuth client
+const googleOAuth = new OAuth2Client({
+  clientId: process.env.GOOGLE_CLIENT_ID!,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+  redirectUri: process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3003/api/auth/google/callback'
+})`
   }
   
   return setups[provider.toLowerCase()] || ''
