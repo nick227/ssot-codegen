@@ -1,0 +1,26 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "packages/gen/src/index.ts",
+    "packages/core/src/index.ts",
+    "packages/sdk-runtime/src/index.ts",
+    "packages/schema-lint/src/index.ts",
+    "packages/templates-default/src/index.ts"
+  ],
+  "project": [
+    "packages/*/src/**/*.ts"
+  ],
+  "ignore": [
+    "**/__tests__/**",
+    "**/*.test.ts",
+    "**/dist/**",
+    "**/gen/**",
+    "**/node_modules/**",
+    "examples/**",
+    "scripts/**"
+  ],
+  "ignoreDependencies": [
+    "@types/*"
+  ],
+  "ignoreExportsUsedInFile": true
+}

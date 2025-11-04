@@ -4,9 +4,9 @@ export interface ModelMeta { name:string; fields:FieldMeta[] }
 export interface Normalized { models: ModelMeta[] }
 export interface StubDMMF { models: { name: string; fields: FieldMeta[] }[] }
 export const normalize = (dmmf: StubDMMF | unknown): Normalized => {
-  const list = (dmmf as any)?.models
+  const list = (dmmf as { models?: unknown[] })?.models
   if (!Array.isArray(list)) return { models: [{ name: 'User', fields: [{name:'id', type:'number'},{name:'name', type:'string'}] }] }
   return { models: list.map(m => ({ name: m.name, fields: m.fields ?? [] })) }
 }
-export const pascal = (s:string) => s.replace(/(^|[_-])(\w)/g, (_:any,__:any,c:string)=>c.toUpperCase())
-export const camel = (s:string) => s.replace(/[-_](\w)/g, (_:any,c:string)=>c.toUpperCase()).replace(/^(\w)/, (m:string)=>m.toLowerCase())
+export const pascal = (s:string) => s.replace(/(^|[_-])(\w)/g, (_match:string, _prefix:string, c:string)=>c.toUpperCase())
+export const camel = (s:string) => s.replace(/[-_](\w)/g, (_match:string, c:string)=>c.toUpperCase()).replace(/^(\w)/, (m:string)=>m.toLowerCase())

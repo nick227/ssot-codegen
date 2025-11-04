@@ -11,25 +11,32 @@
   "scripts": {
     "build": "pnpm -r --filter ./packages/* run build",
     "clean": "rimraf packages/*/dist",
-    "lint": "echo \"(stub) run eslint here\"",
-    
+    "lint": "eslint \"packages/*/src/**/*.ts\"",
+    "lint:fix": "eslint \"packages/*/src/**/*.ts\" --fix",
+    "typecheck": "pnpm -r --filter ./packages/* exec tsc --noEmit",
+    "knip": "knip",
+    "madge": "madge --circular --extensions ts packages/gen/src",
+    "check:all": "pnpm run typecheck && pnpm run lint && pnpm run knip && pnpm run madge",
     "examples:all": "pnpm run examples:demo && pnpm run examples:blog && pnpm run examples:ecommerce",
     "examples:demo": "cd examples/demo-example && pnpm run generate",
     "examples:blog": "cd examples/blog-example && pnpm run generate",
     "examples:ecommerce": "cd examples/ecommerce-example && pnpm run generate",
     "examples:minimal": "node examples/minimal/scripts/generate.js",
-    
     "test:examples": "node scripts/test-all-examples.js",
     "test:demo": "cd examples/demo-example && pnpm run test",
     "test:blog": "cd examples/blog-example && pnpm run test",
     "test:ecommerce": "cd examples/ecommerce-example && pnpm run test",
-    
     "demo": "pnpm run examples:demo && pnpm run test:demo",
     "full-test": "pnpm run build && pnpm run examples:all && pnpm run test:examples"
   },
   "devDependencies": {
-    "typescript": "^5.4.0",
+    "@typescript-eslint/eslint-plugin": "^8.46.3",
+    "@typescript-eslint/parser": "^8.46.3",
+    "eslint": "^9.39.1",
+    "knip": "^5.67.1",
+    "madge": "^8.0.0",
     "prisma": "^5.0.0",
-    "rimraf": "^5.0.0"
+    "rimraf": "^5.0.0",
+    "typescript": "^5.4.0"
   }
 }
