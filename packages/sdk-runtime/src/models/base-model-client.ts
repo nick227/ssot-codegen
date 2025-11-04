@@ -2,7 +2,7 @@
  * Base Model Client - Generic CRUD operations for models
  */
 
-import type { BaseAPIClient, RequestConfig } from '../client/base-client.js'
+import type { BaseAPIClient } from '../client/base-client.js'
 import type { ListResponse } from '../types/api-response.js'
 import { APIException } from '../types/api-error.js'
 
