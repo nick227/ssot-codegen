@@ -100,7 +100,7 @@ export const list${model.name}s = ${modelLower}CRUD.list
 export const get${model.name} = ${modelLower}CRUD.getById
 export const create${model.name} = ${modelLower}CRUD.create
 export const update${model.name} = ${modelLower}CRUD.update
-export const delete${model.name} = ${modelLower}CRUD.delete
+export const delete${model.name} = ${modelLower}CRUD.deleteRecord
 export const count${model.name}s = ${modelLower}CRUD.count`
 }
 

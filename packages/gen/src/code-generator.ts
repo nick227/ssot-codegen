@@ -23,6 +23,8 @@ import { generateEnhancedRoutes, shouldGenerateRoutes } from './generators/route
 // Service integration for complex workflows (AI agents, file uploads, etc.)
 import { parseServiceAnnotation, getServiceExportName, type ServiceAnnotation } from './service-linker.js'
 import { generateServiceController, generateServiceRoutes, generateServiceScaffold } from './generators/service-integration.generator.js'
+// SDK generation for frontend clients
+import { generateModelSDK, generateMainSDK, generateSDKVersion } from './generators/sdk-generator.js'
 // OPTIMIZATION: Pre-analysis utilities
 import { analyzeModel, type ModelAnalysis } from './utils/relationship-analyzer.js'
 
@@ -37,6 +39,7 @@ export interface GeneratedFiles {
   services: Map<string, string>
   controllers: Map<string, string>
   routes: Map<string, string>
+  sdk: Map<string, string>  // filename -> content
 }
 
 /**
@@ -61,7 +64,8 @@ export function generateCode(
     validators: new Map(),
     services: new Map(),
     controllers: new Map(),
-    routes: new Map()
+    routes: new Map(),
+    sdk: new Map()
   }
   
   // PHASE 1: Pre-analyze all models ONCE (O(n) instead of O(n×5))
@@ -87,6 +91,9 @@ export function generateCode(
   for (const model of schema.models) {
     generateModelCode(model, config, files, schema, cache)
   }
+  
+  // PHASE 3: Generate SDK clients (after all models are processed)
+  generateSDKClients(schema, files, cache)
   
   return files
 }
@@ -197,6 +204,32 @@ function generateModelCode(
 }
 
 /**
+ * Generate SDK clients for all models
+ */
+function generateSDKClients(
+  schema: ParsedSchema,
+  files: GeneratedFiles,
+  cache: AnalysisCache
+): void {
+  // Generate model clients (skip junction tables)
+  for (const model of schema.models) {
+    const analysis = cache.modelAnalysis.get(model.name)
+    if (analysis?.isJunctionTable) continue  // Skip junction tables
+    
+    const modelClient = generateModelSDK(model, schema)
+    files.sdk.set(`models/${model.name.toLowerCase()}.client.ts`, modelClient)
+  }
+  
+  // Generate main SDK factory
+  const mainSDK = generateMainSDK(schema.models, schema)
+  files.sdk.set('index.ts', mainSDK)
+  
+  // Generate version file (will be populated with hash later)
+  const versionFile = generateSDKVersion('', '0.5.0')
+  files.sdk.set('version.ts', versionFile)
+}
+
+/**
  * Get file count
  */
 export function countGeneratedFiles(files: GeneratedFiles): number {
@@ -207,6 +240,7 @@ export function countGeneratedFiles(files: GeneratedFiles): number {
   count += files.services.size
   count += files.controllers.size
   count += files.routes.size
+  count += files.sdk.size
   
   return count
 }

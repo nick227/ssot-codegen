@@ -42,22 +42,7 @@ export interface CRUDControllerConfig {
 }
 
 /**
- * Base CRUD Controller
- * 
- * Eliminates 80-85% of boilerplate from generated controllers by providing
- * common functionality: validation, error handling, logging, ID parsing, etc.
- * 
- * @example
- * \`\`\`typescript
- * const postCRUD = new BaseCRUDController(
- *   postService,
- *   { create: PostCreateSchema, update: PostUpdateSchema, query: PostQuerySchema },
- *   { modelName: 'Post', idType: 'number' }
- * )
- * 
- * export const listPosts = postCRUD.list
- * export const getPost = postCRUD.getById
- * \`\`\`
+ * Base CRUD Controller - Eliminates 80-85% of boilerplate
  */
 export class BaseCRUDController<T, CreateDTO, UpdateDTO, QueryDTO> {
   constructor(
@@ -66,12 +51,15 @@ export class BaseCRUDController<T, CreateDTO, UpdateDTO, QueryDTO> {
     private config: CRUDControllerConfig
   ) {}
 
-  /**
-   * Parse and validate ID from request params
-   */
   private parseId(req: Request, res: Response): number | string | null {
     const idField = this.config.idField || 'id'
     const rawId = req.params[idField]
+    
+    if (!rawId) {
+      logger.warn(\`Missing \${this.config.modelName} ID\`)
+      res.status(400).json({ error: 'ID is required' })
+      return null
+    }
     
     if (this.config.idType === 'number') {
       const id = parseInt(rawId, 10)
@@ -83,8 +71,7 @@ export class BaseCRUDController<T, CreateDTO, UpdateDTO, QueryDTO> {
       return id
     }
     
-    // String ID (UUID, CUID, etc.)
-    if (!rawId || rawId.trim() === '') {
+    if (rawId.trim() === '') {
       logger.warn(\`Missing \${this.config.modelName} ID\`)
       res.status(400).json({ error: 'ID is required' })
       return null
@@ -93,35 +80,17 @@ export class BaseCRUDController<T, CreateDTO, UpdateDTO, QueryDTO> {
     return rawId
   }
 
-  /**
-   * Handle validation errors
-   */
   private handleValidationError(error: ZodError, operation: string, res: Response): void {
-    logger.warn(
-      { error: error.errors, operation },
-      \`Validation error in \${operation}\`
-    )
-    res.status(400).json({
-      error: 'Validation Error',
-      details: error.errors
-    })
+    logger.warn({ error: error.errors, operation }, \`Validation error in \${operation}\`)
+    res.status(400).json({ error: 'Validation Error', details: error.errors })
   }
 
-  /**
-   * Handle general errors
-   */
   private handleError(error: unknown, operation: string, context: Record<string, any>, res: Response): void {
-    logger.error(
-      { error, ...context, operation },
-      \`Error in \${operation}\`
-    )
+    logger.error({ error, ...context, operation }, \`Error in \${operation}\`)
     res.status(500).json({ error: 'Internal Server Error' })
   }
 
-  /**
-   * List all records with pagination
-   */
-  list = async (req: Request, res: Response): Promise<Response> => {
+  async list(req: Request, res: Response): Promise<Response> {
     try {
       const query = this.schemas.query.parse(req.query)
       const result = await this.service.list(query)
@@ -136,16 +105,12 @@ export class BaseCRUDController<T, CreateDTO, UpdateDTO, QueryDTO> {
     }
   }
 
-  /**
-   * Get single record by ID
-   */
-  getById = async (req: Request, res: Response): Promise<Response | void> => {
+  async getById(req: Request, res: Response): Promise<Response | void> {
     try {
       const id = this.parseId(req, res)
-      if (id === null) return  // Response already sent
+      if (id === null) return
       
       const item = await this.service.findById(id)
-      
       if (!item) {
         const idKey = \`\${this.config.modelName.toLowerCase()}Id\`
         logger.debug({ [idKey]: id }, \`\${this.config.modelName} not found\`)
@@ -159,10 +124,7 @@ export class BaseCRUDController<T, CreateDTO, UpdateDTO, QueryDTO> {
     }
   }
 
-  /**
-   * Create new record
-   */
-  create = async (req: Request, res: Response): Promise<Response> => {
+  async create(req: Request, res: Response): Promise<Response> {
     try {
       const data = this.schemas.create.parse(req.body)
       const item = await this.service.create(data)
@@ -177,13 +139,10 @@ export class BaseCRUDController<T, CreateDTO, UpdateDTO, QueryDTO> {
     }
   }
 
-  /**
-   * Update existing record
-   */
-  update = async (req: Request, res: Response): Promise<Response | void> => {
+  async update(req: Request, res: Response): Promise<Response | void> {
     try {
       const id = this.parseId(req, res)
-      if (id === null) return  // Response already sent
+      if (id === null) return
       
       const data = this.schemas.update.parse(req.body)
       const item = await this.service.update(id, data)
@@ -205,13 +164,10 @@ export class BaseCRUDController<T, CreateDTO, UpdateDTO, QueryDTO> {
     }
   }
 
-  /**
-   * Delete record
-   */
-  delete = async (req: Request, res: Response): Promise<Response | void> {
+  async deleteRecord(req: Request, res: Response): Promise<Response | void> {
     try {
       const id = this.parseId(req, res)
-      if (id === null) return  // Response already sent
+      if (id === null) return
       
       const deleted = await this.service.delete(id)
       
@@ -228,10 +184,7 @@ export class BaseCRUDController<T, CreateDTO, UpdateDTO, QueryDTO> {
     }
   }
 
-  /**
-   * Count records
-   */
-  count = async (_req: Request, res: Response): Promise<Response> => {
+  async count(_req: Request, res: Response): Promise<Response> {
     try {
       const total = await this.service.count()
       return res.json({ total })
@@ -242,17 +195,6 @@ export class BaseCRUDController<T, CreateDTO, UpdateDTO, QueryDTO> {
   }
 }
 
-/**
- * Create controller for domain method that returns data
- * 
- * @example
- * \`\`\`typescript
- * export const getPostBySlug = createDomainMethodController(
- *   postService.findBySlug,
- *   { modelName: 'Post', methodName: 'getPostBySlug', idType: 'string', paramName: 'slug' }
- * )
- * \`\`\`
- */
 export function createDomainMethodController<T>(
   serviceFn: (...args: any[]) => Promise<T | null>,
   config: {
@@ -305,17 +247,6 @@ export function createDomainMethodController<T>(
   }
 }
 
-/**
- * Create controller for domain method that returns void or doesn't need response data
- * 
- * @example
- * \`\`\`typescript
- * export const incrementPostViews = createVoidDomainMethodController(
- *   postService.incrementViews,
- *   { modelName: 'Post', methodName: 'incrementPostViews', idType: 'number' }
- * )
- * \`\`\`
- */
 export function createVoidDomainMethodController(
   serviceFn: (...args: any[]) => Promise<void | any>,
   config: {
@@ -361,18 +292,6 @@ export function createVoidDomainMethodController(
   }
 }
 
-/**
- * Create controller for list method with custom service function
- * 
- * @example
- * \`\`\`typescript
- * export const listPublishedPosts = createListMethodController(
- *   postService.listPublished,
- *   PostQuerySchema,
- *   { modelName: 'Post', methodName: 'listPublishedPosts' }
- * )
- * \`\`\`
- */
 export function createListMethodController<QueryDTO>(
   serviceFn: (query: QueryDTO) => Promise<{ data: any[]; meta: any }>,
   querySchema: ZodSchema<QueryDTO>,
@@ -401,4 +320,3 @@ export function createListMethodController<QueryDTO>(
 
 // Export as constant for backwards compatibility
 export const baseCRUDControllerTemplate = getBaseCRUDControllerTemplate()
-

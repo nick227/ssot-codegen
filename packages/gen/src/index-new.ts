@@ -214,6 +214,13 @@ async function writeGeneratedFiles(
     track(`routes:${modelName}:${filename}`, filePath, esmImport(cfg, id('routes', modelName)))
   })
   
+  // Write SDK files
+  files.sdk.forEach((content, filename) => {
+    const filePath = path.join(cfg.rootDir, 'sdk', filename)
+    writes.push(write(filePath, content))
+    track(`sdk:${filename}`, filePath, esmImport(cfg, id('sdk', undefined, filename)))
+  })
+  
   // Execute ALL writes in parallel (OPTIMIZED!)
   await Promise.all(writes)
 }

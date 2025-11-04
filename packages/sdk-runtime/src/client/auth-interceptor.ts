@@ -1,0 +1,76 @@
+/**
+ * Authentication Interceptor - Adds tokens to requests
+ */
+
+export interface AuthConfig {
+  token?: string | (() => string | Promise<string>)
+  refreshToken?: string | (() => string | Promise<string>)
+  onRefresh?: (newToken: string) => void | Promise<void>
+  header?: string  // Default: 'Authorization'
+  scheme?: string  // Default: 'Bearer'
+}
+
+/**
+ * Create authentication request interceptor
+ */
+export function createAuthInterceptor(authConfig: AuthConfig) {
+  return async (init: RequestInit): Promise<RequestInit> => {
+    let token: string | undefined
+
+    // Get token (call function if needed)
+    if (typeof authConfig.token === 'function') {
+      token = await authConfig.token()
+    } else {
+      token = authConfig.token
+    }
+
+    // No token, return as-is
+    if (!token) return init
+
+    // Add authorization header
+    const header = authConfig.header || 'Authorization'
+    const scheme = authConfig.scheme || 'Bearer'
+
+    return {
+      ...init,
+      headers: {
+        ...init.headers,
+        [header]: `${scheme} ${token}`
+      }
+    }
+  }
+}
+
+/**
+ * Create refresh token handler
+ */
+export function createRefreshHandler(authConfig: AuthConfig) {
+  return async (error: any): Promise<boolean> => {
+    // Only handle 401 errors
+    if (!error || error.status !== 401) return false
+    
+    // No refresh token configured
+    if (!authConfig.refreshToken || !authConfig.onRefresh) return false
+    
+    try {
+      // Get refresh token
+      let refreshToken: string | undefined
+      if (typeof authConfig.refreshToken === 'function') {
+        refreshToken = await authConfig.refreshToken()
+      } else {
+        refreshToken = authConfig.refreshToken
+      }
+      
+      if (!refreshToken) return false
+      
+      // Call refresh endpoint (this is app-specific, would need to be configured)
+      // For now, return false and let the app handle it
+      // TODO: Add refresh endpoint configuration
+      
+      return false
+    } catch {
+      return false
+    }
+  }
+}
+
