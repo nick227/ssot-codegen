@@ -6,20 +6,16 @@ import 'express-async-errors'
 import config from './config.js'
 import { errorHandler, notFoundHandler } from './middleware.js'
 import { httpLogger, logger } from './logger.js'
+import { authRouter } from './auth/routes.js'
+import { postRouter } from './extensions/post.routes.extensions.js'
 
 // Configure rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // Limit each IP to 100 requests per windowMs
   message: 'Too many requests from this IP, please try again later.',
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-})
-
-const strictLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10, // Stricter limit for sensitive endpoints
-  message: 'Too many requests, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
 })
 
 export const createApp = () => {
@@ -45,17 +41,9 @@ export const createApp = () => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() })
   })
 
-  // Auth routes (public)
-  import('./auth/routes.js').then(({ authRouter }) => {
-    app.use(`${config.api.prefix}/auth`, authRouter)
-  })
-
-  // API routes (protected)
-  // TODO: Import and register your generated routes here
-  // Example:
-  // import { authenticate } from './auth/jwt.js'
-  // import { todoRoutes } from '@gen/routes/todo'
-  // app.use(`${config.api.prefix}/todos`, authenticate, todoRoutes)
+  // API Routes
+  app.use(`${config.api.prefix}/auth`, authRouter)
+  app.use(`${config.api.prefix}/posts`, postRouter)  // Extended routes with search!
 
   // Error handling
   app.use(notFoundHandler)
