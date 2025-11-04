@@ -515,20 +515,36 @@ export const runGenerator = generateFromSchema
  * Count files for a specific model
  */
 function countFilesForModel(generatedFiles: ReturnType<typeof generateCode>, modelName: string): number {
-  const modelLower = modelName.toLowerCase()
   let count = 0
   
-  // Count in each layer
-  for (const [layer, models] of Object.entries(generatedFiles)) {
-    if (typeof models === 'object' && models && modelLower in models) {
-      const files = (models as Record<string, unknown>)[modelLower]
-      if (Array.isArray(files)) {
-        count += files.length
-      } else if (typeof files === 'string') {
-        count += 1
-      }
-    }
+  // Contracts (Map<model, Map<filename, content>>)
+  const contractsMap = generatedFiles.contracts.get(modelName)
+  if (contractsMap) {
+    count += contractsMap.size
   }
+  
+  // Validators (Map<model, Map<filename, content>>)
+  const validatorsMap = generatedFiles.validators.get(modelName)
+  if (validatorsMap) {
+    count += validatorsMap.size
+  }
+  
+  // Services (Map<model, content>)
+  if (generatedFiles.services.has(modelName)) {
+    count += 1
+  }
+  
+  // Controllers (Map<model, content>)
+  if (generatedFiles.controllers.has(modelName)) {
+    count += 1
+  }
+  
+  // Routes (Map<model, content>)
+  if (generatedFiles.routes.has(modelName)) {
+    count += 1
+  }
+  
+  // Note: SDK is not per-model, it's a collection of all model clients
   
   return count
 }
@@ -574,16 +590,35 @@ function buildFileBreakdown(generatedFiles: ReturnType<typeof generateCode>, mod
 function countFilesByPattern(generatedFiles: ReturnType<typeof generateCode>, pattern: string): number {
   let count = 0
   
-  for (const models of Object.values(generatedFiles)) {
-    if (typeof models === 'object' && models) {
-      for (const files of Object.values(models as Record<string, unknown>)) {
-        if (Array.isArray(files)) {
-          count += files.filter((f: string) => f.includes(pattern)).length
-        } else if (typeof files === 'string' && files.includes(pattern)) {
-          count += 1
-        }
-      }
+  // Contracts and Validators are Map<model, Map<filename, content>>
+  for (const filesMap of generatedFiles.contracts.values()) {
+    for (const filename of filesMap.keys()) {
+      if (filename.includes(pattern)) count++
     }
+  }
+  
+  for (const filesMap of generatedFiles.validators.values()) {
+    for (const filename of filesMap.keys()) {
+      if (filename.includes(pattern)) count++
+    }
+  }
+  
+  // Services, Controllers, Routes are Map<model, content> (single file per model)
+  if (pattern.includes('.service.ts')) {
+    count += generatedFiles.services.size
+  }
+  
+  if (pattern.includes('.controller.ts')) {
+    count += generatedFiles.controllers.size
+  }
+  
+  if (pattern.includes('.routes.ts')) {
+    count += generatedFiles.routes.size
+  }
+  
+  // SDK files
+  for (const filename of generatedFiles.sdk.keys()) {
+    if (filename.includes(pattern)) count++
   }
   
   return count
