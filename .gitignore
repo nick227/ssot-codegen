@@ -5,3 +5,13 @@ dist/
 *.tsbuildinfo
 /examples/*/gen/
 tsconfig.paths.json
+
+# Block .env in root and packages (production)
+/.env
+/.env.local
+/.env.*.local
+/packages/*/.env
+/packages/*/.env.local
+
+# Allow .env in examples (they have safe defaults for development)
+!examples/*/.env
