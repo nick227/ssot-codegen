@@ -200,13 +200,13 @@ model AIModelConfig {
 model FileUpload {
   id          Int      @id @default(autoincrement())
   userId      Int
-  filename    String
-  originalName String
-  mimeType    String
+  filename    String   @db.VarChar(255)
+  originalName String  @db.VarChar(255)
+  mimeType    String   @db.VarChar(100)
   size        Int      // bytes
-  r2Key       String   @unique  // Cloudflare R2 object key
-  r2Bucket    String
-  publicUrl   String?
+  r2Key       String   @unique @db.VarChar(500)  // Cloudflare R2 object key
+  r2Bucket    String   @db.VarChar(100)
+  publicUrl   String?  @db.VarChar(500)
   metadata    Json?    // Custom metadata (dimensions, duration, etc.)
   status      FileStatus @default(UPLOADED)
   createdAt   DateTime @default(now())
@@ -239,15 +239,15 @@ enum FileStatus {
 model Payment {
   id                Int      @id @default(autoincrement())
   userId            Int
-  stripePaymentId   String   @unique  // Stripe payment intent ID
+  stripePaymentId   String   @unique @db.VarChar(255)  // Stripe payment intent ID
   amount            Decimal  @db.Decimal(10, 2)
-  currency          String   @default("usd")
+  currency          String   @default("usd") @db.VarChar(10)
   status            PaymentStatus @default(PENDING)
-  description       String?
+  description       String?  @db.VarChar(500)
   metadata          Json?    // Order info, product IDs, etc.
-  stripeCustomerId  String?
-  paymentMethod     String?  // card, bank_transfer, etc.
-  receiptUrl        String?
+  stripeCustomerId  String?  @db.VarChar(255)
+  paymentMethod     String?  @db.VarChar(50)  // card, bank_transfer, etc.
+  receiptUrl        String?  @db.VarChar(500)
   errorMessage      String?  @db.Text
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -280,14 +280,14 @@ enum PaymentStatus {
 model EmailQueue {
   id          Int      @id @default(autoincrement())
   userId      Int?     // Optional (system emails may not have user)
-  toEmail     String
-  fromEmail   String   @default("noreply@ai-chat.com")
-  subject     String
+  toEmail     String   @db.VarChar(255)
+  fromEmail   String   @default("noreply@ai-chat.com") @db.VarChar(255)
+  subject     String   @db.VarChar(500)
   body        String   @db.Text
-  template    String?  // SendGrid template ID
+  template    String?  @db.VarChar(100)  // SendGrid template ID
   templateData Json?   // Template variables
   status      EmailStatus @default(QUEUED)
-  sendgridId  String?  @unique  // SendGrid message ID
+  sendgridId  String?  @unique @db.VarChar(255)  // SendGrid message ID
   sentAt      DateTime?
   deliveredAt DateTime?
   errorMessage String? @db.Text
@@ -321,11 +321,11 @@ enum EmailStatus {
 model OAuthAccount {
   id           Int      @id @default(autoincrement())
   userId       Int
-  provider     String   // 'google', 'github', 'facebook'
-  providerId   String   // User ID from OAuth provider
-  email        String?
-  displayName  String?
-  avatar       String?
+  provider     String   @db.VarChar(30)  // 'google', 'github', 'facebook'
+  providerId   String   @db.VarChar(100)  // User ID from OAuth provider
+  email        String?  @db.VarChar(255)
+  displayName  String?  @db.VarChar(255)
+  avatar       String?  @db.VarChar(500)
   accessToken  String?  @db.Text
   refreshToken String?  @db.Text
   expiresAt    DateTime?

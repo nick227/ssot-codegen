@@ -73,13 +73,46 @@ export const createApp = async (): Promise<express.Application> => {
     logger.warn('Message routes not found')
   }
   
-  // Service integration routes (AI agent) ✨
+  // Service integration routes ✨
   try {
     const { aiAgentRouter } = await import('@gen/routes/ai-agent')
     app.use(`${config.api.prefix}/ai-agent`, aiAgentRouter)
     logger.info('🤖 AI Agent routes registered (service integration)')
-  } catch (err) {
+  } catch (err: any) {
     logger.warn({ error: err.message }, 'AI Agent routes not found - run npm run generate')
+  }
+  
+  // File Storage (use extended routes with multipart support)
+  try {
+    const { fileStorageExtRouter } = await import('./routes/file-storage.routes.ext.js')
+    app.use(`${config.api.prefix}/file-storage`, fileStorageExtRouter)
+    logger.info('📁 File Storage routes registered (extended with multipart)')
+  } catch (err: any) {
+    logger.warn({ error: err.message }, 'File Storage routes not found')
+  }
+  
+  try {
+    const { paymentProcessorRouter } = await import('@gen/routes/payment-processor')
+    app.use(`${config.api.prefix}/payment-processor`, paymentProcessorRouter)
+    logger.info('💳 Payment Processor routes registered (service integration)')
+  } catch (err: any) {
+    logger.warn({ error: err.message }, 'Payment Processor routes not found')
+  }
+  
+  try {
+    const { emailSenderRouter } = await import('@gen/routes/email-sender')
+    app.use(`${config.api.prefix}/email-sender`, emailSenderRouter)
+    logger.info('📧 Email Sender routes registered (service integration)')
+  } catch (err: any) {
+    logger.warn({ error: err.message }, 'Email Sender routes not found')
+  }
+  
+  try {
+    const { googleAuthRouter } = await import('@gen/routes/google-auth')
+    app.use(`${config.api.prefix}/google-auth`, googleAuthRouter)
+    logger.info('🔐 Google Auth routes registered (service integration)')
+  } catch (err: any) {
+    logger.warn({ error: err.message }, 'Google Auth routes not found')
   }
 
   // Error handling
