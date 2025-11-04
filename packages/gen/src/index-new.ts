@@ -101,13 +101,16 @@ export async function generateFromSchema(config: GeneratorConfig) {
   // Generate code
   const cfg = { ...defaultPaths, ...config.paths, rootDir: config.output || defaultPaths.rootDir }
   const framework = config.framework || 'express'
-  const generatedFiles = generateCode(parsedSchema, { framework })
+  const generatedFiles = generateCode(parsedSchema, { 
+    framework,
+    useEnhancedGenerators: true  // Use enhanced generators with relationships and domain logic
+  })
   
   // Write files to disk
   writeGeneratedFiles(generatedFiles, cfg, parsedSchema.models.map(m => m.name))
   
   // Generate barrels
-  generateBarrels(cfg, parsedSchema.models.map(m => m.name))
+  generateBarrels(cfg, parsedSchema.models.map(m => m.name), generatedFiles)
   
   // Generate OpenAPI
   generateOpenAPI(cfg, parsedSchema.models)
@@ -182,15 +185,38 @@ function writeGeneratedFiles(
 /**
  * Generate barrel files
  */
-function generateBarrels(cfg: PathsConfig, models: string[]): void {
+function generateBarrels(cfg: PathsConfig, models: string[], generatedFiles: ReturnType<typeof generateCode>): void {
   // Generate model-level barrels for each layer
   const layers = ['contracts', 'validators', 'services', 'controllers', 'routes']
   
   for (const layer of layers) {
+    const modelsWithFilesInLayer: string[] = []
+    
     for (const modelName of models) {
       const modelLower = modelName.toLowerCase()
+      
+      // Check if this model has files in this layer
+      let hasFiles = false
+      if (layer === 'contracts') {
+        hasFiles = generatedFiles.contracts.has(modelName)
+      } else if (layer === 'validators') {
+        hasFiles = generatedFiles.validators.has(modelName)
+      } else if (layer === 'services') {
+        hasFiles = generatedFiles.services.has(`${modelLower}.service.ts`)
+      } else if (layer === 'controllers') {
+        hasFiles = generatedFiles.controllers.has(`${modelLower}.controller.ts`)
+      } else if (layer === 'routes') {
+        hasFiles = generatedFiles.routes.has(`${modelLower}.routes.ts`)
+      }
+      
+      if (!hasFiles) {
+        console.log(`[ssot-codegen] Skipping barrel for ${modelName} in ${layer} (no files generated)`)
+        continue
+      }
+      
+      modelsWithFilesInLayer.push(modelName)
+      
       const barrelPath = path.join(cfg.rootDir, layer, modelLower, 'index.ts')
-      const exports = `// @generated barrel\nexport * from './${modelLower}.*.js'\n`
       
       // Better barrel - export specific files
       let barrelContent = '// @generated barrel\n'
@@ -211,13 +237,15 @@ function generateBarrels(cfg: PathsConfig, models: string[]): void {
       track(`${layer}:${modelName}:index`, barrelPath, esmImport(cfg, id(layer, modelName)))
     }
     
-    // Generate layer-level barrel
-    const layerBarrelPath = path.join(cfg.rootDir, layer, 'index.ts')
-    const layerExports = models.map(m => 
-      `export * as ${m.toLowerCase()} from '${esmImport(cfg, id(layer, m))}'`
-    ).join('\n')
-    write(layerBarrelPath, `// @generated layer barrel\n${layerExports}\n`)
-    track(`${layer}:index`, layerBarrelPath, esmImport(cfg, id(layer)))
+    // Generate layer-level barrel (only for models that have files)
+    if (modelsWithFilesInLayer.length > 0) {
+      const layerBarrelPath = path.join(cfg.rootDir, layer, 'index.ts')
+      const layerExports = modelsWithFilesInLayer.map(m => 
+        `export * as ${m.toLowerCase()} from '${esmImport(cfg, id(layer, m))}'`
+      ).join('\n')
+      write(layerBarrelPath, `// @generated layer barrel\n${layerExports}\n`)
+      track(`${layer}:index`, layerBarrelPath, esmImport(cfg, id(layer)))
+    }
   }
 }
 

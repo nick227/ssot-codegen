@@ -15,9 +15,14 @@ import { generateAllValidators } from './generators/validator-generator.js'
 import { generateService } from './generators/service-generator.js'
 import { generateController } from './generators/controller-generator.js'
 import { generateRoutes } from './generators/route-generator.js'
+// Enhanced generators with relationships, domain logic, and better logging
+import { generateEnhancedService } from './generators/service-generator-enhanced.js'
+import { generateEnhancedController } from './generators/controller-generator-enhanced.js'
+import { generateEnhancedRoutes, shouldGenerateRoutes } from './generators/route-generator-enhanced.js'
 
 export interface CodeGeneratorConfig {
   framework: 'express' | 'fastify'
+  useEnhancedGenerators?: boolean  // Use enhanced generators with relationships and domain logic
 }
 
 export interface GeneratedFiles {
@@ -44,7 +49,7 @@ export function generateCode(
   }
   
   for (const model of schema.models) {
-    generateModelCode(model, config, files)
+    generateModelCode(model, config, files, schema)
   }
   
   return files
@@ -56,9 +61,11 @@ export function generateCode(
 function generateModelCode(
   model: ParsedModel,
   config: CodeGeneratorConfig,
-  files: GeneratedFiles
+  files: GeneratedFiles,
+  schema: ParsedSchema
 ): void {
   const modelLower = model.name.toLowerCase()
+  const useEnhanced = config.useEnhancedGenerators ?? true  // Default to enhanced
   
   // Generate DTOs
   const dtos = generateAllDTOs(model)
@@ -77,17 +84,34 @@ function generateModelCode(
   validatorMap.set(`${modelLower}.query.zod.ts`, validators.query)
   files.validators.set(model.name, validatorMap)
   
-  // Generate Service
-  const service = generateService(model)
+  // Generate Service (enhanced or basic)
+  const service = useEnhanced 
+    ? generateEnhancedService(model, schema)
+    : generateService(model)
   files.services.set(`${modelLower}.service.ts`, service)
   
-  // Generate Controller
-  const controller = generateController(model, config.framework)
+  // Check if this is a junction table (for skipping routes/controllers)
+  const isJunction = useEnhanced && !shouldGenerateRoutes(model, schema)
+  
+  if (isJunction) {
+    console.log(`[ssot-codegen] Skipping controller and routes for junction table: ${model.name}`)
+    return  // Skip controller and routes entirely for junction tables
+  }
+  
+  // Generate Controller (enhanced or basic)
+  const controller = useEnhanced
+    ? generateEnhancedController(model, schema, config.framework)
+    : generateController(model, config.framework)
   files.controllers.set(`${modelLower}.controller.ts`, controller)
   
-  // Generate Routes
-  const routes = generateRoutes(model, config.framework)
-  files.routes.set(`${modelLower}.routes.ts`, routes)
+  // Generate Routes (enhanced or basic)
+  const routes = useEnhanced
+    ? generateEnhancedRoutes(model, schema, config.framework)
+    : generateRoutes(model, config.framework)
+    
+  if (routes) {
+    files.routes.set(`${modelLower}.routes.ts`, routes)
+  }
 }
 
 /**
