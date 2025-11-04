@@ -12,6 +12,8 @@
     "build": "rimraf dist && tsc",
     "start": "node dist/server.js",
     "generate": "prisma generate && node scripts/generate.js",
+    "db:setup": "node scripts/db-setup.js",
+    "db:init": "npm run db:setup && npm run db:push",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
@@ -36,7 +38,9 @@
     "express-async-errors": "^3.1.1",
     "morgan": "^1.10.0",
     "cookie-parser": "^1.4.6",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.11.5",
+    "pg": "^8.13.1"
   },
   "devDependencies": {
     "@ssot-codegen/gen": "workspace:*",
