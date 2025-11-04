@@ -7,7 +7,14 @@ import config from './config.js'
 import { errorHandler, notFoundHandler } from './middleware.js'
 import { httpLogger, logger } from './logger.js'
 import { authRouter } from './auth/routes.js'
-import { postRouter } from './extensions/post.routes.extensions.js'
+import { protectedPostRouter } from './routes/post.protected.routes.js'
+import { protectedCommentRouter } from './routes/comment.protected.routes.js'
+// Import remaining generated routes (for models without auth requirements)
+import { authorRouter } from '@gen/routes/author'
+import { categoryRouter } from '@gen/routes/category'
+import { tagRouter } from '@gen/routes/tag'
+import { authenticate } from './auth/jwt.js'
+import { requireRole } from './auth/authorization.js'
 
 // Configure rate limiting
 const limiter = rateLimit({
@@ -42,8 +49,17 @@ export const createApp = () => {
   })
 
   // API Routes
+  // Public auth routes
   app.use(`${config.api.prefix}/auth`, authRouter)
-  app.use(`${config.api.prefix}/posts`, postRouter)  // Extended routes with search!
+  
+  // Protected routes with authorization
+  app.use(`${config.api.prefix}/posts`, protectedPostRouter)  // Posts with ownership & role checks
+  app.use(`${config.api.prefix}/comments`, protectedCommentRouter)  // Comments with moderation
+  
+  // Admin-only routes (authors, categories, tags)
+  app.use(`${config.api.prefix}/authors`, authenticate, requireRole('ADMIN'), authorRouter)
+  app.use(`${config.api.prefix}/categories`, authenticate, requireRole('ADMIN', 'EDITOR'), categoryRouter)
+  app.use(`${config.api.prefix}/tags`, authenticate, requireRole('ADMIN', 'EDITOR'), tagRouter)
 
   // Error handling
   app.use(notFoundHandler)
