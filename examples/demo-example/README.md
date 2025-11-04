@@ -1,6 +1,6 @@
 # demo-example
 
-Ultra-light demo with flexible dependencies
+Ultra-light demo with WORKING generated code
 
 ## 🚀 Quick Start
 

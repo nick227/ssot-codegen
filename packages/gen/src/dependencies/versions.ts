@@ -23,7 +23,7 @@ export const VERSIONS = {
   // Logging
   pino: '^9.5.0',
   pinoHttp: '^10.3.0',
-  pinoPretty: '^11.4.0',
+  pinoPretty: '^13.1.0',
   
   // Utilities
   compression: '^1.7.4',
@@ -55,7 +55,7 @@ export const VERSIONS = {
   multer: '^1.4.5',
   typesMorgan: '^1.9.9',
   typesExpress: '^5.0.0',
-  typesCors: '^2.8.17',
+  typesCors: '^2.8.19',
   typesMulter: '^1.4.12',
   
   // Fastify Specific

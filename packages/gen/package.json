@@ -12,7 +12,9 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@ssot-codegen/core": "workspace:*"
+    "@ssot-codegen/core": "workspace:*",
+    "@prisma/generator-helper": "^5.22.0",
+    "@prisma/internals": "^5.22.0"
   },
   "peerDependencies": {
     "prisma": "^5.0.0"

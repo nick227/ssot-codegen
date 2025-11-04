@@ -2,7 +2,7 @@
   "name": "demo-example",
   "version": "1.0.0",
   "type": "module",
-  "description": "Ultra-light demo with flexible dependencies",
+  "description": "Ultra-light demo with WORKING generated code",
   "packageManager": "pnpm@9.0.0",
   "engines": {
     "node": ">=18.0.0"
@@ -42,7 +42,7 @@
     "tsx": "^4.20.0",
     "prisma": "^5.22.0",
     "@types/node": "^22.10.0",
-    "pino-pretty": "^11.4.0",
+    "pino-pretty": "^13.1.0",
     "rimraf": "^6.0.0",
     "@types/express": "^5.0.0",
     "vitest": "^2.1.0",
