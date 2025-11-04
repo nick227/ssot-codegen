@@ -1,22 +1,41 @@
-// Demo Example: Single Table Todo
-// Ultra-light example showing minimal SSOT Codegen usage
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
-/// @route /todos
-/// @auth none
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  name         String?
+  passwordHash String?  @map("password_hash")
+  
+  todos        Todo[]
+  
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
 model Todo {
   id          Int      @id @default(autoincrement())
   title       String
+  description String?
   completed   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
+  
+  userId      Int      @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
+  @@index([userId])
+  @@map("todos")
+}

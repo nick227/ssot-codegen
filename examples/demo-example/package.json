@@ -35,7 +35,8 @@
     "express": "^4.21.0",
     "express-async-errors": "^3.1.1",
     "morgan": "^1.10.0",
-    "cookie-parser": "^1.4.6"
+    "cookie-parser": "^1.4.6",
+    "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
     "@ssot-codegen/gen": "workspace:*",
@@ -46,6 +47,7 @@
     "pino-pretty": "^13.1.0",
     "rimraf": "^6.0.0",
     "@types/express": "^5.0.0",
+    "@types/jsonwebtoken": "^9.0.0",
     "vitest": "^2.1.0",
     "@vitest/coverage-v8": "^2.1.0",
     "supertest": "^7.0.0",

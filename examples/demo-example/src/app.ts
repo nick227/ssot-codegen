@@ -45,11 +45,17 @@ export const createApp = () => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() })
   })
 
-  // API routes
+  // Auth routes (public)
+  import('./auth/routes.js').then(({ authRouter }) => {
+    app.use(`${config.api.prefix}/auth`, authRouter)
+  })
+
+  // API routes (protected)
   // TODO: Import and register your generated routes here
   // Example:
+  // import { authenticate } from './auth/jwt.js'
   // import { todoRoutes } from '@gen/routes/todo'
-  // app.use(`${config.api.prefix}/todos`, todoRoutes)
+  // app.use(`${config.api.prefix}/todos`, authenticate, todoRoutes)
 
   // Error handling
   app.use(notFoundHandler)
