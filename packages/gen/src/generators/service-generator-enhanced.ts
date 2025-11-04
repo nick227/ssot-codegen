@@ -154,6 +154,39 @@ function generateBaseMethods(
       where: { id }
     })
     return count > 0
+  },
+  
+  /**
+   * Create multiple ${model.name} records (bulk operation)
+   */
+  async createMany(data: ${model.name}CreateDTO[]) {
+    const result = await prisma.${modelLower}.createMany({
+      data,
+      skipDuplicates: true
+    })
+    logger.info({ count: result.count }, '${model.name} bulk created')
+    return result
+  },
+  
+  /**
+   * Update multiple ${model.name} records (bulk operation)
+   */
+  async updateMany(where: Prisma.${model.name}WhereInput, data: Partial<${model.name}UpdateDTO>) {
+    const result = await prisma.${modelLower}.updateMany({
+      where,
+      data
+    })
+    logger.info({ count: result.count }, '${model.name} bulk updated')
+    return result
+  },
+  
+  /**
+   * Delete multiple ${model.name} records (bulk operation)
+   */
+  async deleteMany(where: Prisma.${model.name}WhereInput) {
+    const result = await prisma.${modelLower}.deleteMany({ where })
+    logger.info({ count: result.count }, '${model.name} bulk deleted')
+    return result
   }`
 }
 
