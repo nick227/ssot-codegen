@@ -18,6 +18,7 @@ import { generateRoutes } from './generators/route-generator.js'
 // Enhanced generators with relationships, domain logic, and better logging
 import { generateEnhancedService } from './generators/service-generator-enhanced.js'
 import { generateEnhancedController } from './generators/controller-generator-enhanced.js'
+import { generateBaseClassController } from './generators/controller-generator-base-class.js'
 import { generateEnhancedRoutes, shouldGenerateRoutes } from './generators/route-generator-enhanced.js'
 // Service integration for complex workflows (AI agents, file uploads, etc.)
 import { parseServiceAnnotation, getServiceExportName, type ServiceAnnotation } from './service-linker.js'
@@ -179,9 +180,9 @@ function generateModelCode(
     return  // Service integration replaces standard CRUD controller/routes
   }
   
-  // Generate Controller (enhanced or basic)
+  // Generate Controller (base class for minimal boilerplate, enhanced for legacy, or basic)
   const controller = useEnhanced
-    ? generateEnhancedController(model, schema, config.framework)
+    ? generateBaseClassController(model, schema, config.framework)
     : generateController(model, config.framework)
   files.controllers.set(`${modelLower}.controller.ts`, controller)
   
