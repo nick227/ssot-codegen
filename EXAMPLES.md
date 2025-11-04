@@ -69,10 +69,10 @@ pnpm run test:blog
 
 ---
 
-### 3. 🛒 E-commerce Example (Complete Store)
+### 3. 🛒 E-commerce Example (Complete Store - PRODUCTION READY)
 **Path**: `examples/ecommerce-example/`  
-**Models**: 17 (Customer, Product, Order, Cart, Payment, Shipment, etc.)  
-**Purpose**: Production-ready online store
+**Models**: 24 (Customer, Product, Order, Cart, Payment, Shipment, Coupon, Refund, etc.)  
+**Purpose**: Production-ready online store with advanced features
 
 ```bash
 pnpm run examples:ecommerce
@@ -80,28 +80,37 @@ pnpm run test:ecommerce
 ```
 
 **What's Generated**:
-- ✅ Customer and address management
-- ✅ Product catalog with variants
-- ✅ Shopping cart system
-- ✅ Order processing
+- ✅ Customer authentication & management
+- ✅ Product catalog with SEO & variants
+- ✅ Shopping cart with variant support
+- ✅ Order processing with detailed tracking
 - ✅ Payment gateway integration
 - ✅ Shipment tracking
-- ✅ Product reviews
-- ✅ ~170+ files generated
+- ✅ Product reviews with images
+- ✅ **Coupon/discount system**
+- ✅ **Stock reservation** (prevent overselling)
+- ✅ **Complete refunds & returns**
+- ✅ **Inventory audit trail**
+- ✅ **Back-in-stock alerts**
+- ✅ ~240+ files generated
 
 **Core Features**:
-- Customer accounts with multiple addresses
-- Product variants (size, color, etc.)
-- Product images and galleries
+- Customer accounts with authentication & loyalty points
+- Product variants (size, color, etc.) in cart
+- Product images and SEO metadata
 - Categories with hierarchy
 - Brand management
-- Shopping cart and wishlist
-- Order workflow (Pending → Confirmed → Processing → Shipped → Delivered)
-- Payment processing (multiple methods)
-- Shipment tracking
-- Product reviews and ratings
-- Inventory management
-- Low stock alerts
+- Shopping cart with expiry & wishlist
+- Order workflow with detailed timestamps
+- Payment processing (6 methods)
+- Shipment tracking (7 states)
+- Product reviews with customer photos
+- **Stock reservation system**
+- **Inventory audit trail**
+- **Coupon/discount system**
+- **Complete refunds & returns**
+- **Back-in-stock & price drop alerts**
+- Low stock threshold alerts
 
 **Perfect For**:
 - Online stores
@@ -147,8 +156,8 @@ pnpm run full-test
 
 | Feature | Demo | Blog | E-commerce |
 |---------|------|------|------------|
-| **Models** | 1 | 7 | 17 |
-| **Files Generated** | ~20 | ~70 | ~170 |
+| **Models** | 1 | 7 | 24 |
+| **Files Generated** | ~20 | ~70 | ~240 |
 | **Complexity** | 🟢 Simple | 🟡 Medium | 🔴 Complex |
 | **Relationships** | None | 1-to-many, many-to-many | All types + hierarchy |
 | **Auth** | None | RBAC | RBAC + Policies |
