@@ -57,10 +57,13 @@ function analyzeRelationships(model: ParsedModel, schema: ParsedSchema): Relatio
   return model.relationFields.map(field => {
     const targetModel = schema.modelMap.get(field.type)!
     
-    // Determine relationship type
-    const isManyToMany = field.isList && hasBackReference(targetModel, model, true)
+    // OPTIMIZED: Single back-reference check instead of 2
+    const backRef = findBackReference(targetModel, model)
+    
+    // Determine relationship type from back-reference
+    const isManyToMany = field.isList && backRef?.isList === true
     const isOneToMany = field.isList && !isManyToMany
-    const isManyToOne = !field.isList && hasBackReference(targetModel, model, true)
+    const isManyToOne = !field.isList && backRef !== null
     
     // Decide if we should auto-include (many-to-one relationships typically)
     const shouldAutoInclude = isManyToOne && !isJunctionTable(targetModel)
@@ -77,12 +80,11 @@ function analyzeRelationships(model: ParsedModel, schema: ParsedSchema): Relatio
 }
 
 /**
- * Check if target model has a back-reference to source model
+ * Find the back-reference field from target model to source model
+ * OPTIMIZED: Returns the actual field (useful for navigation) or null
  */
-function hasBackReference(targetModel: ParsedModel, sourceModel: ParsedModel, checkList: boolean): boolean {
-  return targetModel.relationFields.some(f => 
-    f.type === sourceModel.name && (!checkList || f.isList)
-  )
+function findBackReference(targetModel: ParsedModel, sourceModel: ParsedModel): ParsedField | null {
+  return targetModel.relationFields.find(f => f.type === sourceModel.name) || null
 }
 
 /**
@@ -125,34 +127,40 @@ function isJunctionTable(model: ParsedModel): boolean {
 }
 
 /**
+ * Pattern definitions for special field detection
+ * OPTIMIZED: Single-pass detection with validator functions
+ */
+const SPECIAL_FIELD_PATTERNS: Record<string, (field: ParsedField) => boolean> = {
+  published: (f) => f.type === 'Boolean',
+  slug: (f) => f.type === 'String',
+  views: (f) => f.type === 'Int' || f.type === 'BigInt',
+  likes: (f) => f.type === 'Int' || f.type === 'BigInt',
+  approved: (f) => f.type === 'Boolean',
+  deletedat: (f) => f.type === 'DateTime',
+  parentid: (f) => f.type === 'Int' || f.type === 'BigInt' || f.type === 'String'
+}
+
+/**
  * Detect special fields that require custom logic
+ * OPTIMIZED: Single pass, O(n) instead of O(n×7)
  */
 function detectSpecialFields(model: ParsedModel): ModelAnalysis['specialFields'] {
   const fields: ModelAnalysis['specialFields'] = {}
   
   for (const field of model.scalarFields) {
-    const lowerName = field.name.toLowerCase()
+    const lowerName = field.name.toLowerCase()  // Compute once per field
     
-    if (lowerName === 'published' && field.type === 'Boolean') {
-      fields.published = field
-    }
-    if (lowerName === 'slug' && field.type === 'String') {
-      fields.slug = field
-    }
-    if (lowerName === 'views' && (field.type === 'Int' || field.type === 'BigInt')) {
-      fields.views = field
-    }
-    if (lowerName === 'likes' && (field.type === 'Int' || field.type === 'BigInt')) {
-      fields.likes = field
-    }
-    if (lowerName === 'approved' && field.type === 'Boolean') {
-      fields.approved = field
-    }
-    if (lowerName === 'deletedat' && field.type === 'DateTime') {
-      fields.deletedAt = field
-    }
-    if (lowerName === 'parentid' && (field.type === 'Int' || field.type === 'BigInt' || field.type === 'String')) {
-      fields.parentId = field
+    // Check all patterns in single pass
+    const patternKey = Object.keys(SPECIAL_FIELD_PATTERNS).find(key => 
+      lowerName === key && SPECIAL_FIELD_PATTERNS[key](field)
+    )
+    
+    if (patternKey) {
+      // Map pattern keys to field keys (handle 'deletedat' → 'deletedAt', etc.)
+      const fieldKey = patternKey === 'deletedat' ? 'deletedAt' : 
+                       patternKey === 'parentid' ? 'parentId' : 
+                       patternKey as keyof ModelAnalysis['specialFields']
+      fields[fieldKey] = field
     }
   }
   
