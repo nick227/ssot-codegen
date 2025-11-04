@@ -9,17 +9,22 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
-    "@ssot-codegen/core": "workspace:*",
     "@prisma/generator-helper": "^5.22.0",
-    "@prisma/internals": "^5.22.0"
+    "@prisma/internals": "^5.22.0",
+    "@ssot-codegen/core": "workspace:*"
   },
   "peerDependencies": {
     "prisma": "^5.0.0"
   },
   "bin": {
     "ssot": "dist/cli.js"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.0"
   }
 }

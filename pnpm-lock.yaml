@@ -87,6 +87,9 @@ importers:
         specifier: ^3.25.0
         version: 3.25.76
     devDependencies:
+      '@ssot-codegen/gen':
+        specifier: workspace:*
+        version: link:../../packages/gen
       '@types/express':
         specifier: ^5.0.0
         version: 5.0.5
@@ -152,6 +155,10 @@ importers:
       prisma:
         specifier: ^5.0.0
         version: 5.22.0
+    devDependencies:
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.0)
 
   packages/schema-lint:
     dependencies:
