@@ -1,7 +1,7 @@
 {
   "schemaHash": "ebd3f79aad8afc2656f602895aaf4f09e31fb51fe70fbb5d435a581ee1980877",
   "toolVersion": "0.4.0",
-  "generated": "2025-11-04T06:49:20.650Z",
+  "generated": "2025-11-04T06:56:58.602Z",
   "outputs": [
     {
       "id": "contracts:User:user.create.dto.ts",

@@ -1,0 +1,387 @@
+// E-commerce Example: Full-featured online store
+// Production-ready schema for e-commerce platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Customer/User model
+/// @route /customers
+/// @auth required
+model Customer {
+  id              Int       @id @default(autoincrement())
+  email           String    @unique
+  firstName       String
+  lastName        String
+  phone           String?
+  emailVerified   Boolean   @default(false)
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  addresses       Address[]
+  orders          Order[]
+  cart            Cart?
+  reviews         Review[]
+  wishlist        WishlistItem[]
+  
+  @@index([email])
+}
+
+/// Physical/Billing address
+/// @route /addresses
+/// @auth required
+model Address {
+  id              Int       @id @default(autoincrement())
+  customerId      Int
+  addressType     AddressType
+  streetAddress   String
+  addressLine2    String?
+  city            String
+  state           String
+  postalCode      String
+  country         String    @default("US")
+  isDefault       Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  customer        Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  orders          Order[]
+  
+  @@index([customerId])
+}
+
+/// Product catalog
+/// @route /products
+/// @auth optional
+model Product {
+  id              Int       @id @default(autoincrement())
+  sku             String    @unique
+  name            String
+  slug            String    @unique
+  description     String
+  shortDescription String?
+  price           Decimal   @db.Decimal(10, 2)
+  compareAtPrice  Decimal?  @db.Decimal(10, 2)
+  costPrice       Decimal?  @db.Decimal(10, 2)
+  stock           Int       @default(0)
+  lowStockThreshold Int     @default(10)
+  weight          Decimal?  @db.Decimal(8, 2)
+  isActive        Boolean   @default(true)
+  isFeatured      Boolean   @default(false)
+  categoryId      Int
+  brandId         Int?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  category        Category  @relation(fields: [categoryId], references: [id])
+  brand           Brand?    @relation(fields: [brandId], references: [id])
+  images          ProductImage[]
+  variants        ProductVariant[]
+  orderItems      OrderItem[]
+  cartItems       CartItem[]
+  reviews         Review[]
+  tags            ProductTag[]
+  wishlistItems   WishlistItem[]
+  
+  @@index([slug])
+  @@index([categoryId])
+  @@index([sku])
+}
+
+/// Product categories
+/// @route /categories
+/// @auth optional
+model Category {
+  id              Int       @id @default(autoincrement())
+  name            String    @unique
+  slug            String    @unique
+  description     String?
+  imageUrl        String?
+  parentId        Int?
+  displayOrder    Int       @default(0)
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  parent          Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children        Category[] @relation("CategoryHierarchy")
+  products        Product[]
+  
+  @@index([slug])
+  @@index([parentId])
+}
+
+/// Product brands
+/// @route /brands
+/// @auth optional
+model Brand {
+  id              Int       @id @default(autoincrement())
+  name            String    @unique
+  slug            String    @unique
+  description     String?
+  logoUrl         String?
+  websiteUrl      String?
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  
+  products        Product[]
+  
+  @@index([slug])
+}
+
+/// Product images
+model ProductImage {
+  id              Int       @id @default(autoincrement())
+  productId       Int
+  imageUrl        String
+  altText         String?
+  displayOrder    Int       @default(0)
+  isPrimary       Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  
+  product         Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@index([productId])
+}
+
+/// Product variants (size, color, etc.)
+model ProductVariant {
+  id              Int       @id @default(autoincrement())
+  productId       Int
+  sku             String    @unique
+  name            String
+  priceAdjustment Decimal   @default(0) @db.Decimal(10, 2)
+  stock           Int       @default(0)
+  attributes      Json      // { "size": "L", "color": "Red" }
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  
+  product         Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@index([productId])
+  @@index([sku])
+}
+
+/// Shopping cart
+/// @route /cart
+/// @auth required
+model Cart {
+  id              Int       @id @default(autoincrement())
+  customerId      Int       @unique
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  customer        Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  items           CartItem[]
+}
+
+/// Cart items
+model CartItem {
+  id              Int       @id @default(autoincrement())
+  cartId          Int
+  productId       Int
+  quantity        Int       @default(1)
+  addedAt         DateTime  @default(now())
+  
+  cart            Cart      @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product         Product   @relation(fields: [productId], references: [id])
+  
+  @@unique([cartId, productId])
+  @@index([cartId])
+}
+
+/// Customer orders
+/// @route /orders
+/// @auth required
+model Order {
+  id              Int       @id @default(autoincrement())
+  orderNumber     String    @unique
+  customerId      Int
+  status          OrderStatus @default(PENDING)
+  subtotal        Decimal   @db.Decimal(10, 2)
+  tax             Decimal   @db.Decimal(10, 2)
+  shipping        Decimal   @db.Decimal(10, 2)
+  discount        Decimal   @default(0) @db.Decimal(10, 2)
+  total           Decimal   @db.Decimal(10, 2)
+  shippingAddressId Int
+  billingAddressId  Int?
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  customer        Customer  @relation(fields: [customerId], references: [id])
+  shippingAddress Address   @relation(fields: [shippingAddressId], references: [id])
+  items           OrderItem[]
+  payment         Payment?
+  shipment        Shipment?
+  
+  @@index([customerId])
+  @@index([orderNumber])
+  @@index([status])
+}
+
+/// Order line items
+model OrderItem {
+  id              Int       @id @default(autoincrement())
+  orderId         Int
+  productId       Int
+  quantity        Int
+  unitPrice       Decimal   @db.Decimal(10, 2)
+  subtotal        Decimal   @db.Decimal(10, 2)
+  createdAt       DateTime  @default(now())
+  
+  order           Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product         Product   @relation(fields: [productId], references: [id])
+  
+  @@index([orderId])
+}
+
+/// Payment transactions
+/// @route /payments
+/// @auth admin
+model Payment {
+  id              Int       @id @default(autoincrement())
+  orderId         Int       @unique
+  paymentMethod   PaymentMethod
+  status          PaymentStatus @default(PENDING)
+  amount          Decimal   @db.Decimal(10, 2)
+  transactionId   String?
+  gatewayResponse Json?
+  paidAt          DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  order           Order     @relation(fields: [orderId], references: [id])
+  
+  @@index([status])
+}
+
+/// Shipment tracking
+/// @route /shipments
+/// @auth admin
+model Shipment {
+  id              Int       @id @default(autoincrement())
+  orderId         Int       @unique
+  carrier         String
+  trackingNumber  String?
+  status          ShipmentStatus @default(PREPARING)
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  order           Order     @relation(fields: [orderId], references: [id])
+  
+  @@index([trackingNumber])
+}
+
+/// Product reviews
+/// @route /reviews
+/// @auth required
+model Review {
+  id              Int       @id @default(autoincrement())
+  productId       Int
+  customerId      Int
+  rating          Int       // 1-5
+  title           String?
+  content         String
+  isVerified      Boolean   @default(false)
+  isApproved      Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  product         Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  customer        Customer  @relation(fields: [customerId], references: [id])
+  
+  @@unique([productId, customerId])
+  @@index([productId])
+}
+
+/// Product tags
+model ProductTag {
+  productId       Int
+  tagId           Int
+  
+  product         Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tag             Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  
+  @@id([productId, tagId])
+}
+
+/// Tags for products
+/// @route /tags
+/// @auth admin
+model Tag {
+  id              Int       @id @default(autoincrement())
+  name            String    @unique
+  slug            String    @unique
+  
+  products        ProductTag[]
+  
+  @@index([slug])
+}
+
+/// Customer wishlist
+model WishlistItem {
+  id              Int       @id @default(autoincrement())
+  customerId      Int
+  productId       Int
+  addedAt         DateTime  @default(now())
+  
+  customer        Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  product         Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@unique([customerId, productId])
+  @@index([customerId])
+}
+
+// Enums
+enum AddressType {
+  SHIPPING
+  BILLING
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CREDIT_CARD
+  DEBIT_CARD
+  PAYPAL
+  STRIPE
+  BANK_TRANSFER
+  CASH_ON_DELIVERY
+}
+
+enum PaymentStatus {
+  PENDING
+  AUTHORIZED
+  CAPTURED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum ShipmentStatus {
+  PREPARING
+  SHIPPED
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  FAILED
+  RETURNED
+}
+

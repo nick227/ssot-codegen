@@ -12,7 +12,20 @@
     "build": "pnpm -r --filter ./packages/* run build",
     "clean": "rimraf packages/*/dist",
     "lint": "echo \"(stub) run eslint here\"",
-    "generate-example": "node examples/minimal/scripts/generate.js"
+    
+    "examples:all": "pnpm run examples:demo && pnpm run examples:blog && pnpm run examples:ecommerce",
+    "examples:demo": "cd examples/demo-example && pnpm run generate",
+    "examples:blog": "cd examples/blog-example && pnpm run generate",
+    "examples:ecommerce": "cd examples/ecommerce-example && pnpm run generate",
+    "examples:minimal": "node examples/minimal/scripts/generate.js",
+    
+    "test:examples": "node scripts/test-all-examples.js",
+    "test:demo": "cd examples/demo-example && pnpm run test",
+    "test:blog": "cd examples/blog-example && pnpm run test",
+    "test:ecommerce": "cd examples/ecommerce-example && pnpm run test",
+    
+    "demo": "pnpm run examples:demo && pnpm run test:demo",
+    "full-test": "pnpm run build && pnpm run examples:all && pnpm run test:examples"
   },
   "devDependencies": {
     "typescript": "^5.4.0",

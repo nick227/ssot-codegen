@@ -1,0 +1,22 @@
+// Demo Example: Single Table Todo
+// Ultra-light example showing minimal SSOT Codegen usage
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+/// @route /todos
+/// @auth none
+model Todo {
+  id          Int      @id @default(autoincrement())
+  title       String
+  completed   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+

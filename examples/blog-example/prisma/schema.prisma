@@ -1,0 +1,142 @@
+// Blog Example: Full-featured blog platform
+// Realistic schema for a production blog website
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Author/User model
+/// @route /authors
+/// @auth required
+model Author {
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  username      String    @unique
+  displayName   String
+  bio           String?
+  avatarUrl     String?
+  isActive      Boolean   @default(true)
+  role          UserRole  @default(AUTHOR)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  posts         Post[]
+  comments      Comment[]
+}
+
+/// Blog post model
+/// @route /posts
+/// @auth author
+model Post {
+  id            Int       @id @default(autoincrement())
+  title         String
+  slug          String    @unique
+  excerpt       String?
+  content       String
+  coverImage    String?
+  published     Boolean   @default(false)
+  publishedAt   DateTime?
+  views         Int       @default(0)
+  likes         Int       @default(0)
+  authorId      Int
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  author        Author              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments      Comment[]
+  categories    PostCategory[]
+  tags          PostTag[]
+  
+  @@index([slug])
+  @@index([publishedAt])
+  @@index([authorId])
+}
+
+/// Comment model
+/// @route /comments
+/// @auth optional
+model Comment {
+  id            Int       @id @default(autoincrement())
+  content       String
+  approved      Boolean   @default(false)
+  postId        Int
+  authorId      Int?
+  parentId      Int?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  post          Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author        Author?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  parent        Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies       Comment[] @relation("CommentReplies")
+  
+  @@index([postId])
+  @@index([authorId])
+}
+
+/// Category model
+/// @route /categories
+/// @auth admin
+model Category {
+  id            Int       @id @default(autoincrement())
+  name          String    @unique
+  slug          String    @unique
+  description   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  posts         PostCategory[]
+  
+  @@index([slug])
+}
+
+/// Tag model
+/// @route /tags
+/// @auth admin
+model Tag {
+  id            Int       @id @default(autoincrement())
+  name          String    @unique
+  slug          String    @unique
+  createdAt     DateTime  @default(now())
+  
+  posts         PostTag[]
+  
+  @@index([slug])
+}
+
+/// Post-Category junction
+model PostCategory {
+  postId        Int
+  categoryId    Int
+  
+  post          Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  category      Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  
+  @@id([postId, categoryId])
+  @@index([categoryId])
+}
+
+/// Post-Tag junction
+model PostTag {
+  postId        Int
+  tagId         Int
+  
+  post          Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag           Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  
+  @@id([postId, tagId])
+  @@index([tagId])
+}
+
+enum UserRole {
+  ADMIN
+  EDITOR
+  AUTHOR
+  SUBSCRIBER
+}
+

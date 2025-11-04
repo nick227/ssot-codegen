@@ -1,0 +1,268 @@
+# E-commerce Example - Complete Online Store
+
+Production-ready e-commerce platform schema with all essential features for building an online store.
+
+## What This Demonstrates
+
+- ✅ Complete e-commerce data model
+- ✅ Customer management with multiple addresses
+- ✅ Product catalog with variants and images
+- ✅ Shopping cart and wishlist
+- ✅ Order processing workflow
+- ✅ Payment gateway integration
+- ✅ Shipment tracking
+- ✅ Product reviews and ratings
+- ✅ Inventory management
+- ✅ Category hierarchy
+- ✅ Brand management
+- ✅ Product tagging
+
+## Schema Overview (17 Models)
+
+### Customer Management
+- **Customer**: User accounts and profiles
+- **Address**: Shipping and billing addresses
+
+### Product Catalog
+- **Product**: Main product catalog with pricing and inventory
+- **Category**: Hierarchical category structure
+- **Brand**: Product manufacturers/brands
+- **ProductImage**: Multiple images per product
+- **ProductVariant**: Size, color, and other variations
+- **Tag**: Flexible product tagging
+- **ProductTag**: Product ↔ Tag junction
+
+### Shopping Experience
+- **Cart**: Shopping cart
+- **CartItem**: Items in cart
+- **WishlistItem**: Saved products
+
+### Order Management
+- **Order**: Customer orders with status tracking
+- **OrderItem**: Order line items
+- **Payment**: Payment transactions
+- **Shipment**: Delivery tracking
+
+### Engagement
+- **Review**: Product reviews and ratings
+
+## Features Included
+
+### Customer Features
+✅ Registration and authentication  
+✅ Multiple shipping addresses  
+✅ Order history  
+✅ Product reviews  
+✅ Wishlist  
+✅ Shopping cart persistence
+
+### Product Features
+✅ SKU management  
+✅ Pricing with compare-at-price  
+✅ Inventory tracking with low stock alerts  
+✅ Product variants (size, color, etc.)  
+✅ Multiple product images  
+✅ Product categorization  
+✅ Brand association  
+✅ Product tags  
+✅ Featured products
+
+### Order Features
+✅ Order number generation  
+✅ Order status workflow  
+✅ Tax and shipping calculation  
+✅ Discount support  
+✅ Multiple address types  
+✅ Order notes
+
+### Payment Features
+✅ Multiple payment methods  
+✅ Payment status tracking  
+✅ Gateway integration ready  
+✅ Transaction ID storage  
+✅ Refund support
+
+### Shipping Features
+✅ Carrier tracking  
+✅ Tracking number  
+✅ Shipment status updates  
+✅ Delivery confirmation
+
+## Quick Start
+
+```bash
+# Generate code
+pnpm run generate
+
+# Run tests
+pnpm run test
+```
+
+## Generated API Endpoints
+
+### Customers
+```
+POST   /customers           # Register
+GET    /customers/:id       # Get profile
+PUT    /customers/:id       # Update profile
+GET    /customers/:id/orders # Order history
+```
+
+### Products
+```
+GET    /products            # List with filters
+GET    /products/:slug      # Get by slug
+POST   /products            # Create (admin)
+PUT    /products/:id        # Update
+GET    /products/:id/reviews # Get reviews
+```
+
+### Categories & Brands
+```
+GET    /categories          # List all
+GET    /categories/:slug    # Get with products
+GET    /brands              # List brands
+```
+
+### Cart
+```
+GET    /cart                # Get current cart
+POST   /cart/items          # Add item
+PUT    /cart/items/:id      # Update quantity
+DELETE /cart/items/:id      # Remove item
+```
+
+### Orders
+```
+POST   /orders              # Checkout
+GET    /orders/:id          # Get order
+GET    /orders/:id/tracking # Track shipment
+```
+
+### Reviews
+```
+POST   /reviews             # Add review
+GET    /products/:id/reviews # Get product reviews
+```
+
+## Database Schema Relationships
+
+```
+Customer (1) ──→ (∞) Address
+Customer (1) ──→ (∞) Order
+Customer (1) ──→ (1) Cart
+Customer (1) ──→ (∞) Review
+Customer (1) ──→ (∞) WishlistItem
+
+Product (∞) ──→ (1) Category
+Product (∞) ──→ (1) Brand (optional)
+Product (1) ──→ (∞) ProductImage
+Product (1) ──→ (∞) ProductVariant
+Product (1) ──→ (∞) Review
+Product (∞) ←→ (∞) Tag (via ProductTag)
+
+Cart (1) ──→ (∞) CartItem
+CartItem (∞) ──→ (1) Product
+
+Order (1) ──→ (∞) OrderItem
+Order (1) ──→ (1) Address (shipping)
+Order (1) ──→ (1) Payment
+Order (1) ──→ (1) Shipment
+
+Category (tree) ──→ Category (parent/children)
+```
+
+## Business Logic Examples
+
+### Order Processing Flow
+1. Customer adds items to cart
+2. Proceeds to checkout
+3. Selects shipping address
+4. Submits payment
+5. Order created with PENDING status
+6. Payment processed → CONFIRMED
+7. Order prepared → PROCESSING
+8. Shipment created → SHIPPED
+9. Tracking updates → DELIVERED
+
+### Inventory Management
+- Stock tracked per product
+- Low stock threshold alerts
+- Variants have separate stock
+- Stock decremented on order
+- Stock restored on cancellation/refund
+
+### Pricing Strategy
+- Base price
+- Compare-at-price (was/now)
+- Cost price for margin tracking
+- Variant price adjustments
+- Tax and shipping calculations
+
+## Environment Setup
+
+```env
+DATABASE_URL="postgresql://user:password@localhost:5432/ecommerce_db"
+```
+
+## Use Cases
+
+Perfect for:
+- ✅ Full-featured online stores
+- ✅ Multi-vendor marketplaces (extend with Vendor model)
+- ✅ Subscription box services
+- ✅ Digital product stores
+- ✅ B2B wholesale platforms
+- ✅ Learning e-commerce architecture
+- ✅ Testing SSOT Codegen at scale
+
+## Next Steps
+
+1. Set up PostgreSQL database
+2. Run `npx prisma migrate dev`
+3. Generate code with `pnpm run generate`
+4. Seed sample data
+5. Build your storefront!
+
+## Generated Structure
+
+```
+gen/
+├── contracts/         # DTOs for all 17 models
+│   ├── customer/
+│   ├── product/
+│   ├── order/
+│   ├── cart/
+│   └── ... (13 more)
+├── validators/        # Zod schemas with business rules
+├── routes/           # RESTful API routes
+├── controllers/      # Request handlers
+├── services/         # Business logic
+│   ├── order.service.ts      # Order processing
+│   ├── payment.service.ts    # Payment handling
+│   ├── inventory.service.ts  # Stock management
+│   └── ...
+├── loaders/          # DataLoader for performance
+├── auth/             # Role-based access control
+└── openapi/          # Complete API specification
+```
+
+## Generated Code Stats
+
+- 📦 17 models
+- 🔄 170+ generated files
+- 🎯 85+ API endpoints
+- 📋 50+ DTOs
+- ✅ Complete CRUD operations
+- 🔐 Auth-ready controllers
+- 📊 OpenAPI 3.1 specification
+
+## This is a **complete e-commerce store in a box!**
+
+Just add:
+- Frontend (React, Vue, Next.js, etc.)
+- Payment gateway keys (Stripe, PayPal, etc.)
+- Email service for notifications
+- Image storage (S3, Cloudinary, etc.)
+- Deploy and start selling! 🚀
+

@@ -1,0 +1,16 @@
+{
+  "name": "ssot-example-demo",
+  "private": true,
+  "version": "0.4.0",
+  "type": "module",
+  "description": "Ultra-light demo: Single table Todo with one API route",
+  "scripts": {
+    "generate": "node ./scripts/generate.js",
+    "test": "node ./scripts/test.js"
+  },
+  "devDependencies": {
+    "@ssot-codegen/gen": "workspace:*",
+    "typescript": "^5.4.0"
+  }
+}
+

@@ -1,0 +1,16 @@
+{
+  "name": "ssot-example-ecommerce",
+  "private": true,
+  "version": "0.4.0",
+  "type": "module",
+  "description": "Complete e-commerce store schema with products, orders, payments, and inventory",
+  "scripts": {
+    "generate": "node ./scripts/generate.js",
+    "test": "node ./scripts/test.js"
+  },
+  "devDependencies": {
+    "@ssot-codegen/gen": "workspace:*",
+    "typescript": "^5.4.0"
+  }
+}
+

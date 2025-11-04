@@ -49,11 +49,25 @@ pnpm install
 # Build all packages
 pnpm run build
 
-# Generate code from example schema
-pnpm run generate-example
+# Try the demo (single table Todo)
+pnpm run demo
 
-# Output in examples/minimal/gen/
+# Or generate all examples
+pnpm run examples:all
+
+# Test all examples
+pnpm run test:examples
 ```
+
+## 🎯 Example Projects
+
+We provide **3 complete example schemas** - from simple to production-ready:
+
+1. **Demo (Todo)** - Ultra-light single table → `pnpm run examples:demo`
+2. **Blog Platform** - Full blog with 7 models → `pnpm run examples:blog`
+3. **E-commerce Store** - Complete store with 17 models → `pnpm run examples:ecommerce`
+
+[📖 View Complete Examples Guide](./EXAMPLES.md)
 
 ## Packages
 
@@ -129,6 +143,7 @@ Add to your `tsconfig.json`:
 - ✅ OpenAPI 3.1 output
 - ✅ TypeScript compilation verified
 - ✅ Determinism validated
+- ✅ **3 production-ready example schemas** (Demo, Blog, E-commerce)
 
 **Roadmap** (see TECHNOTES.md)
 - Real DMMF ingestion via `@prisma/generator-helper`

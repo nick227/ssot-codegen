@@ -1,0 +1,16 @@
+{
+  "name": "ssot-example-blog",
+  "private": true,
+  "version": "0.4.0",
+  "type": "module",
+  "description": "Complete blog platform schema with posts, comments, authors, categories, and tags",
+  "scripts": {
+    "generate": "node ./scripts/generate.js",
+    "test": "node ./scripts/test.js"
+  },
+  "devDependencies": {
+    "@ssot-codegen/gen": "workspace:*",
+    "typescript": "^5.4.0"
+  }
+}
+
