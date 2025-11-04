@@ -1,7 +1,7 @@
 {
   "name": "ssot-example-minimal",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
   "scripts": {
     "generate:stub": "node ./scripts/generate.js"
