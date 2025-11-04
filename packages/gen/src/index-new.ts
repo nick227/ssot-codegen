@@ -17,6 +17,8 @@ import type { DMMF } from '@prisma/generator-helper'
 import { parseDMMF, validateSchema } from './dmmf-parser.js'
 import { generateCode, countGeneratedFiles } from './code-generator.js'
 import { PathsConfig, filePath, esmImport } from './path-resolver.js'
+import { createLogger, type LogLevel } from './utils/cli-logger.js'
+import { analyzeRelationships } from './relationship-analyzer.js'
 
 // Import CommonJS module
 const require = createRequire(import.meta.url)
@@ -31,6 +33,11 @@ export interface GeneratorConfig {
   schemaText?: string
   paths?: Partial<PathsConfig>
   framework?: 'express' | 'fastify'
+  
+  // CLI options
+  verbosity?: LogLevel
+  colors?: boolean
+  timestamps?: boolean
 }
 
 const defaultPaths: PathsConfig = {
@@ -74,64 +81,128 @@ const id = (layer: string, model?: string, file?: string) => ({ layer, model, fi
  * Main generator function
  */
 export async function generateFromSchema(config: GeneratorConfig) {
-  console.log('[ssot-codegen] Starting code generation...')
-  
-  // Parse schema
-  let dmmf: DMMF.Document
-  if (config.schemaPath) {
-    dmmf = await getDMMF({ datamodelPath: config.schemaPath })
-  } else if (config.schemaText) {
-    dmmf = await getDMMF({ datamodel: config.schemaText })
-  } else {
-    throw new Error('Either schemaPath or schemaText is required')
-  }
-  
-  // Parse DMMF into our format
-  const parsedSchema = parseDMMF(dmmf)
-  
-  // Validate
-  const errors = validateSchema(parsedSchema)
-  if (errors.length > 0) {
-    console.error('[ssot-codegen] Schema validation errors:')
-    errors.forEach(err => console.error(`  - ${err}`))
-    throw new Error('Schema validation failed')
-  }
-  
-  console.log(`[ssot-codegen] Parsed ${parsedSchema.models.length} models, ${parsedSchema.enums.length} enums`)
-  
-  // Generate code
-  const cfg = { ...defaultPaths, ...config.paths, rootDir: config.output || defaultPaths.rootDir }
-  const framework = config.framework || 'express'
-  const generatedFiles = generateCode(parsedSchema, { 
-    framework,
-    useEnhancedGenerators: true  // Use enhanced generators with relationships and domain logic
+  // Create logger
+  const isCI = !!process.env.CI
+  const logger = createLogger({
+    level: config.verbosity || (isCI ? 'minimal' : 'normal'),
+    useColors: config.colors ?? (!isCI && !!process.stdout.isTTY),
+    showTimestamps: config.timestamps ?? false
   })
   
-  // Write files to disk (OPTIMIZED: async parallel)
-  await writeGeneratedFiles(generatedFiles, cfg, parsedSchema.models.map(m => m.name))
+  logger.startGeneration()
   
-  // Write base infrastructure (OPTIMIZED: async parallel)
-  await writeBaseInfrastructure(cfg)
-  
-  // Generate barrels (OPTIMIZED: async parallel)
-  await generateBarrels(cfg, parsedSchema.models.map(m => m.name), generatedFiles)
-  
-  // Generate OpenAPI
-  await generateOpenAPI(cfg, parsedSchema.models)
-  
-  // Generate manifest
-  const schemaHash = hash(config.schemaText || '')
-  await writeManifest(cfg, schemaHash, parsedSchema.models.map(m => m.name), '0.5.0')
-  
-  // Generate tsconfig paths
-  await emitTsConfigPaths(cfg, path.resolve('.'))
-  
-  const totalFiles = countGeneratedFiles(generatedFiles)
-  console.log(`[ssot-codegen] ✅ Generated ${totalFiles} working code files`)
-  
-  return {
-    models: parsedSchema.models.map(m => m.name),
-    files: totalFiles
+  try {
+    // Parse schema
+    logger.startPhase('Parsing schema')
+    let dmmf: DMMF.Document
+    if (config.schemaPath) {
+      logger.debug('Reading schema from file', { path: config.schemaPath })
+      dmmf = await getDMMF({ datamodelPath: config.schemaPath })
+    } else if (config.schemaText) {
+      logger.debug('Parsing inline schema')
+      dmmf = await getDMMF({ datamodel: config.schemaText })
+    } else {
+      throw new Error('Either schemaPath or schemaText is required')
+    }
+    
+    const parsedSchema = parseDMMF(dmmf)
+    logger.endPhase('Parsing schema')
+    
+    // Validate
+    logger.startPhase('Validating schema')
+    const errors = validateSchema(parsedSchema)
+    if (errors.length > 0) {
+      errors.forEach(err => logger.error(err))
+      throw new Error('Schema validation failed')
+    }
+    logger.endPhase('Validating schema')
+    
+    // Analyze relationships
+    logger.startPhase('Analyzing relationships')
+    const relationships = analyzeRelationships(parsedSchema)
+    logger.endPhase('Analyzing relationships')
+    
+    logger.logSchemaParsed(
+      parsedSchema.models.length,
+      parsedSchema.enums.length,
+      relationships.length
+    )
+    
+    // Generate code
+    logger.startPhase('Generating code')
+    const cfg = { ...defaultPaths, ...config.paths, rootDir: config.output || defaultPaths.rootDir }
+    const framework = config.framework || 'express'
+    const generatedFiles = generateCode(parsedSchema, { 
+      framework,
+      useEnhancedGenerators: true
+    })
+    
+    // Track per-model progress
+    for (const model of parsedSchema.models) {
+      logger.startModel(model.name)
+      
+      // Detect junction tables
+      const isJunction = model.fields.length === 2 && 
+                        model.fields.every(f => f.kind === 'object' && !f.isList)
+      
+      if (isJunction) {
+        logger.logJunctionTable(model.name)
+      }
+      
+      // Count files for this model
+      const modelFiles = countFilesForModel(generatedFiles, model.name)
+      logger.completeModel(model.name, modelFiles)
+    }
+    
+    logger.endPhase('Generating code', countGeneratedFiles(generatedFiles))
+    
+    // Write files to disk
+    logger.startPhase('Writing files to disk')
+    await writeGeneratedFiles(generatedFiles, cfg, parsedSchema.models.map(m => m.name))
+    logger.endPhase('Writing files to disk')
+    
+    // Write base infrastructure
+    logger.startPhase('Writing base infrastructure')
+    await writeBaseInfrastructure(cfg)
+    logger.endPhase('Writing base infrastructure', 2)
+    
+    // Generate barrels
+    logger.startPhase('Generating barrel exports')
+    await generateBarrels(cfg, parsedSchema.models.map(m => m.name), generatedFiles)
+    logger.endPhase('Generating barrel exports')
+    
+    // Generate OpenAPI
+    logger.startPhase('Generating OpenAPI specification')
+    await generateOpenAPI(cfg, parsedSchema.models)
+    logger.endPhase('Generating OpenAPI specification', 1)
+    
+    // Generate manifest
+    logger.startPhase('Writing manifest')
+    const schemaHash = hash(config.schemaText || '')
+    await writeManifest(cfg, schemaHash, parsedSchema.models.map(m => m.name), '0.5.0')
+    logger.endPhase('Writing manifest', 1)
+    
+    // Generate tsconfig paths
+    logger.startPhase('Generating TypeScript config')
+    await emitTsConfigPaths(cfg, path.resolve('.'))
+    logger.endPhase('Generating TypeScript config', 1)
+    
+    // Generate summary
+    const totalFiles = countGeneratedFiles(generatedFiles)
+    const breakdown = buildFileBreakdown(generatedFiles, parsedSchema.models.length)
+    
+    logger.printGenerationTable(breakdown)
+    logger.completeGeneration(totalFiles)
+    
+    return {
+      models: parsedSchema.models.map(m => m.name),
+      files: totalFiles,
+      relationships: relationships.length,
+      breakdown
+    }
+  } catch (error) {
+    logger.error('Generation failed', error as Error)
+    throw error
   }
 }
 
@@ -439,4 +510,82 @@ export interface GeneratorInput {
 }
 
 export const runGenerator = generateFromSchema
+
+/**
+ * Count files for a specific model
+ */
+function countFilesForModel(generatedFiles: ReturnType<typeof generateCode>, modelName: string): number {
+  const modelLower = modelName.toLowerCase()
+  let count = 0
+  
+  // Count in each layer
+  for (const [layer, models] of Object.entries(generatedFiles)) {
+    if (typeof models === 'object' && models && modelLower in models) {
+      const files = (models as Record<string, unknown>)[modelLower]
+      if (Array.isArray(files)) {
+        count += files.length
+      } else if (typeof files === 'string') {
+        count += 1
+      }
+    }
+  }
+  
+  return count
+}
+
+/**
+ * Build file breakdown for summary table
+ */
+function buildFileBreakdown(generatedFiles: ReturnType<typeof generateCode>, modelCount: number): Array<{ layer: string; count: number }> {
+  const breakdown: Array<{ layer: string; count: number }> = []
+  
+  // Count by layer
+  const dtoCount = countFilesByPattern(generatedFiles, '.dto.ts')
+  const validatorCount = countFilesByPattern(generatedFiles, '.zod.ts')
+  const serviceCount = countFilesByPattern(generatedFiles, '.service.ts')
+  const controllerCount = countFilesByPattern(generatedFiles, '.controller.ts')
+  const routeCount = countFilesByPattern(generatedFiles, '.routes.ts')
+  const loaderCount = countFilesByPattern(generatedFiles, '.loader.ts')
+  const telemetryCount = countFilesByPattern(generatedFiles, '.telemetry.ts')
+  
+  if (dtoCount > 0) breakdown.push({ layer: 'DTOs', count: dtoCount })
+  if (validatorCount > 0) breakdown.push({ layer: 'Validators', count: validatorCount })
+  if (serviceCount > 0) breakdown.push({ layer: 'Services', count: serviceCount })
+  if (controllerCount > 0) breakdown.push({ layer: 'Controllers', count: controllerCount })
+  if (routeCount > 0) breakdown.push({ layer: 'Routes', count: routeCount })
+  if (loaderCount > 0) breakdown.push({ layer: 'Loaders', count: loaderCount })
+  if (telemetryCount > 0) breakdown.push({ layer: 'Telemetry', count: telemetryCount })
+  
+  // Add base/infrastructure files (estimated)
+  breakdown.push({ layer: 'Base/Infra', count: 2 })
+  
+  // Add barrel exports (estimated: 4 per model - contracts, validators, services, controllers)
+  breakdown.push({ layer: 'Barrels', count: modelCount * 4 })
+  
+  // Add config files (OpenAPI + manifest + tsconfig)
+  breakdown.push({ layer: 'Config', count: 3 })
+  
+  return breakdown
+}
+
+/**
+ * Count files matching a pattern across all layers
+ */
+function countFilesByPattern(generatedFiles: ReturnType<typeof generateCode>, pattern: string): number {
+  let count = 0
+  
+  for (const models of Object.values(generatedFiles)) {
+    if (typeof models === 'object' && models) {
+      for (const files of Object.values(models as Record<string, unknown>)) {
+        if (Array.isArray(files)) {
+          count += files.filter((f: string) => f.includes(pattern)).length
+        } else if (typeof files === 'string' && files.includes(pattern)) {
+          count += 1
+        }
+      }
+    }
+  }
+  
+  return count
+}
 
