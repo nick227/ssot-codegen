@@ -23,7 +23,7 @@ export const ${modelLower}Service = {
    * List ${model.name} records with pagination
    */
   async list(query: ${model.name}QueryDTO) {
-    const { skip = 0, take = 20, orderBy, where } = query
+    const { skip = 0, take = 20, orderBy, where, include, select } = query
     
     const [items, total] = await Promise.all([
       prisma.${modelLower}.findMany({
@@ -31,6 +31,8 @@ export const ${modelLower}Service = {
         take,
         orderBy: orderBy as Prisma.${model.name}OrderByWithRelationInput,
         where: where as Prisma.${model.name}WhereInput,
+        include: include as Prisma.${model.name}Include | undefined,
+        select: select as Prisma.${model.name}Select | undefined,
       }),
       prisma.${modelLower}.count({
         where: where as Prisma.${model.name}WhereInput,

@@ -86,11 +86,10 @@ export class DTOGenerator extends BaseGenerator {
     )
     
     const whereFields = filterableFields.map(f => this.buildWhereField(f))
-    const sortableFields = this.buildSortableFields()
     
     return this.createTemplate()
       .importString(`import type { ${this.modelName}ReadDTO } from './${this.modelLower}.read.dto.js'`)
-      .block(this.buildQueryInterface(whereFields, sortableFields))
+      .block(this.buildQueryInterface(whereFields))
       .block(this.buildListResponseInterface())
       .buildWithNewline()
   }
@@ -144,25 +143,71 @@ ${ops}
   }
   
   /**
-   * Build sortable fields union type
+   * Build orderBy type (object-based for Prisma compatibility)
    */
-  private buildSortableFields(): string {
-    return this.model.scalarFields
-      .map(f => `'${f.name}' | '-${f.name}'`)
-      .join(' | ')
+  private buildOrderByType(): string {
+    const scalarFields = this.model.scalarFields
+      .map(f => `    ${f.name}?: 'asc' | 'desc'`)
+    
+    const relationFields = this.model.relationFields
+      .map(f => `    ${f.name}?: { [key: string]: 'asc' | 'desc' }`)
+    
+    const allFields = [...scalarFields, ...relationFields]
+    
+    if (allFields.length === 0) {
+      return `Record<string, 'asc' | 'desc'>`
+    }
+    
+    return `{
+${allFields.join('\n')}
+  }`
+  }
+  
+  /**
+   * Build include type for relation selection
+   */
+  private buildIncludeType(): string {
+    if (this.model.relationFields.length === 0) {
+      return 'Record<string, boolean>'
+    }
+    
+    const relationFields = this.model.relationFields
+      .map(f => `    ${f.name}?: boolean`)
+    
+    return `{
+${relationFields.join('\n')}
+  }`
+  }
+  
+  /**
+   * Build select type for field selection
+   */
+  private buildSelectType(): string {
+    const allFields = this.model.fields
+      .map(f => `    ${f.name}?: boolean`)
+    
+    return `{
+${allFields.join('\n')}
+  }`
   }
   
   /**
    * Build Query interface
    */
-  private buildQueryInterface(whereFields: string[], sortableFields: string): string {
+  private buildQueryInterface(whereFields: string[]): string {
+    const orderByType = this.buildOrderByType()
+    const includeType = this.buildIncludeType()
+    const selectType = this.buildSelectType()
+    
     return `export interface ${this.modelName}QueryDTO {
   skip?: number
   take?: number
-  orderBy?: ${sortableFields}
+  orderBy?: ${orderByType}
   where?: {
 ${whereFields.join('\n')}
   }
+  include?: ${includeType}
+  select?: ${selectType}
 }`
   }
   

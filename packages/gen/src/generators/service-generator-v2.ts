@@ -72,7 +72,7 @@ ${methods.join(',\n\n')}
    * List ${this.modelName} records with pagination
    */
   async list(query: ${this.modelName}QueryDTO) {
-    const { skip = 0, take = 20, orderBy, where } = query
+    const { skip = 0, take = 20, orderBy, where, include, select } = query
     
     const [items, total] = await Promise.all([
       prisma.${this.modelLower}.findMany({
@@ -80,6 +80,8 @@ ${methods.join(',\n\n')}
         take,
         orderBy: orderBy as Prisma.${this.modelName}OrderByWithRelationInput,
         where: where as Prisma.${this.modelName}WhereInput,
+        include: include as Prisma.${this.modelName}Include | undefined,
+        select: select as Prisma.${this.modelName}Select | undefined,
       }),
       prisma.${this.modelLower}.count({
         where: where as Prisma.${this.modelName}WhereInput,

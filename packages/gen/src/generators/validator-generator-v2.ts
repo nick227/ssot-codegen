@@ -63,19 +63,38 @@ export class ValidatorGenerator extends BaseGenerator {
    * Generate Query validator
    */
   generateQuery(): string {
-    const sortableFields = this.model.scalarFields
-      .map(f => `'${f.name}'`)
-      .join(', ')
+    const scalarFields = this.model.scalarFields
+      .map(f => `    ${f.name}: z.enum(['asc', 'desc']).optional()`)
+    
+    const relationFields = this.model.relationFields
+      .map(f => `    ${f.name}: z.record(z.enum(['asc', 'desc'])).optional()`)
+    
+    const orderByFields = [...scalarFields, ...relationFields]
+    const orderBySchema = orderByFields.length > 0 
+      ? `z.object({\n${orderByFields.join(',\n')}\n  }).optional()`
+      : 'z.record(z.enum([\'asc\', \'desc\'])).optional()'
+    
+    const includeFields = this.model.relationFields
+      .map(f => `    ${f.name}: z.boolean().optional()`)
+    const includeSchema = includeFields.length > 0
+      ? `z.object({\n${includeFields.join(',\n')}\n  }).optional()`
+      : 'z.record(z.boolean()).optional()'
+    
+    const selectFields = this.model.fields
+      .map(f => `    ${f.name}: z.boolean().optional()`)
+    const selectSchema = `z.object({\n${selectFields.join(',\n')}\n  }).optional()`
     
     return this.createTemplate()
       .imports(['import { z } from \'zod\''])
       .block(`export const ${this.modelName}QuerySchema = z.object({
   skip: z.coerce.number().min(0).optional(),
   take: z.coerce.number().min(1).max(100).optional().default(20),
-  orderBy: z.enum([${sortableFields}]).optional(),
+  orderBy: ${orderBySchema},
   where: z.object({
     // Filterable fields based on model
-  }).optional()
+  }).optional(),
+  include: ${includeSchema},
+  select: ${selectSchema}
 })`)
       .block(`export type ${this.modelName}QueryInput = z.infer<typeof ${this.modelName}QuerySchema>`)
       .buildWithNewline()
