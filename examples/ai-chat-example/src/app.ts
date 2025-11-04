@@ -48,30 +48,39 @@ export const createApp = async (): Promise<express.Application> => {
   // Public auth routes
   app.use(`${config.api.prefix}/auth`, authRouter)
   
-  // Import generated routes dynamically
+  // Import generated routes
+  const { authenticate } = await import('./auth/jwt.js')
+  
   // Standard CRUD routes
-  import('@gen/routes/user').then(({ userRouter }) => {
-    const { authenticate } = await import('./auth/jwt.js')
+  try {
+    const { userRouter } = await import('@gen/routes/user')
     app.use(`${config.api.prefix}/users`, authenticate, userRouter)
-  })
+  } catch (err) {
+    logger.warn('User routes not found')
+  }
   
-  import('@gen/routes/conversation').then(({ conversationRouter }) => {
-    const { authenticate } = await import('./auth/jwt.js')
+  try {
+    const { conversationRouter } = await import('@gen/routes/conversation')
     app.use(`${config.api.prefix}/conversations`, authenticate, conversationRouter)
-  })
+  } catch (err) {
+    logger.warn('Conversation routes not found')
+  }
   
-  import('@gen/routes/message').then(({ messageRouter }) => {
-    const { authenticate } = await import('./auth/jwt.js')
+  try {
+    const { messageRouter } = await import('@gen/routes/message')
     app.use(`${config.api.prefix}/messages`, authenticate, messageRouter)
-  })
+  } catch (err) {
+    logger.warn('Message routes not found')
+  }
   
-  // Service integration routes (AI agent)
-  import('@gen/routes/ai-agent').then(({ aiAgentRouter }) => {
+  // Service integration routes (AI agent) ✨
+  try {
+    const { aiAgentRouter } = await import('@gen/routes/ai-agent')
     app.use(`${config.api.prefix}/ai-agent`, aiAgentRouter)
     logger.info('🤖 AI Agent routes registered (service integration)')
-  }).catch(err => {
+  } catch (err) {
     logger.warn({ error: err.message }, 'AI Agent routes not found - run npm run generate')
-  })
+  }
 
   // Error handling
   app.use(notFoundHandler)

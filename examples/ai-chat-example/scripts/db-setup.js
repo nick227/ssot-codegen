@@ -8,8 +8,6 @@
 
 import { config } from 'dotenv'
 import { createConnection } from 'mysql2/promise'
-import pg from 'pg'
-const { Client } = pg
 
 // Load environment variables
 config()
@@ -95,59 +93,7 @@ function buildDatabaseUrl(config) {
   throw new Error(`Unsupported database provider: ${provider}`)
 }
 
-/**
- * Check if PostgreSQL database exists
- */
-async function postgresDatabaseExists(config) {
-  const client = new Client({
-    host: config.host || 'localhost',
-    port: config.port || 5432,
-    user: config.user || 'postgres',
-    password: config.password || '',
-    database: 'postgres', // Connect to default database
-  })
-
-  try {
-    await client.connect()
-    const result = await client.query(
-      'SELECT 1 FROM pg_database WHERE datname = $1',
-      [config.database]
-    )
-    return result.rowCount > 0
-  } catch (error) {
-    console.error('❌ Failed to check PostgreSQL database:', error.message)
-    return false
-  } finally {
-    await client.end()
-  }
-}
-
-/**
- * Create PostgreSQL database
- */
-async function createPostgresDatabase(config) {
-  const client = new Client({
-    host: config.host || 'localhost',
-    port: config.port || 5432,
-    user: config.user || 'postgres',
-    password: config.password || '',
-    database: 'postgres',
-  })
-
-  try {
-    await client.connect()
-    await client.query(`CREATE DATABASE "${config.database}"`)
-    console.log(`✅ Created PostgreSQL database: ${config.database}`)
-  } catch (error) {
-    if (error.code === '42P04') {
-      console.log(`ℹ️  PostgreSQL database already exists: ${config.database}`)
-    } else {
-      throw error
-    }
-  } finally {
-    await client.end()
-  }
-}
+// PostgreSQL support removed for this example (MySQL only)
 
 /**
  * Check if MySQL database exists
@@ -216,16 +162,11 @@ async function setupDatabase() {
     // Check and create database
     console.log(`\n🔍 Checking if database exists: ${config.database}`)
 
-    if (config.provider === 'postgresql') {
-      const exists = await postgresDatabaseExists(config)
-      if (!exists) {
-        console.log('📝 Database does not exist, creating...')
-        await createPostgresDatabase(config)
-      } else {
-        console.log(`✅ Database already exists: ${config.database}`)
-      }
-    } else if (config.provider === 'mysql') {
+    if (config.provider === 'mysql') {
       await createMysqlDatabase(config) // CREATE IF NOT EXISTS handles checking
+    } else {
+      console.error(`❌ Unsupported provider: ${config.provider}. This example only supports MySQL.`)
+      process.exit(1)
     }
 
     // Generate and set DATABASE_URL for Prisma

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config'
 import { PrismaClient } from '@prisma/client'
 import { hashPassword } from '../src/auth/password.js'
 
@@ -11,12 +12,12 @@ async function seed() {
     // Clear existing data
     await prisma.$transaction([
       prisma.usageLog.deleteMany(),
-      prisma.aiResponse.deleteMany(),
-      prisma.aiPrompt.deleteMany(),
+      prisma.aIResponse.deleteMany(),
+      prisma.aIPrompt.deleteMany(),
       prisma.message.deleteMany(),
       prisma.conversation.deleteMany(),
       prisma.user.deleteMany(),
-      prisma.aiModelConfig.deleteMany(),
+      prisma.aIModelConfig.deleteMany(),
     ])
     
     console.log('✅ Cleared existing data')
@@ -64,7 +65,7 @@ async function seed() {
     console.log(`  - Password for all: Test123!@#`)
     
     // Create AI model configurations
-    await prisma.aiModelConfig.createMany({
+    await prisma.aIModelConfig.createMany({
       data: [
         {
           modelName: 'gpt-4',
