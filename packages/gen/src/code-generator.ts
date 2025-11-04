@@ -107,7 +107,37 @@ function generateModelCode(
   // Get cached service annotation (already parsed in phase 1)
   const serviceAnnotation = cache.serviceAnnotations.get(model.name)
   
-  // Generate DTOs (always needed)
+  // Get cached analysis (already computed in phase 1)
+  const analysis = cache.modelAnalysis.get(model.name)
+  
+  // Check if this is a junction table FIRST (before generating anything beyond DTOs/validators)
+  const isJunction = useEnhanced && analysis?.isJunctionTable
+  
+  if (isJunction) {
+    console.log(`[ssot-codegen] Junction table detected: ${model.name} - generating DTOs/validators only`)
+    
+    // Generate DTOs (useful for type system even for junction tables)
+    const dtos = generateAllDTOs(model)
+    const dtoMap = new Map<string, string>()
+    dtoMap.set(`${modelLower}.create.dto.ts`, dtos.create)
+    dtoMap.set(`${modelLower}.update.dto.ts`, dtos.update)
+    dtoMap.set(`${modelLower}.read.dto.ts`, dtos.read)
+    dtoMap.set(`${modelLower}.query.dto.ts`, dtos.query)
+    files.contracts.set(model.name, dtoMap)
+    
+    // Generate Validators (useful for type system)
+    const validators = generateAllValidators(model)
+    const validatorMap = new Map<string, string>()
+    validatorMap.set(`${modelLower}.create.zod.ts`, validators.create)
+    validatorMap.set(`${modelLower}.update.zod.ts`, validators.update)
+    validatorMap.set(`${modelLower}.query.zod.ts`, validators.query)
+    files.validators.set(model.name, validatorMap)
+    
+    // Skip services, controllers, and routes for junction tables
+    return
+  }
+  
+  // Generate DTOs (always needed for non-junction models)
   const dtos = generateAllDTOs(model)
   const dtoMap = new Map<string, string>()
   dtoMap.set(`${modelLower}.create.dto.ts`, dtos.create)
@@ -147,17 +177,6 @@ function generateModelCode(
     files.services.set(`${serviceAnnotation.name}.service.scaffold.ts`, scaffold)
     
     return  // Service integration replaces standard CRUD controller/routes
-  }
-  
-  // Get cached analysis (already computed in phase 1)
-  const analysis = cache.modelAnalysis.get(model.name)
-  
-  // Check if this is a junction table (use cached analysis)
-  const isJunction = useEnhanced && analysis?.isJunctionTable
-  
-  if (isJunction) {
-    console.log(`[ssot-codegen] Skipping controller and routes for junction table: ${model.name}`)
-    return  // Skip controller and routes entirely for junction tables
   }
   
   // Generate Controller (enhanced or basic)

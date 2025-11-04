@@ -90,20 +90,18 @@ export function mapPrismaToZod(field: ParsedField): string {
     baseSchema = `z.array(${baseSchema})`
   }
   
-  // Handle optional/nullable
-  if (!field.isRequired) {
-    if (field.hasDefaultValue) {
-      // Has default - just optional
-      const defaultVal = getZodDefault(field)
-      if (defaultVal) {
-        baseSchema = `${baseSchema}.optional().default(${defaultVal})`
-      } else {
-        baseSchema = `${baseSchema}.optional()`
-      }
+  // Handle optional/nullable/defaults
+  // IMPORTANT: Fields with defaults should be optional in CREATE input (even if Prisma marks them required)
+  if (field.hasDefaultValue) {
+    const defaultVal = getZodDefault(field)
+    if (defaultVal) {
+      baseSchema = `${baseSchema}.optional().default(${defaultVal})`
     } else {
-      // Nullable and optional
-      baseSchema = `${baseSchema}.nullable().optional()`
+      baseSchema = `${baseSchema}.optional()`
     }
+  } else if (!field.isRequired) {
+    // No default, but nullable/optional
+    baseSchema = `${baseSchema}.nullable().optional()`
   }
   
   return baseSchema
