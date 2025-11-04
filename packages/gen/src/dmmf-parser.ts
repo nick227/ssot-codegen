@@ -256,9 +256,12 @@ export function validateSchema(schema: ParsedSchema): string[] {
   const errors: string[] = []
   
   for (const model of schema.models) {
-    // Check for ID field
-    if (!model.idField) {
-      errors.push(`Model ${model.name} has no @id field`)
+    // Check for ID field or composite primary key
+    const hasIdField = !!model.idField
+    const hasCompositePrimaryKey = model.primaryKey && model.primaryKey.fields.length > 0
+    
+    if (!hasIdField && !hasCompositePrimaryKey) {
+      errors.push(`Model ${model.name} has no @id field or @@id composite key`)
     }
     
     // Check relations

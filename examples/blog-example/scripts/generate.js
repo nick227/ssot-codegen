@@ -1,25 +1,18 @@
 #!/usr/bin/env node
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
-import { runGenerator } from '@ssot-codegen/gen';
+import { fileURLToPath } from 'node:url'
+import { dirname, resolve } from 'node:path'
+import { generateFromSchema } from '../../../packages/gen/dist/index-new.js'
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const projectRoot = resolve(__dirname, '..');
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+const projectRoot = resolve(__dirname, '..')
 
-console.log('[blog-example] Generating code for blog platform...');
-console.log('[blog-example] Models: Author, Post, Comment, Category, Tag, PostCategory, PostTag');
+console.log('[blog-example] Generating code from Prisma schema...')
 
-await runGenerator({
-  outDir: resolve(projectRoot, 'gen'),
-  models: ['Author', 'Post', 'Comment', 'Category', 'Tag', 'PostCategory', 'PostTag']
-});
+await generateFromSchema({
+  schemaPath: resolve(projectRoot, 'prisma/schema.prisma'),
+  output: resolve(projectRoot, 'gen'),
+  framework: 'express',
+})
 
-console.log('[blog-example] Generation complete!');
-console.log('[blog-example] Generated structure includes:');
-console.log('  - 7 models with full CRUD operations');
-console.log('  - Author authentication and roles');
-console.log('  - Post with categories, tags, and comments');
-console.log('  - Nested comment replies');
-console.log('  - OpenAPI spec ready for client SDK generation');
-
+console.log('[blog-example] ✅ Generation complete!')
