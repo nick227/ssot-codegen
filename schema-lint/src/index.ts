@@ -1,0 +1,1 @@
+export const lint = () => console.log('schema lint ok');

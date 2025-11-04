@@ -1,0 +1,23 @@
+{
+  "name": "@ssot-codegen/gen",
+  "version": "0.3.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@ssot-codegen/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "prisma": "^5.0.0"
+  },
+  "bin": {
+    "ssot": "dist/cli.js"
+  }
+}

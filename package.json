@@ -1,0 +1,21 @@
+{
+  "name": "ssot-codegen",
+  "private": true,
+  "version": "0.3.0",
+  "workspaces": [
+    "packages/*",
+    "examples/*"
+  ],
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "build": "pnpm -r --filter ./packages/* run build",
+    "clean": "rimraf packages/*/dist",
+    "lint": "echo \"(stub) run eslint here\"",
+    "generate-example": "node examples/minimal/scripts/generate.js"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "prisma": "^5.0.0",
+    "rimraf": "^5.0.0"
+  }
+}

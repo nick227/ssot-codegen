@@ -1,0 +1,1 @@
+export const templates = ['dto','zod','openapi'];

@@ -1,0 +1,1 @@
+export const sdkRuntime = () => 'sdk runtime active';

@@ -1,0 +1,17 @@
+{
+  "name": "@ssot-codegen/schema-lint",
+  "version": "0.3.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@ssot-codegen/core": "workspace:*"
+  }
+}

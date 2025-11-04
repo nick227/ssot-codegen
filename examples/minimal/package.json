@@ -1,0 +1,12 @@
+{
+  "name": "ssot-example-minimal",
+  "private": true,
+  "version": "0.3.0",
+  "type": "module",
+  "scripts": {
+    "generate:stub": "node ./scripts/generate.js"
+  },
+  "devDependencies": {
+    "@ssot-codegen/gen": "workspace:*"
+  }
+}

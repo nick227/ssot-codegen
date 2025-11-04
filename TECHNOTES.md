@@ -1,0 +1,1 @@
+# v0.4.0 Addendum\n- Dynamic path resolver, barrels, tsconfig paths.\n

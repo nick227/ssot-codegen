@@ -1,0 +1,1 @@
+export const runGenerator = () => console.log('generator running');
