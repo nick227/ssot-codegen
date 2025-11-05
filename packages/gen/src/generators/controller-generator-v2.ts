@@ -46,8 +46,8 @@ export class ControllerGenerator extends BaseGenerator {
       : `import type { FastifyRequest, FastifyReply } from 'fastify'`
     
     return `${reqRes}
-import { ${this.modelLower}Service } from '@gen/services/${this.modelLower}'
-import { ${this.modelName}CreateSchema, ${this.modelName}UpdateSchema, ${this.modelName}QuerySchema } from '@gen/validators/${this.modelLower}'
+import { ${this.modelLower}Service } from '@/services/${this.modelLower}'
+import { ${this.modelName}CreateSchema, ${this.modelName}UpdateSchema, ${this.modelName}QuerySchema } from '@/validators/${this.modelLower}'
 import { ZodError } from 'zod'
 
 `
@@ -250,7 +250,7 @@ export const count${this.modelName}s = async (${reqVar}: ${this.framework === 'e
    */
   getImports(): string[] {
     return this.strategy.getImports(this.modelLower).concat([
-      `import { ${this.modelName}CreateSchema, ${this.modelName}UpdateSchema, ${this.modelName}QuerySchema } from '@gen/validators/${this.modelLower}'`,
+      `import { ${this.modelName}CreateSchema, ${this.modelName}UpdateSchema, ${this.modelName}QuerySchema } from '@/validators/${this.modelLower}'`,
       `import { ZodError } from 'zod'`
     ])
   }
@@ -276,4 +276,5 @@ export const count${this.modelName}s = async (${reqVar}: ${this.framework === 'e
     return BarrelBuilder.simple([`${this.modelLower}.controller`])
   }
 }
+
 

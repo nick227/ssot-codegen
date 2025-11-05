@@ -76,21 +76,22 @@ export class ModelMetadata {
    * Get import path for this model's contracts
    */
   getContractsPath(): string {
-    return `@gen/contracts/${this.lower}`
+    return `@/contracts/${this.lower}`
   }
   
   /**
    * Get import path for this model's validators
    */
   getValidatorsPath(): string {
-    return `@gen/validators/${this.lower}`
+    return `@/validators/${this.lower}`
   }
   
   /**
    * Get import path for this model's services
    */
   getServicesPath(): string {
-    return `@gen/services/${this.lower}`
+    return `@/services/${this.lower}`
   }
 }
+
 

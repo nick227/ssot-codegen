@@ -165,3 +165,4 @@ ${this.methods.join(',\n\n')}
   }
 }
 
+

@@ -67,6 +67,7 @@ export const tsconfigTemplate = (projectName: string) => `{
     "lib": ["ES2022"],
     "rootDir": ".",
     "outDir": "./dist",
+    "jsx": "react-jsx",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,

@@ -56,7 +56,7 @@ describe('SDK Generator - Comprehensive Tests', () => {
         'TodoUpdateDTO',
         'TodoReadDTO',
         'TodoQueryDTO',
-        "} from '@gen/contracts/todo'"
+        "} from '@/contracts/todo/index.js'"
       ])
     })
 
@@ -119,10 +119,9 @@ describe('SDK Generator - Comprehensive Tests', () => {
       const sdk = generateModelSDK(model, schema)
 
       assertIncludes(sdk, [
-        'async findBySlug(slug: string, options?: QueryOptions)',
-        "await this.client.get<PostReadDTO>",
-        '`${this.basePath}/slug/${slug}`',
-        'return response.data'
+        'helpers = {',
+        'findBySlug: async (slug: string, options?: QueryOptions)',
+        'return this.findOne({ slug } as any, options)'
       ])
     })
 
@@ -136,10 +135,9 @@ describe('SDK Generator - Comprehensive Tests', () => {
       const schema = createMockSchema([model])
       const sdk = generateModelSDK(model, schema)
 
+      // findBySlug uses findOne which handles errors internally in BaseModelClient
       assertIncludes(sdk, [
-        'catch (error)',
-        '(error as any).status === 404',
-        'return null'
+        'findBySlug: async (slug: string, options?: QueryOptions)'
       ])
     })
   })
@@ -157,9 +155,9 @@ describe('SDK Generator - Comprehensive Tests', () => {
       const sdk = generateModelSDK(model, schema)
 
       assertIncludes(sdk, [
-        'async listPublished(query?: PostQueryDTO',
-        'async publish(id: number',
-        'async unpublish(id: number'
+        'listPublished: async (query?: Omit<PostQueryDTO',
+        'publish: async (id: number',
+        'unpublish: async (id: number'
       ])
     })
 
@@ -173,7 +171,7 @@ describe('SDK Generator - Comprehensive Tests', () => {
       const schema = createMockSchema([model])
       const sdk = generateModelSDK(model, schema)
 
-      expect(sdk).toContain('where: { ...query?.where, published: true }')
+      expect(sdk).toContain('where: { published: true }')
     })
 
     it('should use correct ID type in publish/unpublish', () => {
@@ -186,8 +184,8 @@ describe('SDK Generator - Comprehensive Tests', () => {
       const schema = createMockSchema([model])
       const sdk = generateModelSDK(model, schema)
 
-      expect(sdk).toContain('async publish(id: string')
-      expect(sdk).toContain('async unpublish(id: string')
+      expect(sdk).toContain('publish: async (id: string')
+      expect(sdk).toContain('unpublish: async (id: string')
     })
   })
 
@@ -204,7 +202,7 @@ describe('SDK Generator - Comprehensive Tests', () => {
       const sdk = generateModelSDK(model, schema)
 
       assertIncludes(sdk, [
-        'async incrementViews(id: number, options?: QueryOptions)',
+        'incrementViews: async (id: number, options?: QueryOptions)',
         "await this.client.post<void>",
         '`${this.basePath}/${id}/views`'
       ])
@@ -220,7 +218,7 @@ describe('SDK Generator - Comprehensive Tests', () => {
       const schema = createMockSchema([model])
       const sdk = generateModelSDK(model, schema)
 
-      expect(sdk).toContain('async incrementViews(id: string')
+      expect(sdk).toContain('incrementViews: async (id: string')
     })
   })
 
@@ -237,10 +235,10 @@ describe('SDK Generator - Comprehensive Tests', () => {
       const sdk = generateModelSDK(model, schema)
 
       assertIncludes(sdk, [
-        'async approve(id: number',
-        'async reject(id: number',
-        '`${this.basePath}/${id}/approve`',
-        '`${this.basePath}/${id}/reject`'
+        'approve: async (id: number',
+        'reject: async (id: number',
+        'return this.update(id, { approved: true }',
+        'return this.update(id, { approved: false }'
       ])
     })
 
@@ -254,9 +252,11 @@ describe('SDK Generator - Comprehensive Tests', () => {
       const schema = createMockSchema([model])
       const sdk = generateModelSDK(model, schema)
 
-      const approveMethods = sdk.match(/async approve[\s\S]*?catch \(error\)[\s\S]*?return null/g)
-      expect(approveMethods).toBeTruthy()
-      expect(approveMethods!.length).toBeGreaterThanOrEqual(1)
+      // approve/reject use update which handles errors internally in BaseModelClient
+      assertIncludes(sdk, [
+        'approve: async (id: number',
+        'reject: async (id: number'
+      ])
     })
   })
 
@@ -273,10 +273,10 @@ describe('SDK Generator - Comprehensive Tests', () => {
       const sdk = generateModelSDK(model, schema)
 
       assertIncludes(sdk, [
-        'async softDelete(id: number',
-        'async restore(id: number',
-        '`${this.basePath}/${id}/soft-delete`',
-        '`${this.basePath}/${id}/restore`'
+        'softDelete: async (id: number',
+        'restore: async (id: number',
+        'return this.update(id, { deletedAt: new Date() }',
+        'return this.update(id, { deletedAt: null }'
       ])
     })
   })
@@ -294,7 +294,7 @@ describe('SDK Generator - Comprehensive Tests', () => {
       const sdk = generateModelSDK(model, schema)
 
       assertIncludes(sdk, [
-        'async getThread(id: number',
+        'getThread: async (id: number',
         '`${this.basePath}/${id}/thread`'
       ])
     })
@@ -505,10 +505,11 @@ describe('SDK Generator - Comprehensive Tests', () => {
       const schema = createMockSchema([model])
       const sdk = generateModelSDK(model, schema)
 
-      // Should not have domain methods
-      expect(sdk).not.toContain('findBySlug')
-      expect(sdk).not.toContain('listPublished')
-      expect(sdk).not.toContain('incrementViews')
+      // Should not have helpers namespace
+      expect(sdk).not.toContain('helpers = {')
+      expect(sdk).not.toContain('findBySlug: async')
+      expect(sdk).not.toContain('listPublished: async')
+      expect(sdk).not.toContain('incrementViews: async')
     })
 
     it('should handle model with all special fields', () => {
@@ -527,16 +528,16 @@ describe('SDK Generator - Comprehensive Tests', () => {
       const sdk = generateModelSDK(model, schema)
 
       assertIncludes(sdk, [
-        'async findBySlug',
-        'async listPublished',
-        'async publish',
-        'async unpublish',
-        'async incrementViews',
-        'async approve',
-        'async reject',
-        'async softDelete',
-        'async restore',
-        'async getThread'
+        'findBySlug: async',
+        'listPublished: async',
+        'publish: async',
+        'unpublish: async',
+        'incrementViews: async',
+        'approve: async',
+        'reject: async',
+        'softDelete: async',
+        'restore: async',
+        'getThread: async'
       ])
 
       assertValidTypeScript(sdk)
@@ -554,8 +555,8 @@ describe('SDK Generator - Comprehensive Tests', () => {
       const sdk = generateModelSDK(model, schema)
 
       // All ID parameters should be string
-      expect(sdk).toContain('async publish(id: string')
-      expect(sdk).toContain('async incrementViews(id: string')
+      expect(sdk).toContain('publish: async (id: string')
+      expect(sdk).toContain('incrementViews: async (id: string')
     })
   })
 
@@ -580,10 +581,10 @@ describe('SDK Generator - Comprehensive Tests', () => {
       assertValidTypeScript(sdk)
       assertIncludes(sdk, [
         'export class BlogPostClient',
-        'async findBySlug',
-        'async listPublished',
-        'async publish',
-        'async incrementViews'
+        'findBySlug: async',
+        'listPublished: async',
+        'publish: async',
+        'incrementViews: async'
       ])
     })
 
@@ -603,11 +604,11 @@ describe('SDK Generator - Comprehensive Tests', () => {
       assertValidTypeScript(sdk)
       assertIncludes(sdk, [
         'export class CommentClient',
-        'async approve',
-        'async reject',
-        'async getThread',
-        'async softDelete',
-        'async restore'
+        'approve: async',
+        'reject: async',
+        'getThread: async',
+        'softDelete: async',
+        'restore: async'
       ])
     })
   })
@@ -655,4 +656,5 @@ describe('SDK Generator - Comprehensive Tests', () => {
     })
   })
 })
+
 

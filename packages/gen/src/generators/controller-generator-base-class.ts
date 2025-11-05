@@ -72,13 +72,13 @@ function generateImports(model: ParsedModel, modelLower: string, analysis: Retur
   
   return `import {
   BaseCRUDController${helperImports}
-} from '@gen/base'
-import { ${modelLower}Service } from '@gen/services/${modelLower}'
+} from '../base/index.js'
+import { ${modelLower}Service } from '../services/${modelLower}/index.js'
 import {
   ${model.name}CreateSchema,
   ${model.name}UpdateSchema,
   ${model.name}QuerySchema
-} from '@gen/validators/${modelLower}'`
+} from '../validators/${modelLower}/index.js'`
 }
 
 /**
@@ -287,4 +287,5 @@ export const get${model.name}Thread = createDomainMethodController(
   
   return methods.length > 0 ? '\n' + methods.join('\n') : ''
 }
+
 

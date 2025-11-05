@@ -463,7 +463,7 @@ export function generateSDKTypes(models: ParsedModel[], schema: ParsedSchema): s
   ${m.name}CreateDTO as ${m.name}Create,
   ${m.name}UpdateDTO as ${m.name}Update,
   ${m.name}QueryDTO as ${m.name}Query
-} from '@gen/contracts/${modelLower}'`
+} from '@/contracts/${modelLower}'`
   }).join('\n\n')
   
   return `// @generated
@@ -488,4 +488,5 @@ export type { APIException } from '@ssot-codegen/sdk-runtime'
 export type { QueryOptions } from '@ssot-codegen/sdk-runtime'
 `
 }
+
 

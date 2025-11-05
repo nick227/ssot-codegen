@@ -51,7 +51,7 @@ export class RouteGenerator extends BaseGenerator {
     return this.createTemplate()
       .imports([
         `import { Router } from 'express'`,
-        `import * as ${this.modelLower}Controller from '@gen/controllers/${this.modelLower}'`
+        `import * as ${this.modelLower}Controller from '@/controllers/${this.modelLower}'`
       ])
       .block(`export const ${this.modelLower}Router = Router()`)
       .blocks(...routeLines)
@@ -80,7 +80,7 @@ export class RouteGenerator extends BaseGenerator {
     return this.createTemplate()
       .imports([
         `import type { FastifyInstance } from 'fastify'`,
-        `import * as ${this.modelLower}Controller from '@gen/controllers/${this.modelLower}'`
+        `import * as ${this.modelLower}Controller from '@/controllers/${this.modelLower}'`
       ])
       .block(`export async function ${this.modelLower}Routes(fastify: FastifyInstance) {`)
       .blocks(...routeLines)
@@ -95,12 +95,12 @@ export class RouteGenerator extends BaseGenerator {
     if (this.framework === 'express') {
       return [
         `import { Router } from 'express'`,
-        `import * as ${this.modelLower}Controller from '@gen/controllers/${this.modelLower}'`
+        `import * as ${this.modelLower}Controller from '@/controllers/${this.modelLower}'`
       ]
     } else {
       return [
         `import type { FastifyInstance } from 'fastify'`,
-        `import * as ${this.modelLower}Controller from '@gen/controllers/${this.modelLower}'`
+        `import * as ${this.modelLower}Controller from '@/controllers/${this.modelLower}'`
       ]
     }
   }
@@ -121,4 +121,5 @@ export class RouteGenerator extends BaseGenerator {
     return BarrelBuilder.simple([`${this.modelLower}.routes`])
   }
 }
+
 

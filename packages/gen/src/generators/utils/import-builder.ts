@@ -49,8 +49,8 @@ export class ImportBuilder {
   
   /**
    * Add namespace import
-   * @example addNamespace('@gen/controllers/todo', 'todoController')
-   * // import * as todoController from '@gen/controllers/todo'
+   * @example addNamespace('@/controllers/todo', 'todoController')
+   * // import * as todoController from '@/controllers/todo'
    */
   addNamespace(module: string, alias: string): this {
     this.imports.add(`import * as ${alias} from '${module}'`)
@@ -97,4 +97,5 @@ export class ImportBuilder {
     return this
   }
 }
+
 

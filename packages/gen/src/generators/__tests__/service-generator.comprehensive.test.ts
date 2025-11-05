@@ -490,7 +490,7 @@ describe('ServiceGenerator - Comprehensive Tests', () => {
 
       assertIncludes(content, [
         "import type { TodoCreateDTO, TodoUpdateDTO, TodoQueryDTO } from",
-        "@gen/contracts/todo'"
+        "@/contracts/todo'"
       ])
     })
 
@@ -784,7 +784,7 @@ describe('ServiceGenerator - Comprehensive Tests', () => {
 
       const imports = extractImports(content)
       expect(imports).toContain('@/db')
-      expect(imports).toContain('@gen/contracts/todo')
+      expect(imports).toContain('@/contracts/todo')
       expect(imports).toContain('@prisma/client')
     })
 
@@ -976,4 +976,5 @@ describe('ServiceGenerator - Comprehensive Tests', () => {
     })
   })
 })
+
 

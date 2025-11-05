@@ -481,7 +481,7 @@ export * from './${modelLower}.routes.js'
     if (layerModelsArray.length > 0) {
       const layerBarrelPath = path.join(cfg.rootDir, layer, 'index.ts')
       const layerExports = layerModelsArray.map(m => 
-        `export * as ${m.toLowerCase()} from '${esmImport(cfg, id(layer, m))}'`
+        `export * as ${m.toLowerCase()} from './${m.toLowerCase()}/index.js'`
       ).join('\n')
       writes.push(write(layerBarrelPath, `// @generated layer barrel\n${layerExports}\n`))
       track(`${layer}:index`, layerBarrelPath, esmImport(cfg, id(layer)))

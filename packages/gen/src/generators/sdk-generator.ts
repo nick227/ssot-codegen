@@ -26,7 +26,7 @@ import type {
   ${model.name}UpdateDTO,
   ${model.name}ReadDTO,
   ${model.name}QueryDTO
-} from '@gen/contracts/${modelLower}'
+} from '@/contracts/${modelLower}/index.js'
 import { BaseModelClient, type ListResponse } from '@ssot-codegen/sdk-runtime'
 import type { BaseAPIClient, QueryOptions } from '@ssot-codegen/sdk-runtime'
 
@@ -372,4 +372,5 @@ export function checkVersion(backendHash: string): {
 }
 `
 }
+
 

@@ -443,7 +443,7 @@ describe('ControllerGenerator - Comprehensive Tests', () => {
       const output = generator.generate()
       const content = output.files.get('todo.controller.ts')!
 
-      expect(content).toContain("import { todoService } from '@gen/services/todo'")
+      expect(content).toContain("import { todoService } from '@/services/todo'")
     })
 
     it('should import validators', () => {
@@ -453,7 +453,7 @@ describe('ControllerGenerator - Comprehensive Tests', () => {
       const content = output.files.get('todo.controller.ts')!
 
       assertIncludes(content, [
-        "import { TodoCreateSchema, TodoUpdateSchema, TodoQuerySchema } from '@gen/validators/todo'"
+        "import { TodoCreateSchema, TodoUpdateSchema, TodoQuerySchema } from '@/validators/todo'"
       ])
     })
 
@@ -484,8 +484,8 @@ describe('ControllerGenerator - Comprehensive Tests', () => {
       const content = output.files.get('todo.controller.ts')!
 
       assertIncludes(content, [
-        "import { todoService } from '@gen/services/todo'",
-        "import { TodoCreateSchema, TodoUpdateSchema, TodoQuerySchema } from '@gen/validators/todo'"
+        "import { todoService } from '@/services/todo'",
+        "import { TodoCreateSchema, TodoUpdateSchema, TodoQuerySchema } from '@/validators/todo'"
       ])
     })
   })
@@ -729,8 +729,8 @@ describe('ControllerGenerator - Comprehensive Tests', () => {
 
       const imports = extractImports(content)
       expect(imports).toContain('express')
-      expect(imports).toContain('@gen/services/todo')
-      expect(imports).toContain('@gen/validators/todo')
+      expect(imports).toContain('@/services/todo')
+      expect(imports).toContain('@/validators/todo')
       expect(imports).toContain('zod')
     })
 
@@ -915,4 +915,5 @@ describe('ControllerGenerator - Comprehensive Tests', () => {
     })
   })
 })
+
 

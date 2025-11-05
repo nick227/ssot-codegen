@@ -121,7 +121,7 @@ function generateModelHooks(
     // Generate tests if enabled
     if (config.generateTests !== false) {
       const tests = generateReactHookTests(model, schema)
-      hooks.react.set(`models/__tests__/use-${modelLower}.test.ts`, tests)
+      hooks.react.set(`models/__tests__/use-${modelLower}.test.tsx`, tests)
     }
   }
   
@@ -155,4 +155,5 @@ export * from './core-queries-generator.js'
 export * from './react-adapter-generator.js'
 export * from './framework-adapters.js'
 export * from './test-generator.js'
+
 

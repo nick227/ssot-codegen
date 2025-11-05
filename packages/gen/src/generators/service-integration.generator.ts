@@ -41,7 +41,7 @@ export const ${methodName} = controller.wrap(
 // Service Integration Controller for ${annotation.name}
 // Using BaseServiceController to eliminate boilerplate
 
-import { BaseServiceController } from '@gen/base'
+import { BaseServiceController } from '@/base'
 import { ${serviceName} } from '@/services/${annotation.name}.service.js'
 
 ${controllerSetup}
@@ -155,7 +155,7 @@ ${toCamelCase(annotation.name)}Router.${httpMethod}('${routePath}', ${middleware
 // ${annotation.description || 'Service routes'}
 
 import { Router, type Router as RouterType } from 'express'
-import * as ${toCamelCase(annotation.name)}Controller from '@gen/controllers/${annotation.name}'
+import * as ${toCamelCase(annotation.name)}Controller from '@/controllers/${annotation.name}'
 ${annotation.auth ? "import { authenticate } from '@/auth/jwt.js'" : ''}
 ${annotation.rateLimit ? "import { rateLimit } from 'express-rate-limit'" : ''}
 
@@ -210,7 +210,7 @@ function toCamelCase(str: string): string {
 export function generateServiceScaffold(annotation: ServiceAnnotation): string {
   const serviceName = getServiceExportName(annotation)
   const modelLower = annotation.model.name.toLowerCase()
-  const baseServiceImport = `import { ${modelLower}Service as baseService } from '@gen/services/${modelLower}'`
+  const baseServiceImport = `import { ${modelLower}Service as baseService } from '@/services/${modelLower}'`
   
   // Provider-specific imports
   const providerImports = getProviderImports(annotation.provider)
@@ -356,4 +356,5 @@ const googleOAuth = new OAuth2Client({
   
   return setups[provider.toLowerCase()] || ''
 }
+
 

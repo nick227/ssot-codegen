@@ -92,7 +92,7 @@ describe('RouteGenerator - Comprehensive Tests', () => {
       const output = generator.generate()
       const content = output.files.get('todo.routes.ts')!
 
-      expect(content).toContain("import * as todoController from '@gen/controllers/todo'")
+      expect(content).toContain("import * as todoController from '@/controllers/todo'")
     })
 
     it('should define routes in correct order', () => {
@@ -171,7 +171,7 @@ describe('RouteGenerator - Comprehensive Tests', () => {
       const output = generator.generate()
       const content = output.files.get('todo.routes.ts')!
 
-      expect(content).toContain("import * as todoController from '@gen/controllers/todo'")
+      expect(content).toContain("import * as todoController from '@/controllers/todo'")
     })
   })
 
@@ -534,7 +534,7 @@ describe('RouteGenerator - Comprehensive Tests', () => {
 
       const imports = extractImports(content)
       expect(imports).toContain('express')
-      expect(imports).toContain('@gen/controllers/todo')
+      expect(imports).toContain('@/controllers/todo')
     })
 
     it('should extract imports correctly - Fastify', () => {
@@ -545,7 +545,7 @@ describe('RouteGenerator - Comprehensive Tests', () => {
 
       const imports = extractImports(content)
       expect(imports).toContain('fastify')
-      expect(imports).toContain('@gen/controllers/todo')
+      expect(imports).toContain('@/controllers/todo')
     })
 
     it('should extract exports correctly - Express', () => {
@@ -715,4 +715,5 @@ describe('RouteGenerator - Comprehensive Tests', () => {
     })
   })
 })
+
 

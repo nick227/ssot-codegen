@@ -58,7 +58,7 @@ export class ExpressStrategy implements FrameworkStrategy {
   getImports(modelLower: string): string[] {
     return [
       `import type { Request, Response } from 'express'`,
-      `import { ${modelLower}Service } from '@gen/services/${modelLower}'`
+      `import { ${modelLower}Service } from '@/services/${modelLower}'`
     ]
   }
   
@@ -93,7 +93,7 @@ export class ExpressStrategy implements FrameworkStrategy {
   
   generateRouterSetup(modelLower: string): string {
     return `import { Router } from 'express'
-import * as ${modelLower}Controller from '@gen/controllers/${modelLower}'
+import * as ${modelLower}Controller from '@/controllers/${modelLower}'
 
 export const ${modelLower}Router = Router()`
   }
@@ -114,7 +114,7 @@ export class FastifyStrategy implements FrameworkStrategy {
   getImports(modelLower: string): string[] {
     return [
       `import type { FastifyRequest, FastifyReply } from 'fastify'`,
-      `import { ${modelLower}Service } from '@gen/services/${modelLower}'`
+      `import { ${modelLower}Service } from '@/services/${modelLower}'`
     ]
   }
   
@@ -149,7 +149,7 @@ export class FastifyStrategy implements FrameworkStrategy {
   
   generateRouterSetup(modelLower: string): string {
     return `import type { FastifyInstance } from 'fastify'
-import * as ${modelLower}Controller from '@gen/controllers/${modelLower}'
+import * as ${modelLower}Controller from '@/controllers/${modelLower}'
 
 export async function ${modelLower}Routes(fastify: FastifyInstance)`
   }
@@ -166,4 +166,5 @@ export async function ${modelLower}Routes(fastify: FastifyInstance)`
 export function getFrameworkStrategy(framework: 'express' | 'fastify'): FrameworkStrategy {
   return framework === 'express' ? new ExpressStrategy() : new FastifyStrategy()
 }
+
 
