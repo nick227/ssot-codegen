@@ -27,6 +27,8 @@ import { generateServiceController, generateServiceRoutes, generateServiceScaffo
 import { generateModelSDK, generateMainSDK, generateSDKVersion } from './generators/sdk-generator.js'
 import { generateServiceSDK, generateMainSDKWithServices } from './generators/sdk-service-generator.js'
 import { generateSDKReadme, generateAPIReference, generateSDKArchitecture, generateQuickStart, generateSDKTypes } from './generators/sdk-docs-generator.js'
+// Framework hooks generation (React, Vue, etc.)
+import { generateAllHooks } from './generators/hooks/index.js'
 // OPTIMIZATION: Pre-analysis utilities
 import { analyzeModel, type ModelAnalysis } from './utils/relationship-analyzer.js'
 
@@ -42,6 +44,14 @@ export interface GeneratedFiles {
   controllers: Map<string, string>
   routes: Map<string, string>
   sdk: Map<string, string>  // filename -> content
+  hooks: {
+    core: Map<string, string>        // Framework-agnostic queries
+    react?: Map<string, string>      // React hooks
+    vue?: Map<string, string>        // Vue composables
+    zustand?: Map<string, string>    // Zustand stores
+    vanilla?: Map<string, string>    // Vanilla JS stores
+    angular?: Map<string, string>    // Angular services
+  }
 }
 
 /**
@@ -67,7 +77,10 @@ export function generateCode(
     services: new Map(),
     controllers: new Map(),
     routes: new Map(),
-    sdk: new Map()
+    sdk: new Map(),
+    hooks: {
+      core: new Map()
+    }
   }
   
   // PHASE 1: Pre-analyze all models ONCE (O(n) instead of O(n×5))
@@ -96,6 +109,10 @@ export function generateCode(
   
   // PHASE 3: Generate SDK clients (after all models are processed)
   generateSDKClients(schema, files, cache)
+  
+  // PHASE 4: Generate framework hooks (React by default)
+  const hooks = generateAllHooks(schema, { frameworks: ['react'] })
+  files.hooks = hooks
   
   return files
 }
@@ -280,6 +297,12 @@ export function countGeneratedFiles(files: GeneratedFiles): number {
   count += files.controllers.size
   count += files.routes.size
   count += files.sdk.size
+  count += files.hooks.core.size
+  if (files.hooks.react) count += files.hooks.react.size
+  if (files.hooks.vue) count += files.hooks.vue.size
+  if (files.hooks.zustand) count += files.hooks.zustand.size
+  if (files.hooks.vanilla) count += files.hooks.vanilla.size
+  if (files.hooks.angular) count += files.hooks.angular.size
   
   return count
 }
