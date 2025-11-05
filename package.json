@@ -28,7 +28,9 @@
     "test:blog": "cd examples/blog-example && pnpm run test",
     "test:ecommerce": "cd examples/ecommerce-example && pnpm run test",
     "test:ai-chat": "cd examples/ai-chat-example && pnpm run test",
-    "full-test": "pnpm run build && pnpm run examples:all && pnpm run test:examples"
+    "test:generator": "cd packages/gen && pnpm test",
+    "test:generated": "node scripts/test-generated.js",
+    "full-test": "pnpm run build && pnpm test:generator && pnpm run test:generated"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.46.3",
