@@ -9,7 +9,12 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
-  "dependencies": {}
+  "dependencies": {},
+  "devDependencies": {
+    "vitest": "^2.1.9"
+  }
 }

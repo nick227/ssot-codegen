@@ -430,7 +430,11 @@ importers:
         specifier: workspace:*
         version: link:../core
 
-  packages/sdk-runtime: {}
+  packages/sdk-runtime:
+    devDependencies:
+      vitest:
+        specifier: ^2.1.9
+        version: 2.1.9(@types/node@22.19.0)
 
   packages/templates-default:
     dependencies:
