@@ -1,305 +1,165 @@
 # SSOT Codegen Examples
 
-Complete, production-ready examples demonstrating different use cases and features.
+This directory contains example Prisma schemas demonstrating different use cases and patterns.
 
-## 📚 Available Examples
+## 📁 Structure (Option 2: Organized by Feature)
 
-### 1. Minimal Example ⚡
-**Perfect for**: Getting started quickly
+Each example follows a clean, schema-first structure:
 
-```bash
-cd examples/minimal
-pnpm setup && pnpm test
 ```
-
-**Features**:
-- 2 models (User, Todo)
-- Basic CRUD operations
-- ~5 minute setup
-- ~40 generated files
-
-**Best for**: First-time users, understanding basics
-
----
-
-### 2. Blog Example 📝
-**Perfect for**: Content management systems
-
-```bash
-cd examples/blog-example
-pnpm setup && pnpm dev
+examples/
+├── minimal/
+│   ├── schema.prisma          # Simple User + Post schema
+│   └── README.md
+│
+├── blog-example/
+│   ├── schema.prisma          # Full blog platform (7 models)
+│   ├── extensions/            # Example custom code
+│   │   ├── post.service.extension.ts
+│   │   └── README.md
+│   └── README.md
+│
+├── ecommerce-example/
+│   ├── schema.prisma          # Online store (15+ models)
+│   ├── extensions/            # E-commerce patterns
+│   │   ├── product.service.extensions.ts
+│   │   ├── product.controller.extensions.ts
+│   │   ├── product.routes.extensions.ts
+│   │   └── README.md
+│   └── README.md
+│
+└── ai-chat-example/
+    ├── schema.prisma          # AI chat with @service annotations
+    ├── extensions/            # Service integration patterns
+    │   ├── ai-agent.service.integration.ts
+    │   ├── file-storage.service.integration.ts
+    │   └── README.md
+    └── README.md
 ```
-
-**Features**:
-- 7 models (Author, Post, Comment, Category, Tag, etc.)
-- Authentication & authorization
-- Publishing workflow
-- Nested comments
-- Many-to-many relationships
-- ~100 generated files
-- Full integration tests
-
-**Best for**: Learning relationships, auth, complex workflows
-
----
-
-### 3. E-Commerce Example 🛒
-**Perfect for**: Online stores, marketplaces
-
-```bash
-cd examples/ecommerce-example
-pnpm setup && pnpm dev
-```
-
-**Features**:
-- 24 models (Customer, Product, Order, Payment, etc.)
-- Shopping cart
-- Order processing
-- Inventory management
-- Reviews and ratings
-- Coupon system
-- ~387 generated files
-
-**Best for**: Complex domains, large schemas, production patterns
-
----
-
-### 4. AI Chat Example 🤖
-**Perfect for**: Service integrations, AI features
-
-```bash
-cd examples/ai-chat-example
-pnpm setup && pnpm dev
-```
-
-**Features**:
-- 11 models (User, Conversation, Message, etc.)
-- @service annotations for AI integration
-- File upload service
-- Payment processing
-- Email notifications
-- Service-oriented architecture
-- ~140 generated files
-
-**Best for**: Learning service integrations, AI features, external APIs
-
----
 
 ## 🚀 Quick Start
 
-### First Time Setup
+### List Available Examples
 
 ```bash
-# 1. Clone repository
-git clone https://github.com/your-org/ssot-codegen
-cd ssot-codegen
-
-# 2. Build the library
-pnpm install
-pnpm build
-
-# 3. Choose an example
-cd examples/minimal        # or blog-example, ecommerce-example, ai-chat-example
-
-# 4. Run setup
-pnpm setup                 # Installs + generates + DB setup
-
-# 5. Start development
-pnpm dev                   # (if example has dev server)
+pnpm ssot list
 ```
 
-### What Happens During Setup
-
-`pnpm setup` performs:
-1. ✅ Install dependencies
-2. ✅ Generate code from Prisma schema
-3. ✅ Setup database schema
-4. ✅ (Optional) Seed sample data
-
-The `gen/` folder is created with:
-- **contracts/**: TypeScript DTOs
-- **validators/**: Zod validation schemas
-- **services/**: Database service layer
-- **controllers/**: Express/Fastify handlers
-- **routes/**: Route definitions
-- **sdk/**: Type-safe client SDK
-
----
-
-## 📊 Comparison
-
-| Example | Models | Files Generated | Setup Time | Best For |
-|---------|--------|-----------------|------------|----------|
-| **Minimal** | 2 | ~40 | 5 min | Learning basics |
-| **Blog** | 7 | ~100 | 10 min | Content platforms |
-| **E-Commerce** | 24 | ~387 | 15 min | Online stores |
-| **AI Chat** | 11 | ~140 | 10 min | Service integration |
-
----
-
-## 🎯 Choosing an Example
-
-### I want to learn the basics
-→ **Start with minimal**
-
-### I'm building a blog/CMS
-→ **Use blog-example**
-
-### I'm building an online store
-→ **Use ecommerce-example**
-
-### I'm integrating external services
-→ **Use ai-chat-example**
-
-### I want to see everything
-→ **Try all of them!** Each shows different patterns.
-
----
-
-## 📋 Common Tasks
-
-### After Changing Schema
+### Generate a Project
 
 ```bash
-# 1. Edit prisma/schema.prisma
-# 2. Regenerate code
-pnpm generate
+# Generate from any example
+pnpm ssot generate minimal
+pnpm ssot generate blog-example
+pnpm ssot generate ecommerce-example
+pnpm ssot generate ai-chat-example
 
-# 3. Update database
-pnpm db:push
-
-# 4. Restart server (if running)
+# Creates gen-N/ folder with complete standalone project
+cd gen-1
+pnpm install
+pnpm test:validate
 pnpm dev
 ```
 
-### Running Tests
+## 📚 Examples
+
+### 1. Minimal
+**Purpose:** Simplest possible example  
+**Models:** User, Post  
+**Features:** Basic CRUD, one-to-many relationship  
+**Best for:** Learning the basics
+
+### 2. Blog Example
+**Purpose:** Full-featured content platform  
+**Models:** Author, Post, Comment, Category, Tag  
+**Features:** Many-to-many, SEO, publishing workflow  
+**Extensions:** Search, slugs, view tracking  
+**Best for:** Content management systems
+
+### 3. E-Commerce Example
+**Purpose:** Online store backend  
+**Models:** Product, Customer, Order, Payment, Review, etc.  
+**Features:** Variants, inventory, orders, payments  
+**Extensions:** Advanced search, filtering, pagination  
+**Best for:** E-commerce platforms
+
+### 4. AI Chat Example
+**Purpose:** AI-powered chat application  
+**Models:** User, Conversation, Message, AIPrompt  
+**Features:** Service integration (`@service` annotation)  
+**Extensions:** OpenAI integration, token tracking  
+**Best for:** AI/ML applications with external services
+
+## 🎨 Extension Patterns
+
+Each example's `extensions/` folder shows real-world patterns:
+
+### Service Extensions
+Add custom methods while keeping generated CRUD:
+```typescript
+import { postService as generated } from '@gen/services/post'
+
+export const postService = {
+  ...generated,  // Keep all generated methods
+  
+  async search(query: string) {
+    // Your custom logic
+  }
+}
+```
+
+### Service Integration
+Orchestrate complex workflows with external services:
+```typescript
+export const aiAgentService = {
+  async sendMessage(userId, message) {
+    // 1. Save to database
+    // 2. Call external API (OpenAI)
+    // 3. Process response
+    // 4. Track usage
+    // 5. Return coordinated result
+  }
+}
+```
+
+See individual `extensions/README.md` files for detailed patterns.
+
+## 🎯 Benefits of This Structure
+
+1. **Schema-First** - Schema is the source of truth
+2. **Clean** - No boilerplate (package.json, scripts/, node_modules/)
+3. **Educational** - Extensions show real patterns
+4. **Flexible** - Copy extensions to gen-N as needed
+5. **Isolated** - Generated projects are standalone
+6. **Deletable** - Safe to delete any gen-N folder
+
+## 🔄 Workflow
 
 ```bash
-# Unit tests
-pnpm test
+# 1. Edit schema
+vim examples/blog-example/schema.prisma
 
-# Integration tests (blog-example)
-pnpm test:integration
+# 2. Generate project
+pnpm ssot generate blog-example
 
-# All tests
-pnpm test:all
+# 3. Test it
+cd gen-1
+pnpm install
+pnpm test:validate
+
+# 4. Optionally copy extensions
+cp ../examples/blog-example/extensions/* src/extensions/
+
+# 5. Run it
+pnpm dev
+
+# 6. Try another generation (keeps gen-1!)
+cd ..
+pnpm ssot generate blog-example  # Creates gen-2
 ```
-
-### Clean Start
-
-```bash
-# Remove generated code and node_modules
-pnpm clean
-
-# Fresh setup
-pnpm setup
-```
-
----
-
-## 🛠️ Example Structure
-
-Each example follows this structure:
-
-```
-example-name/
-├── prisma/
-│   └── schema.prisma       ← Prisma schema definition
-├── src/
-│   ├── app.ts              ← Application setup
-│   ├── server.ts           ← Server entry point
-│   └── extensions/         ← Custom business logic
-├── scripts/
-│   ├── generate.js         ← Code generation script
-│   ├── db-setup.js         ← Database initialization
-│   └── seed.ts             ← Sample data
-├── tests/                  ← Integration tests (some examples)
-├── gen/                    ← Generated code (gitignored)
-├── .gitignore              ← Excludes gen/, dist/, etc.
-├── package.json            ← Dependencies and scripts
-└── README.md               ← Setup instructions
-```
-
----
-
-## 💡 Tips
-
-### Generated Code is Gitignored
-The `gen/` folder is created during setup and **not committed** to git. This is intentional:
-- ✅ Keeps examples pristine
-- ✅ Always uses your version of the library
-- ✅ No merge conflicts
-- ✅ Regenerate anytime with `pnpm generate`
-
-### Customization
-Don't edit files in `gen/` - they'll be overwritten. Instead:
-- Extend generated services in `src/extensions/`
-- Add custom routes in `src/routes/`
-- Override controllers in `src/controllers/`
-
-### Database Choice
-Examples use different databases to show flexibility:
-- **minimal**: PostgreSQL
-- **blog-example**: PostgreSQL
-- **ecommerce-example**: PostgreSQL
-- **ai-chat-example**: MySQL
-
-You can change the database provider in `schema.prisma`.
-
----
-
-## 🧪 Testing
-
-### Blog Example (Full Test Suite)
-```bash
-cd examples/blog-example
-pnpm test                    # Unit tests
-pnpm test:integration        # API integration tests
-```
-
-### Other Examples
-```bash
-pnpm test                    # Basic functionality tests
-```
-
----
-
-## 📚 Learning Path
-
-### Beginner
-1. **minimal** - Understand generation basics
-2. **blog-example** - Learn relationships and auth
-3. Try your own schema!
-
-### Intermediate
-1. **ecommerce-example** - Complex domains
-2. **ai-chat-example** - Service integrations
-3. Extend with custom logic
-
-### Advanced
-1. Study generated code structure
-2. Customize with extensions
-3. Deploy to production
-
----
-
-## 🤝 Contributing
-
-Found an issue or have an improvement?
-- Open an issue
-- Submit a PR
-- Share your use case
-
----
 
 ## 📖 Documentation
 
-- [Main README](../README.md)
-- [Getting Started Guide](../docs/getting-started.md)
-- [API Reference](../docs/api-reference.md)
-- [Prisma Documentation](https://www.prisma.io/docs)
-
----
-
-**Examples are learning tools** - Clone, experiment, and build something awesome! 🚀
-
+- [CLI Usage](../docs/CLI_USAGE.md) - Command reference
+- [Quick Start](../docs/QUICKSTART.md) - Getting started guide
+- Individual example READMEs - Use case specific docs
