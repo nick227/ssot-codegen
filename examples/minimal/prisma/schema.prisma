@@ -1,5 +1,31 @@
-generator client { provider = "prisma-client-js" }
-generator ssot { provider = "@ssot-codegen/gen"; output = "../gen"; templatePack = "@ssot-codegen/templates-default" }
-datasource db { provider = "sqlite"; url = "file:./dev.db" }
-model User { id Int @id @default(autoincrement()); name String; email String @unique; posts Post[] }
-model Post { id Int @id @default(autoincrement()); title String; content String?; published Boolean @default(false); authorId Int; author User @relation(fields: [authorId], references: [id]) }
+// Minimal Example Schema
+// Simplest possible setup for learning SSOT Codegen
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  posts     Post[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String?
+  published Boolean  @default(false)
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
