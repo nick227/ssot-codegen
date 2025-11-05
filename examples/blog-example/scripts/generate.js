@@ -7,12 +7,15 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const projectRoot = resolve(__dirname, '..')
 
-console.log('[blog-example] Generating code from Prisma schema...')
+console.log('[blog-example] Generating standalone project from Prisma schema...')
+console.log('[blog-example] Output will be in an incremental gen-N folder')
 
 await generateFromSchema({
   schemaPath: resolve(projectRoot, 'prisma/schema.prisma'),
-  output: resolve(projectRoot, 'gen'),
   framework: 'express',
+  standalone: true,
+  projectName: 'blog-generated',
 })
 
 console.log('[blog-example] ✅ Generation complete!')
+console.log('[blog-example] Check the newly created gen-N folder for your standalone project')

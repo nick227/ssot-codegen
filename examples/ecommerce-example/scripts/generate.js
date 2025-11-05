@@ -7,13 +7,15 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const projectRoot = resolve(__dirname, '..')
 
-console.log('[ecommerce-example] Generating code for e-commerce platform...')
+console.log('[ecommerce-example] Generating standalone project for e-commerce platform...')
 console.log('[ecommerce-example] This is a complete online store in a box!')
+console.log('[ecommerce-example] Output will be in an incremental gen-N folder')
 
 await generateFromSchema({
   schemaPath: resolve(projectRoot, 'prisma/schema.prisma'),
-  output: resolve(projectRoot, 'gen'),
   framework: 'express',
+  standalone: true,
+  projectName: 'ecommerce-generated',
 });
 
 console.log('[ecommerce-example] Generation complete!');
@@ -34,4 +36,5 @@ console.log('  🎯 Complete refunds & returns');
 console.log('  🎯 Inventory audit trail');
 console.log('  🎯 Back-in-stock alerts');
 console.log('\n🎉 PRODUCTION-READY online store!');
+console.log('[ecommerce-example] Check the newly created gen-N folder for your standalone project');
 

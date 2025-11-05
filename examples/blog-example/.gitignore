@@ -3,6 +3,7 @@ node_modules/
 
 # Generated Code (DO NOT COMMIT - regenerate with `pnpm generate`)
 gen/
+gen-*/
 
 # Build Output
 dist/

@@ -19,6 +19,8 @@ import { generateCode, countGeneratedFiles } from './code-generator.js'
 import { PathsConfig, filePath, esmImport } from './path-resolver.js'
 import { createLogger, type LogLevel } from './utils/cli-logger.js'
 import { analyzeRelationships } from './relationship-analyzer.js'
+import { getNextGenFolder } from './utils/gen-folder.js'
+import * as standaloneTemplates from './templates/standalone-project.template.js'
 
 // Import CommonJS module
 const require = createRequire(import.meta.url)
@@ -33,6 +35,10 @@ export interface GeneratorConfig {
   schemaText?: string
   paths?: Partial<PathsConfig>
   framework?: 'express' | 'fastify'
+  
+  // Standalone project options
+  standalone?: boolean // Generate as complete standalone project
+  projectName?: string // Name for standalone project
   
   // CLI options
   verbosity?: LogLevel
@@ -92,15 +98,34 @@ export async function generateFromSchema(config: GeneratorConfig) {
   logger.startGeneration()
   
   try {
+    // Determine output directory
+    const projectRoot = config.schemaPath ? path.dirname(path.dirname(config.schemaPath)) : process.cwd()
+    const standalone = config.standalone ?? true // Default to standalone
+    let outputDir: string
+    
+    if (standalone) {
+      // Generate to incremental gen-N folder
+      const genFolderName = getNextGenFolder(projectRoot)
+      outputDir = path.join(projectRoot, genFolderName)
+      logger.logProgress(`📁 Generating standalone project: ${genFolderName}`)
+    } else {
+      // Use specified output or default
+      outputDir = config.output ? path.resolve(config.output) : path.join(projectRoot, 'gen')
+      logger.logProgress(`📁 Generating to: ${outputDir}`)
+    }
+    
     // Parse schema
     logger.startPhase('Parsing schema')
     let dmmf: DMMF.Document
+    let schemaContent = ''
     if (config.schemaPath) {
       logger.debug('Reading schema from file', { path: config.schemaPath })
       dmmf = await getDMMF({ datamodelPath: config.schemaPath })
+      schemaContent = await fs.promises.readFile(config.schemaPath, 'utf8')
     } else if (config.schemaText) {
       logger.debug('Parsing inline schema')
       dmmf = await getDMMF({ datamodel: config.schemaText })
+      schemaContent = config.schemaText
     } else {
       throw new Error('Either schemaPath or schemaText is required')
     }
@@ -130,7 +155,8 @@ export async function generateFromSchema(config: GeneratorConfig) {
     
     // Generate code
     logger.startPhase('Generating code')
-    const cfg = { ...defaultPaths, ...config.paths, rootDir: config.output || defaultPaths.rootDir }
+    const genSubDir = path.join(outputDir, 'gen')
+    const cfg = { ...defaultPaths, ...config.paths, rootDir: genSubDir }
     const framework = config.framework || 'express'
     const generatedFiles = generateCode(parsedSchema, { 
       framework,
@@ -187,6 +213,20 @@ export async function generateFromSchema(config: GeneratorConfig) {
     await emitTsConfigPaths(cfg, path.resolve('.'))
     logger.endPhase('Generating TypeScript config', 1)
     
+    // Generate standalone project files if enabled
+    if (standalone) {
+      logger.startPhase('Writing standalone project files')
+      await writeStandaloneProjectFiles({
+        outputDir,
+        projectName: config.projectName || path.basename(outputDir),
+        framework,
+        models: parsedSchema.models.map(m => m.name),
+        schemaContent,
+        schemaPath: config.schemaPath
+      })
+      logger.endPhase('Writing standalone project files', 8)
+    }
+    
     // Generate summary
     const totalFiles = countGeneratedFiles(generatedFiles)
     const breakdown = buildFileBreakdown(generatedFiles, parsedSchema.models.length)
@@ -194,11 +234,20 @@ export async function generateFromSchema(config: GeneratorConfig) {
     logger.printGenerationTable(breakdown)
     logger.completeGeneration(totalFiles)
     
+    if (standalone) {
+      console.log(`\n✅ Standalone project created at: ${path.relative(process.cwd(), outputDir)}`)
+      console.log(`\nNext steps:`)
+      console.log(`  cd ${path.relative(process.cwd(), outputDir)}`)
+      console.log(`  pnpm install`)
+      console.log(`  pnpm dev`)
+    }
+    
     return {
       models: parsedSchema.models.map(m => m.name),
       files: totalFiles,
       relationships: relationships.length,
-      breakdown
+      breakdown,
+      outputDir: standalone ? outputDir : undefined
     }
   } catch (error) {
     logger.error('Generation failed', error as Error)
@@ -303,6 +352,22 @@ async function writeGeneratedFiles(
     writes.push(write(filePath, content))
     track(`sdk:${filename}`, filePath, esmImport(cfg, id('sdk', undefined, filename)))
   })
+  
+  // Write hooks files (core queries - framework agnostic)
+  files.hooks.core.forEach((content, filename) => {
+    const filePath = path.join(cfg.rootDir, 'sdk', 'core', 'queries', filename)
+    writes.push(write(filePath, content))
+    track(`hooks:core:${filename}`, filePath, `${cfg.alias}/sdk/core/queries/${filename.replace('.ts', '')}`)
+  })
+  
+  // Write React hooks (if generated)
+  if (files.hooks.react) {
+    files.hooks.react.forEach((content, filename) => {
+      const filePath = path.join(cfg.rootDir, 'sdk', 'react', filename)
+      writes.push(write(filePath, content))
+      track(`hooks:react:${filename}`, filePath, `${cfg.alias}/sdk/react/${filename.replace('.ts', '').replace('.tsx', '')}`)
+    })
+  }
   
   // Execute ALL writes in parallel (OPTIMIZED!)
   await Promise.all(writes)
@@ -510,6 +575,74 @@ export interface GeneratorInput {
 }
 
 export const runGenerator = generateFromSchema
+
+/**
+ * Write standalone project files (package.json, tsconfig, src/, etc.)
+ */
+async function writeStandaloneProjectFiles(options: {
+  outputDir: string
+  projectName: string
+  framework: 'express' | 'fastify'
+  models: string[]
+  schemaContent: string
+  schemaPath?: string
+}): Promise<void> {
+  const { outputDir, projectName, framework, models, schemaContent, schemaPath } = options
+  
+  // Detect database provider from schema
+  const databaseProvider = schemaContent.includes('provider = "postgresql"') 
+    ? 'postgresql' 
+    : schemaContent.includes('provider = "mysql"')
+    ? 'mysql'
+    : 'sqlite'
+  
+  const standaloneOptions: standaloneTemplates.StandaloneProjectOptions = {
+    projectName,
+    framework,
+    databaseProvider,
+    models
+  }
+  
+  const writes: Promise<void>[] = []
+  
+  // Write package.json
+  const packageJsonPath = path.join(outputDir, 'package.json')
+  writes.push(write(packageJsonPath, standaloneTemplates.packageJsonTemplate(standaloneOptions)))
+  
+  // Write tsconfig.json
+  const tsconfigPath = path.join(outputDir, 'tsconfig.json')
+  writes.push(write(tsconfigPath, standaloneTemplates.tsconfigTemplate(projectName)))
+  
+  // Write .env.example
+  const envPath = path.join(outputDir, '.env.example')
+  writes.push(write(envPath, standaloneTemplates.envTemplate(databaseProvider)))
+  
+  // Write .gitignore
+  const gitignorePath = path.join(outputDir, '.gitignore')
+  writes.push(write(gitignorePath, standaloneTemplates.gitignoreTemplate()))
+  
+  // Write README.md
+  const readmePath = path.join(outputDir, 'README.md')
+  writes.push(write(readmePath, standaloneTemplates.readmeTemplate(standaloneOptions)))
+  
+  // Write src/ files
+  const srcDir = path.join(outputDir, 'src')
+  writes.push(write(path.join(srcDir, 'config.ts'), standaloneTemplates.configTemplate()))
+  writes.push(write(path.join(srcDir, 'db.ts'), standaloneTemplates.dbTemplate()))
+  writes.push(write(path.join(srcDir, 'logger.ts'), standaloneTemplates.loggerTemplate()))
+  writes.push(write(path.join(srcDir, 'middleware.ts'), standaloneTemplates.middlewareTemplate()))
+  writes.push(write(path.join(srcDir, 'app.ts'), standaloneTemplates.appTemplate(models)))
+  writes.push(write(path.join(srcDir, 'server.ts'), standaloneTemplates.serverTemplate()))
+  
+  // Copy prisma schema to new project
+  if (schemaPath) {
+    const prismaDir = path.join(outputDir, 'prisma')
+    const newSchemaPath = path.join(prismaDir, 'schema.prisma')
+    writes.push(write(newSchemaPath, schemaContent))
+  }
+  
+  await Promise.all(writes)
+}
 
 /**
  * Count files for a specific model
