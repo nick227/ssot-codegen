@@ -420,6 +420,9 @@ importers:
         specifier: ^5.0.0
         version: 5.22.0
     devDependencies:
+      '@vitest/coverage-v8':
+        specifier: ^2.1.0
+        version: 2.1.9(vitest@2.1.9(@types/node@22.19.0))
       vitest:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@22.19.0)
@@ -432,6 +435,9 @@ importers:
 
   packages/sdk-runtime:
     devDependencies:
+      '@vitest/coverage-v8':
+        specifier: ^2.1.0
+        version: 2.1.9(vitest@2.1.9(@types/node@22.19.0))
       vitest:
         specifier: ^2.1.9
         version: 2.1.9(@types/node@22.19.0)
