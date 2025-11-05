@@ -282,13 +282,20 @@ export const notFoundHandler = (req: Request, res: Response) => {
 }
 `
 
+/**
+ * Convert PascalCase to camelCase for variable names
+ */
+const toCamelCase = (str: string): string => {
+  return str.charAt(0).toLowerCase() + str.slice(1)
+}
+
 export const appTemplate = (models: string[]) => {
   const routeImports = models
-    .map(m => `import { ${m.toLowerCase()}Router } from './routes/${m.toLowerCase()}/index.js'`)
+    .map(m => `import { ${toCamelCase(m)}Router } from './routes/${m.toLowerCase()}/index.js'`)
     .join('\n')
   
   const routeRegistrations = models
-    .map(m => `  app.use(\`\${config.api.prefix}/${m.toLowerCase()}s\`, ${m.toLowerCase()}Router)`)
+    .map(m => `  app.use(\`\${config.api.prefix}/${m.toLowerCase()}s\`, ${toCamelCase(m)}Router)`)
     .join('\n')
 
   return `import express from 'express'

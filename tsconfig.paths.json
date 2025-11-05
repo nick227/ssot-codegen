@@ -2,7 +2,7 @@
   "compilerOptions": {
     "paths": {
       "@gen/*": [
-        "C:\\wamp64\\www\\ssot-codegen\\generated\\test-validation\\src/*"
+        "C:\\wamp64\\www\\ssot-codegen\\generated\\blog-example-1\\src/*"
       ]
     }
   }

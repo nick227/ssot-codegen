@@ -19,6 +19,7 @@ import { generateCode, countGeneratedFiles } from './code-generator.js'
 import { PathsConfig, filePath, esmImport } from './path-resolver.js'
 import { createLogger, type LogLevel } from './utils/cli-logger.js'
 import { analyzeRelationships } from './relationship-analyzer.js'
+import { analyzeModel } from './utils/relationship-analyzer.js'
 import { getNextProjectFolder, findWorkspaceRoot, deriveProjectName } from './utils/gen-folder.js'
 import * as standaloneTemplates from './templates/standalone-project.template.js'
 import { 
@@ -229,11 +230,17 @@ export async function generateFromSchema(config: GeneratorConfig) {
     // Generate standalone project files if enabled
     if (standalone) {
       logger.startPhase('Writing standalone project files')
+      // Filter out junction tables from app.ts imports
+      const nonJunctionModels = parsedSchema.models.filter(m => {
+        const analysis = analyzeModel(m, parsedSchema)
+        return !analysis.isJunctionTable
+      })
+      
       await writeStandaloneProjectFiles({
         outputDir,
         projectName: config.projectName || path.basename(outputDir),
         framework,
-        models: parsedSchema.models.map(m => m.name),
+        models: nonJunctionModels.map(m => m.name),
         schemaContent,
         schemaPath: config.schemaPath
       })
