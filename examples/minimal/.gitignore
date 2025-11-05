@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Generated Code (DO NOT COMMIT - regenerate with `pnpm generate`)
+gen/
+
+# Build Output
+dist/
+build/
+*.tsbuildinfo
+
+# Environment
+.env.local
+
+# Logs
+*.log
+
