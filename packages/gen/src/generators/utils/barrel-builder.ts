@@ -9,7 +9,7 @@ export class BarrelBuilder {
    * Generate model-level barrel (exports all files for a model)
    */
   static modelBarrel(modelLower: string, files: string[]): string {
-    const exports = files.map(file => `export * from './${modelLower}.${file}'`)
+    const exports = files.map(file => `export * from './${modelLower}.${file}.js'`)
     return `// @generated barrel\n${exports.join('\n')}\n`
   }
   
@@ -25,7 +25,7 @@ export class BarrelBuilder {
    * Generate simple barrel (just re-export files)
    */
   static simple(files: string[]): string {
-    const exports = files.map(file => `export * from './${file}'`)
+    const exports = files.map(file => `export * from './${file}.js'`)
     return `// @generated barrel\n${exports.join('\n')}\n`
   }
 }
