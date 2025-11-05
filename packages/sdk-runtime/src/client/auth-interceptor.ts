@@ -63,9 +63,9 @@ export function createRefreshHandler(authConfig: AuthConfig) {
       
       if (!refreshToken) return false
       
-      // Call refresh endpoint (this is app-specific, would need to be configured)
-      // For now, return false and let the app handle it
-      // TODO: Add refresh endpoint configuration
+      // Note: Refresh endpoint configuration is app-specific
+      // Apps should implement their own refresh logic and call onRefresh
+      // This is a placeholder for future enhancement
       
       return false
     } catch {
