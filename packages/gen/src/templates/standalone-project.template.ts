@@ -22,8 +22,12 @@ export const packageJsonTemplate = (options: StandaloneProjectOptions) => `{
     "dev": "tsx watch src/server.ts",
     "build": "rimraf dist && tsc && tsc-alias",
     "start": "node dist/src/server.js",
+    "test": "vitest",
+    "test:validate": "vitest run tests/self-validation.test.ts",
+    "test:ui": "vitest --ui",
     "typecheck": "tsc --noEmit",
-    "clean": "rimraf dist/ node_modules/"
+    "clean": "rimraf dist/ node_modules/",
+    "validate": "pnpm typecheck && pnpm test:validate"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -43,11 +47,13 @@ export const packageJsonTemplate = (options: StandaloneProjectOptions) => `{
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^22.10.0",
+    "@vitest/ui": "^2.1.0",
     "pino-pretty": "^13.1.0",
     "rimraf": "^6.0.0",
     "tsc-alias": "^1.8.16",
     "tsx": "^4.20.0",
-    "typescript": "^5.9.0"
+    "typescript": "^5.9.0",
+    "vitest": "^2.1.0"
   },
   "_generatedBy": "ssot-codegen standalone generator"
 }
@@ -400,12 +406,23 @@ ${options.models.map(m => `- ${m}`).join('\n')}
    npx prisma migrate dev
    \`\`\`
 
-4. **Start development server:**
+4. **Run self-validation tests:**
+   \`\`\`bash
+   pnpm test:validate
+   \`\`\`
+   This validates that:
+   - TypeScript compiles
+   - Server starts
+   - Database connection works
+   - All CRUD operations function
+   - API endpoints respond
+
+5. **Start development server:**
    \`\`\`bash
    pnpm dev
    \`\`\`
 
-5. **Access the API:**
+6. **Access the API:**
    - Health check: http://localhost:3000/health
    - API endpoints: http://localhost:3000/api/*
 
@@ -414,6 +431,10 @@ ${options.models.map(m => `- ${m}`).join('\n')}
 - \`pnpm dev\` - Start development server with hot reload
 - \`pnpm build\` - Build for production
 - \`pnpm start\` - Start production server
+- \`pnpm test\` - Run tests in watch mode
+- \`pnpm test:validate\` - Run self-validation test suite
+- \`pnpm test:ui\` - Open Vitest UI
+- \`pnpm validate\` - Run typecheck + tests (full validation)
 - \`pnpm typecheck\` - Run TypeScript type checking
 - \`pnpm clean\` - Remove build artifacts
 
@@ -432,7 +453,7 @@ ${options.models.map(m => `
 
 \`\`\`
 ${options.projectName}/
-├── gen/              # Generated code (DTOs, services, controllers, routes)
+├── gen/              # Generated code (DTOs, services, controllers, routes, SDK)
 ├── src/              # Application code
 │   ├── app.ts        # Express app configuration
 │   ├── server.ts     # Server entry point
@@ -440,10 +461,28 @@ ${options.projectName}/
 │   ├── db.ts         # Database client
 │   ├── logger.ts     # Logging setup
 │   └── middleware.ts # Error handlers
+├── tests/            # Self-validation tests
+│   ├── self-validation.test.ts  # Comprehensive integration tests
+│   └── setup.ts      # Test configuration
+├── prisma/           # Database schema
+│   └── schema.prisma
 ├── package.json
 ├── tsconfig.json
+├── vitest.config.ts
 └── .env.example
 \`\`\`
+
+## Testing
+
+This project includes comprehensive self-validation tests that verify:
+
+- ✅ TypeScript compilation
+- ✅ Server startup
+- ✅ Database connectivity
+- ✅ CRUD operations for all models
+- ✅ API endpoint responses
+
+Run \`pnpm test:validate\` to execute the full test suite.
 
 ## Notes
 

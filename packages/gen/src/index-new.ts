@@ -21,6 +21,11 @@ import { createLogger, type LogLevel } from './utils/cli-logger.js'
 import { analyzeRelationships } from './relationship-analyzer.js'
 import { getNextGenFolder } from './utils/gen-folder.js'
 import * as standaloneTemplates from './templates/standalone-project.template.js'
+import { 
+  generateSelfValidationTests, 
+  generateVitestConfig, 
+  generateTestSetup 
+} from './generators/test-generator.js'
 
 // Import CommonJS module
 const require = createRequire(import.meta.url)
@@ -225,6 +230,15 @@ export async function generateFromSchema(config: GeneratorConfig) {
         schemaPath: config.schemaPath
       })
       logger.endPhase('Writing standalone project files', 8)
+      
+      // Generate test suite
+      logger.startPhase('Generating self-validation tests')
+      await writeTestSuite({
+        outputDir,
+        models: parsedSchema.models,
+        framework
+      })
+      logger.endPhase('Generating self-validation tests', 3)
     }
     
     // Generate summary
@@ -640,6 +654,36 @@ async function writeStandaloneProjectFiles(options: {
     const newSchemaPath = path.join(prismaDir, 'schema.prisma')
     writes.push(write(newSchemaPath, schemaContent))
   }
+  
+  await Promise.all(writes)
+}
+
+/**
+ * Write test suite (self-validation tests, vitest config, test setup)
+ */
+async function writeTestSuite(options: {
+  outputDir: string
+  models: import('./dmmf-parser.js').ParsedModel[]
+  framework: 'express' | 'fastify'
+}): Promise<void> {
+  const { outputDir, models, framework } = options
+  
+  const writes: Promise<void>[] = []
+  
+  // Generate self-validation test
+  const testContent = generateSelfValidationTests({ models, framework })
+  const testPath = path.join(outputDir, 'tests', 'self-validation.test.ts')
+  writes.push(write(testPath, testContent))
+  
+  // Generate vitest config
+  const vitestConfigContent = generateVitestConfig()
+  const vitestConfigPath = path.join(outputDir, 'vitest.config.ts')
+  writes.push(write(vitestConfigPath, vitestConfigContent))
+  
+  // Generate test setup
+  const setupContent = generateTestSetup()
+  const setupPath = path.join(outputDir, 'tests', 'setup.ts')
+  writes.push(write(setupPath, setupContent))
   
   await Promise.all(writes)
 }
