@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "paths": {
+      "@gen/*": [
+        "C:\\wamp64\\www\\ssot-codegen\\generated\\blog-example-2\\gen/*"
+      ]
+    }
+  }
+}

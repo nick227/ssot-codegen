@@ -1,5 +1,5 @@
-# Generated standalone projects
-gen-*/
+# Generated standalone projects (now at root/generated/)
+# gen-*/ no longer used here
 
 # Dependencies (examples don't need these)
 node_modules/

@@ -10,7 +10,7 @@ export interface StandaloneProjectOptions {
 }
 
 export const packageJsonTemplate = (options: StandaloneProjectOptions) => `{
-  "name": "${options.projectName}",
+  "name": "${options.projectName.replace(/-\d+$/, '')}",
   "version": "1.0.0",
   "type": "module",
   "description": "Generated standalone project from SSOT Codegen",

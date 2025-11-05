@@ -19,9 +19,15 @@ import {
   generateAngularService,
   generateFrameworkAdapterIndex
 } from './framework-adapters.js'
+import {
+  generateReactHookTests,
+  generateTestSetup,
+  generateVitestConfig
+} from './test-generator.js'
 
 export interface HooksConfig {
   frameworks?: Array<'react' | 'vue' | 'zustand' | 'vanilla' | 'angular'>
+  generateTests?: boolean  // Generate automated tests (default: true)
 }
 
 export interface GeneratedHooks {
@@ -54,7 +60,7 @@ export function generateAllHooks(
   
   // Generate per-model
   for (const model of schema.models) {
-    generateModelHooks(model, schema, hooks, frameworks)
+    generateModelHooks(model, schema, hooks, frameworks, config)
   }
   
   // Generate index barrels
@@ -64,6 +70,12 @@ export function generateAllHooks(
     hooks.react.set('index.ts', generateReactHooksIndex(schema.models, schema))
     hooks.react.set('provider.tsx', generateReactProvider())
     hooks.react.set('README.md', generateReactHooksReadme(schema.models, schema))
+    
+    // Generate tests if enabled (default: true)
+    if (config.generateTests !== false) {
+      hooks.react.set('__tests__/setup.ts', generateTestSetup())
+      hooks.react.set('vitest.config.ts', generateVitestConfig())
+    }
   }
   
   if (hooks.vue) {
@@ -92,7 +104,8 @@ function generateModelHooks(
   model: ParsedModel,
   schema: ParsedSchema,
   hooks: GeneratedHooks,
-  frameworks: string[]
+  frameworks: string[],
+  config: HooksConfig
 ): void {
   const modelLower = model.name.toLowerCase()
   
@@ -104,6 +117,12 @@ function generateModelHooks(
   if (frameworks.includes('react') && hooks.react) {
     const reactHooks = generateReactHooks(model, schema)
     hooks.react.set(`models/use-${modelLower}.ts`, reactHooks)
+    
+    // Generate tests if enabled
+    if (config.generateTests !== false) {
+      const tests = generateReactHookTests(model, schema)
+      hooks.react.set(`models/__tests__/use-${modelLower}.test.ts`, tests)
+    }
   }
   
   // 3. Vue adapter (if enabled)
@@ -135,4 +154,5 @@ function generateModelHooks(
 export * from './core-queries-generator.js'
 export * from './react-adapter-generator.js'
 export * from './framework-adapters.js'
+export * from './test-generator.js'
 

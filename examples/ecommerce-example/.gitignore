@@ -1,9 +1,7 @@
 # Dependencies
 node_modules/
 
-# Generated Code (DO NOT COMMIT - regenerate with `pnpm generate`)
-gen/
-gen-*/
+# Generated projects now at root/generated/ (not here)
 
 # Build Output
 dist/

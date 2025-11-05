@@ -72,7 +72,7 @@ program
         output: options.output,
         framework: options.framework as 'express' | 'fastify',
         standalone: options.standalone,
-        projectName: options.name || basename(dirname(schemaPath)) + '-generated'
+        projectName: options.name
       })
       
       console.log(chalk.green('\n✅ Generation complete!'))

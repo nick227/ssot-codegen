@@ -329,6 +329,10 @@ ${properties}
 export interface SDK {
 ${exportTypes}
 }
+
+// Re-export convenience modules
+export * from './quick-start.js'
+export * from './types.js'
 `
 }
 

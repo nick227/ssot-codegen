@@ -19,7 +19,7 @@ import { generateCode, countGeneratedFiles } from './code-generator.js'
 import { PathsConfig, filePath, esmImport } from './path-resolver.js'
 import { createLogger, type LogLevel } from './utils/cli-logger.js'
 import { analyzeRelationships } from './relationship-analyzer.js'
-import { getNextGenFolder } from './utils/gen-folder.js'
+import { getNextProjectFolder, findWorkspaceRoot, deriveProjectName } from './utils/gen-folder.js'
 import * as standaloneTemplates from './templates/standalone-project.template.js'
 import { 
   generateSelfValidationTests, 
@@ -104,18 +104,26 @@ export async function generateFromSchema(config: GeneratorConfig) {
   
   try {
     // Determine output directory
-    const projectRoot = config.schemaPath ? path.dirname(path.dirname(config.schemaPath)) : process.cwd()
     const standalone = config.standalone ?? true // Default to standalone
     let outputDir: string
     
     if (standalone) {
-      // Generate to incremental gen-N folder
-      const genFolderName = getNextGenFolder(projectRoot)
-      outputDir = path.join(projectRoot, genFolderName)
-      logger.logProgress(`📁 Generating standalone project: ${genFolderName}`)
+      // Generate to root-level generated/ folder
+      const workspaceRoot = findWorkspaceRoot(process.cwd())
+      const generatedDir = path.join(workspaceRoot, 'generated')
+      
+      // Derive project name from schema path or config
+      const projectBaseName = config.projectName || deriveProjectName(config.schemaPath)
+      
+      // Find next incremental number for this project
+      const projectFolderName = getNextProjectFolder(generatedDir, projectBaseName)
+      outputDir = path.join(generatedDir, projectFolderName)
+      
+      logger.logProgress(`📁 Generating standalone project: ${projectFolderName}`)
+      logger.logProgress(`📂 Output: generated/${projectFolderName}`)
     } else {
       // Use specified output or default
-      outputDir = config.output ? path.resolve(config.output) : path.join(projectRoot, 'gen')
+      outputDir = config.output ? path.resolve(config.output) : path.join(process.cwd(), 'gen')
       logger.logProgress(`📁 Generating to: ${outputDir}`)
     }
     
