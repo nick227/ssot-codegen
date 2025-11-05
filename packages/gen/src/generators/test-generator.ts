@@ -426,7 +426,6 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@gen': path.resolve(__dirname, './gen'),
       '@': path.resolve(__dirname, './src'),
     },
   },

@@ -168,8 +168,8 @@ export async function generateFromSchema(config: GeneratorConfig) {
     
     // Generate code
     logger.startPhase('Generating code')
-    const genSubDir = path.join(outputDir, 'gen')
-    const cfg = { ...defaultPaths, ...config.paths, rootDir: genSubDir }
+    const srcDir = path.join(outputDir, 'src')
+    const cfg = { ...defaultPaths, ...config.paths, rootDir: srcDir }
     const framework = config.framework || 'express'
     const generatedFiles = generateCode(parsedSchema, { 
       framework,

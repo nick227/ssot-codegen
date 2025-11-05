@@ -77,11 +77,10 @@ export const tsconfigTemplate = (projectName: string) => `{
     "sourceMap": true,
     "allowImportingTsExtensions": false,
     "paths": {
-      "@gen/*": ["./gen/*"],
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*", "gen/**/*"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }
 `
@@ -284,7 +283,7 @@ export const notFoundHandler = (req: Request, res: Response) => {
 
 export const appTemplate = (models: string[]) => {
   const routeImports = models
-    .map(m => `import { ${m.toLowerCase()}Router } from '@gen/routes/${m.toLowerCase()}/index.js'`)
+    .map(m => `import { ${m.toLowerCase()}Router } from './routes/${m.toLowerCase()}/index.js'`)
     .join('\n')
   
   const routeRegistrations = models
@@ -453,17 +452,21 @@ ${options.models.map(m => `
 
 \`\`\`
 ${options.projectName}/
-├── gen/              # Generated code (DTOs, services, controllers, routes, SDK)
-├── src/              # Application code
+├── src/              # All code here
 │   ├── app.ts        # Express app configuration
 │   ├── server.ts     # Server entry point
 │   ├── config.ts     # Configuration
 │   ├── db.ts         # Database client
 │   ├── logger.ts     # Logging setup
-│   └── middleware.ts # Error handlers
+│   ├── middleware.ts # Error handlers
+│   ├── contracts/    # Generated DTOs
+│   ├── services/     # Generated services
+│   ├── controllers/  # Generated controllers
+│   ├── routes/       # Generated routes
+│   └── sdk/          # TypeScript SDK + React hooks
 ├── tests/            # Self-validation tests
-│   ├── self-validation.test.ts  # Comprehensive integration tests
-│   └── setup.ts      # Test configuration
+│   ├── self-validation.test.ts
+│   └── setup.ts
 ├── prisma/           # Database schema
 │   └── schema.prisma
 ├── package.json
