@@ -31,9 +31,11 @@ export default [
       '**/dist/**',
       '**/node_modules/**',
       '**/gen/**',
+      '**/generated/**',
       '**/__tests__/**',
       '**/*.test.ts',
-      '**/*.js'
+      '**/*.js',
+      '**/*.d.ts'
     ]
   }
 ]

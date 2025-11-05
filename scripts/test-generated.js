@@ -12,9 +12,8 @@
 
 import { execSync } from 'child_process'
 import { existsSync, rmSync, readFileSync } from 'fs'
-import { join } from 'path'
+import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
-import { dirname } from 'path'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -52,6 +51,7 @@ if (existsSync(TEST_OUTPUT)) {
 console.log('📦 Step 1: Generate Test Project\n')
 
 test('Generate minimal test project', () => {
+  // Use standalone mode to get full project with package.json, tsconfig, etc.
   const output = exec(`node packages/cli/dist/cli.js generate examples/minimal/schema.prisma --output ${TEST_OUTPUT} --no-standalone`)
   if (!output.includes('Generation complete')) {
     throw new Error('Generation did not complete successfully')
@@ -123,7 +123,8 @@ test('Controllers use relative imports for local files', () => {
   
   for (const file of files) {
     const content = readFileSync(join(TEST_OUTPUT, file), 'utf8')
-    if (!content.includes(`from '../services/`)) {
+    // Controllers are in nested directories, so they use ../../
+    if (!content.includes(`from '../../services/`) && !content.includes(`from '../services/`)) {
       throw new Error(`${file} does not use relative imports for services`)
     }
   }
@@ -200,6 +201,71 @@ test('SDK has helpers namespace for domain methods', () => {
   if (sdk.includes('slug')) {
     if (!sdk.includes('helpers = {')) {
       throw new Error('SDK with domain fields missing helpers namespace')
+    }
+  }
+})
+
+console.log('\n🔧 Step 5: Import Integrity\n')
+
+test('No broken relative imports in routes', () => {
+  const files = [
+    'src/routes/user/user.routes.ts',
+    'src/routes/post/post.routes.ts'
+  ]
+  
+  for (const file of files) {
+    const content = readFileSync(join(TEST_OUTPUT, file), 'utf8')
+    const importRegex = /from ['"](\.\.\/[^'"]+)['"]/g
+    const imports = [...content.matchAll(importRegex)]
+    
+    for (const match of imports) {
+      const importPath = match[1]
+      const fileDir = pathDirname(join(TEST_OUTPUT, file))
+      let resolvedPath = join(fileDir, importPath)
+      
+      // Handle .js extensions - try .ts version
+      if (resolvedPath.endsWith('.js')) {
+        resolvedPath = resolvedPath.slice(0, -3) + '.ts'
+      }
+      
+      // Check if file or directory exists
+      if (!existsSync(resolvedPath) && !existsSync(resolvedPath + '.ts')) {
+        throw new Error(`Broken import in ${file}: ${importPath}`)
+      }
+    }
+  }
+})
+
+test('No broken relative imports in controllers', () => {
+  const files = [
+    'src/controllers/user/user.controller.ts',
+    'src/controllers/post/post.controller.ts'
+  ]
+  
+  for (const file of files) {
+    const content = readFileSync(join(TEST_OUTPUT, file), 'utf8')
+    const importRegex = /from ['"](\.\.\/[^'"]+)['"]/g
+    const imports = [...content.matchAll(importRegex)]
+    
+    for (const match of imports) {
+      const importPath = match[1]
+      const fileDir = dirname(join(TEST_OUTPUT, file))
+      let resolvedPath = join(fileDir, importPath)
+      
+      // Handle .js extensions - try .ts version
+      if (resolvedPath.endsWith('.js')) {
+        resolvedPath = resolvedPath.slice(0, -3) + '.ts'
+      }
+      
+      // For index imports, check if directory exists
+      if (importPath.includes('/index.')) {
+        resolvedPath = dirname(resolvedPath)
+      }
+      
+      // Check if file or directory exists
+      if (!existsSync(resolvedPath)) {
+        throw new Error(`Broken import in ${file}: ${importPath}`)
+      }
     }
   }
 })

@@ -2,7 +2,7 @@
 
 import { Command } from 'commander'
 import { generateFromSchema } from '@ssot-codegen/gen'
-import { resolve, basename, dirname } from 'path'
+import { resolve } from 'path'
 import { existsSync, readdirSync, statSync } from 'fs'
 import chalk from 'chalk'
 

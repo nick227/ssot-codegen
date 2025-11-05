@@ -72,13 +72,13 @@ function generateImports(model: ParsedModel, modelLower: string, analysis: Retur
   
   return `import {
   BaseCRUDController${helperImports}
-} from '../base/index.js'
-import { ${modelLower}Service } from '../services/${modelLower}/index.js'
+} from '../../base/index.js'
+import { ${modelLower}Service } from '../../services/${modelLower}/index.js'
 import {
   ${model.name}CreateSchema,
   ${model.name}UpdateSchema,
   ${model.name}QuerySchema
-} from '../validators/${modelLower}/index.js'`
+} from '../../validators/${modelLower}/index.js'`
 }
 
 /**
