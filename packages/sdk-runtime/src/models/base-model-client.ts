@@ -118,9 +118,48 @@ export abstract class BaseModelClient<ReadDTO, CreateDTO, UpdateDTO, QueryDTO> {
   }
 
   /**
-   * Count records
+   * Find single record by any field
+   * 
+   * @example
+   * ```typescript
+   * const post = await client.findOne({ slug: 'hello-world' })
+   * const user = await client.findOne({ email: 'john@example.com' })
+   * ```
    */
-  async count(options?: QueryOptions): Promise<number> {
+  async findOne(
+    where: Partial<ReadDTO>,
+    options?: QueryOptions
+  ): Promise<ReadDTO | null> {
+    const result = await this.list(
+      { where, take: 1 } as QueryDTO,
+      options
+    )
+    return result.data[0] || null
+  }
+
+  /**
+   * Count records with optional filtering
+   * 
+   * @example
+   * ```typescript
+   * const total = await client.count()
+   * const published = await client.count({ where: { published: true } })
+   * ```
+   */
+  async count(
+    query?: Partial<QueryDTO>,
+    options?: QueryOptions
+  ): Promise<number> {
+    // If query with where is provided, count filtered results
+    if (query && (query as any).where) {
+      const result = await this.list(
+        { ...query, take: 0 } as QueryDTO,
+        options
+      )
+      return result.meta.total
+    }
+    
+    // Otherwise use the dedicated count endpoint
     const response = await this.client.get<{ total: number }>(
       `${this.basePath}/meta/count`,
       { signal: options?.signal }

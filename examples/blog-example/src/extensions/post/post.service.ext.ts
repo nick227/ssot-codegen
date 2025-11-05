@@ -6,7 +6,7 @@
  */
 
 import { postService as generatedPostService } from '@gen/services/post'
-import prisma from '../db.js'
+import prisma from '../../db.js'
 import type { Prisma } from '@prisma/client'
 
 export const postService = {
@@ -40,9 +40,9 @@ export const postService = {
     const where: Prisma.PostWhereInput = {
       // Search across multiple fields
       OR: [
-        { title: { contains: query, mode: 'insensitive' } },
-        { content: { contains: query, mode: 'insensitive' } },
-        { excerpt: { contains: query, mode: 'insensitive' } }
+        { title: { contains: query } },
+        { content: { contains: query } },
+        { excerpt: { contains: query } }
       ],
       // Apply filters
       ...(publishedOnly && { published: true }),

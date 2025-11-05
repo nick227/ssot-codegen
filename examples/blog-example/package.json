@@ -11,7 +11,7 @@
     "setup": "pnpm install && pnpm generate && pnpm db:setup",
     "generate": "prisma generate && node scripts/generate.js",
     "dev": "tsx watch src/server.ts",
-    "build": "rimraf dist && tsc",
+    "build": "rimraf dist && tsc && tsc-alias",
     "start": "node dist/src/server.js",
     "db:setup": "node scripts/db-setup.js",
     "db:push": "prisma db push",
@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "@ssot-codegen/sdk-runtime": "workspace:*",
     "compression": "^1.7.4",
     "cors": "^2.8.5",
     "dotenv": "^17.2.0",
@@ -52,6 +53,7 @@
     "prisma": "^5.22.0",
     "rimraf": "^6.0.0",
     "supertest": "^7.0.0",
+    "tsc-alias": "^1.8.16",
     "tsx": "^4.20.0",
     "typescript": "^5.9.0",
     "vitest": "^2.1.0"

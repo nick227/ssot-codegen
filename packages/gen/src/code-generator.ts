@@ -26,6 +26,7 @@ import { generateServiceController, generateServiceRoutes, generateServiceScaffo
 // SDK generation for frontend clients
 import { generateModelSDK, generateMainSDK, generateSDKVersion } from './generators/sdk-generator.js'
 import { generateServiceSDK, generateMainSDKWithServices } from './generators/sdk-service-generator.js'
+import { generateSDKReadme, generateAPIReference, generateSDKArchitecture, generateQuickStart, generateSDKTypes } from './generators/sdk-docs-generator.js'
 // OPTIMIZATION: Pre-analysis utilities
 import { analyzeModel, type ModelAnalysis } from './utils/relationship-analyzer.js'
 
@@ -258,6 +259,13 @@ function generateSDKClients(
   // Generate version file (will be populated with hash later)
   const versionFile = generateSDKVersion('', '0.5.0')
   files.sdk.set('version.ts', versionFile)
+  
+  // Generate SDK documentation files
+  files.sdk.set('README.md', generateSDKReadme(schema.models, schema))
+  files.sdk.set('API-REFERENCE.md', generateAPIReference(schema.models, schema))
+  files.sdk.set('ARCHITECTURE.md', generateSDKArchitecture())
+  files.sdk.set('quick-start.ts', generateQuickStart())
+  files.sdk.set('types.ts', generateSDKTypes(schema.models, schema))
 }
 
 /**

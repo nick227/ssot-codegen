@@ -73,7 +73,7 @@ authRouter.post('/register', async (req, res: Response) => {
       select: {
         id: true,
         email: true,
-        name: true,
+        displayName: true,
         createdAt: true,
       },
     })
@@ -122,7 +122,7 @@ authRouter.post('/login', async (req, res: Response) => {
       select: {
         id: true,
         email: true,
-        name: true,
+        displayName: true,
         passwordHash: true,
         createdAt: true,
       },
@@ -190,11 +190,11 @@ authRouter.post('/refresh', async (req, res: Response) => {
 
     // Get author
     const user = await prisma.author.findUnique({
-      where: { id: payload.userId },
+      where: { id: Number(payload.userId) },
       select: {
         id: true,
         email: true,
-        name: true,
+        displayName: true,
       },
     })
 
@@ -256,12 +256,12 @@ authRouter.get('/me', async (req: AuthRequest, res: Response) => {
       })
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: req.user.userId },
+    const user = await prisma.author.findUnique({
+      where: { id: Number(req.user.userId) },
       select: {
         id: true,
         email: true,
-        name: true,
+        displayName: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -311,7 +311,7 @@ authRouter.post('/change-password', async (req: AuthRequest, res: Response) => {
 
     // Get author with password hash
     const user = await prisma.author.findUnique({
-      where: { id: req.user.userId },
+      where: { id: Number(req.user.userId) },
       select: {
         id: true,
         passwordHash: true,
