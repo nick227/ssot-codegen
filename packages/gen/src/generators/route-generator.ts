@@ -15,7 +15,7 @@ function toCamelCase(str: string): string {
  * Generate routes
  */
 export function generateRoutes(model: ParsedModel, framework: 'express' | 'fastify' = 'express'): string {
-  const modelLower = model.name.toLowerCase()
+  const modelLower = model.nameLower  // Use cached lowercase name
   const modelCamel = toCamelCase(model.name)
   
   if (framework === 'express') {
