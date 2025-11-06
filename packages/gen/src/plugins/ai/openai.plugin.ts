@@ -226,7 +226,7 @@ export const openaiProvider = {
           estimatedCost
         },
         model: response.model,
-        finishReason: response.choices[0].finish_reason as any,
+        finishReason: (response.choices[0].finish_reason || 'stop') as 'stop' | 'length' | 'content_filter' | 'tool_calls',
         provider: 'openai',
         latency
       }

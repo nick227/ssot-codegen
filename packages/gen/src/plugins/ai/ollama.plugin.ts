@@ -70,7 +70,7 @@ export const ollamaProvider = {
     try {
       const response = await fetch(\`\${OLLAMA_URL}/api/tags\`)
       const data = await response.json()
-      return data.models.map((m: any) => m.name)
+      return data.models.map((m: { name: string }) => m.name)
     } catch {
       return []
     }

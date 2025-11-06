@@ -221,7 +221,7 @@ export { anthropic }
 // Claude Service - High-level API
 
 import { claudeProvider } from '../providers/claude.provider.js'
-import type { ChatMessage, ChatOptions } from '../types/ai.types.js'
+import type { ChatMessage, ChatOptions, ChatResponse } from '../types/ai.types.js'
 
 export const claudeService = {
   async chat(prompt: string, options: ChatOptions = {}): Promise<string> {
