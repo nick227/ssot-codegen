@@ -22,6 +22,10 @@ export * from './ai/openrouter.plugin.js'
 export * from './ai/lmstudio.plugin.js'
 export * from './ai/ollama.plugin.js'
 
+// Voice AI providers
+export * from './voice/deepgram.plugin.js'
+export * from './voice/elevenlabs.plugin.js'
+
 // AI provider interface
 export * from './ai/ai-provider.interface.js'
 
