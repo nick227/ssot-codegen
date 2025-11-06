@@ -42,11 +42,16 @@ export interface CRUDServiceConfig {
 export function generateListMethod(config: CRUDServiceConfig): string {
   const {modelName, modelLower, includeStatement = '', enableLogging = false} = config
   
+  // If includeStatement exists, don't add dynamic include/select (they conflict)
+  const dynamicIncludes = includeStatement ? '' : `,
+        include: include as Prisma.${modelName}Include | undefined,
+        select: select as Prisma.${modelName}Select | undefined`
+  
   return `  /**
    * List ${modelName} records with pagination${config.includeRelationships ? ' and relationships' : ''}
    */
   async list(query: ${modelName}QueryDTO) {
-    const { skip = 0, take = 20, orderBy, where, include, select } = query
+    const { skip = 0, take = 20, orderBy, where${includeStatement ? '' : ', include, select'} } = query
     ${enableLogging ? `
     logger.debug({ skip, take }, 'Listing ${modelName} records')` : ''}
     
@@ -55,9 +60,7 @@ export function generateListMethod(config: CRUDServiceConfig): string {
         skip,
         take,
         orderBy: orderBy as Prisma.${modelName}OrderByWithRelationInput,
-        where: where as Prisma.${modelName}WhereInput,
-        include: include as Prisma.${modelName}Include | undefined,
-        select: select as Prisma.${modelName}Select | undefined${includeStatement}
+        where: where as Prisma.${modelName}WhereInput${dynamicIncludes}${includeStatement}
       }),
       prisma.${modelLower}.count({
         where: where as Prisma.${modelName}WhereInput,
@@ -87,7 +90,7 @@ export function generateFindByIdMethod(config: CRUDServiceConfig): string {
    */
   async findById(id: ${idType}) {
     return prisma.${modelLower}.findUnique({
-      where: { id }${includeStatement}
+      where: { id }${includeStatement ? includeStatement : ''}
     })
   }`
 }
@@ -104,7 +107,7 @@ export function generateCreateMethod(config: CRUDServiceConfig): string {
   async create(data: ${modelName}CreateDTO) {
     try {
       const item = await prisma.${modelLower}.create({
-        data${includeStatement}
+        data${includeStatement ? includeStatement : ''}
       })${enableLogging ? `
       logger.info({ ${modelLower}Id: item.id }, '${modelName} created')` : ''}
       return item
@@ -128,7 +131,7 @@ export function generateUpdateMethod(config: CRUDServiceConfig): string {
     try {
       const item = await prisma.${modelLower}.update({
         where: { id },
-        data${includeStatement}
+        data${includeStatement ? includeStatement : ''}
       })${enableLogging ? `
       logger.info({ ${modelLower}Id: id }, '${modelName} updated')` : ''}
       return item
