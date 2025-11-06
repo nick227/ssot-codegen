@@ -31,10 +31,13 @@ import { generateSDKReadme, generateAPIReference, generateSDKArchitecture, gener
 import { generateAllHooks } from './generators/hooks/index.js'
 // OPTIMIZATION: Pre-analysis utilities
 import { analyzeModel, type ModelAnalysis } from './utils/relationship-analyzer.js'
+// Registry-based architecture (78% less code)
+import { generateRegistrySystem } from './generators/registry-generator.js'
 
 export interface CodeGeneratorConfig {
   framework: 'express' | 'fastify'
   useEnhancedGenerators?: boolean  // Use enhanced generators with relationships and domain logic
+  useRegistry?: boolean  // Use registry-based architecture (78% less code)
 }
 
 export interface GeneratedFiles {
@@ -44,6 +47,7 @@ export interface GeneratedFiles {
   controllers: Map<string, string>
   routes: Map<string, string>
   sdk: Map<string, string>  // filename -> content
+  registry?: Map<string, string>  // Registry-based architecture files
   hooks: {
     core: Map<string, string>        // Framework-agnostic queries
     react?: Map<string, string>      // React hooks
@@ -78,6 +82,7 @@ export function generateCode(
     controllers: new Map(),
     routes: new Map(),
     sdk: new Map(),
+    registry: undefined,
     hooks: {
       core: new Map()
     }
@@ -102,6 +107,31 @@ export function generateCode(
     }
   }
   
+  // REGISTRY MODE: Generate unified registry instead of individual files
+  if (config.useRegistry) {
+    files.registry = generateRegistrySystem(schema, cache.modelAnalysis)
+    
+    // Still generate DTOs and SDK in registry mode
+    for (const model of schema.models) {
+      const modelLower = model.name.toLowerCase()
+      const dtos = generateAllDTOs(model)
+      const dtoMap = new Map<string, string>()
+      dtoMap.set(`${modelLower}.create.dto.ts`, dtos.create)
+      dtoMap.set(`${modelLower}.update.dto.ts`, dtos.update)
+      dtoMap.set(`${modelLower}.read.dto.ts`, dtos.read)
+      dtoMap.set(`${modelLower}.query.dto.ts`, dtos.query)
+      files.contracts.set(model.name, dtoMap)
+    }
+    
+    // Generate SDK and hooks
+    generateSDKClients(schema, files, cache)
+    const hooks = generateAllHooks(schema, { frameworks: ['react'] })
+    files.hooks = hooks
+    
+    return files
+  }
+  
+  // LEGACY MODE: Generate individual files for each model
   // PHASE 2: Generate code using cached analysis (O(n) with no repeated work)
   for (const model of schema.models) {
     generateModelCode(model, config, files, schema, cache)

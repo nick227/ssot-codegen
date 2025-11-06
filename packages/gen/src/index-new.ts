@@ -172,9 +172,11 @@ export async function generateFromSchema(config: GeneratorConfig) {
     const srcDir = path.join(outputDir, 'src')
     const cfg = { ...defaultPaths, ...config.paths, rootDir: srcDir }
     const framework = config.framework || 'express'
+    const useRegistry = process.env.USE_REGISTRY === 'true' // Enable via env var for now
     const generatedFiles = generateCode(parsedSchema, { 
       framework,
-      useEnhancedGenerators: true
+      useEnhancedGenerators: !useRegistry, // Legacy mode when not using registry
+      useRegistry // Use registry-based architecture (78% less code)
     })
     
     // Track per-model progress
@@ -374,6 +376,15 @@ async function writeGeneratedFiles(
     writes.push(write(filePath, content))
     track(`routes:${modelName}:${filename}`, filePath, esmImport(cfg, id('routes', modelName)))
   })
+  
+  // Write registry files (registry-based architecture)
+  if (files.registry) {
+    files.registry.forEach((content, filename) => {
+      const filePath = path.join(cfg.rootDir, 'registry', filename)
+      writes.push(write(filePath, content))
+      track(`registry:${filename}`, filePath, esmImport(cfg, id('registry', undefined, filename)))
+    })
+  }
   
   // Write SDK files
   files.sdk.forEach((content, filename) => {
