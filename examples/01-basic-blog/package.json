@@ -1,0 +1,27 @@
+{
+  "name": "basic-blog-example",
+  "version": "1.0.0",
+  "description": "Basic blog demonstrating registry pattern and CRUD operations",
+  "type": "module",
+  "scripts": {
+    "generate": "USE_REGISTRY=true node ../../packages/gen/dist/cli.js --schema schema.prisma --output src",
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "express": "^4.18.2",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.10.0",
+    "prisma": "^5.22.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}
+

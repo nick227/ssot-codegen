@@ -1,0 +1,211 @@
+// Multi-Tenant SaaS Example Schema
+// Demonstrates: Tenant isolation, workspace management, subscriptions
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Core tenant model
+model Workspace {
+  id          Int      @id @default(autoincrement())
+  name        String
+  slug        String   @unique
+  description String?
+  logo        String?
+  
+  // Usage tracking
+  projectsCount Int @default(0)
+  tasksCount    Int @default(0)
+  storageUsed   Int @default(0)  // bytes
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  subscription   Subscription?
+  members        WorkspaceMember[]
+  projects       Project[]
+  invitations    Invitation[]
+
+  @@map("workspaces")
+  @@index([slug])
+}
+
+model Subscription {
+  id        Int                @id @default(autoincrement())
+  plan      SubscriptionPlan   @default(FREE)
+  status    SubscriptionStatus @default(ACTIVE)
+  
+  // Limits
+  maxProjects Int @default(1)
+  maxTasks    Int @default(100)
+  maxStorage  Int @default(1073741824)  // 1GB
+  
+  // Billing
+  stripeCustomerId    String?
+  stripeSubscriptionId String?
+  currentPeriodEnd     DateTime?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  workspaceId Int       @unique
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model WorkspaceMember {
+  id   Int              @id @default(autoincrement())
+  role WorkspaceMemberRole @default(MEMBER)
+  
+  joinedAt  DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  workspaceId Int
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@map("workspace_members")
+  @@index([workspaceId])
+  @@index([userId])
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  memberships WorkspaceMember[]
+  invitations Invitation[]
+  tasks       Task[]
+
+  @@map("users")
+  @@index([email])
+}
+
+model Invitation {
+  id        String           @id @default(cuid())
+  email     String
+  role      WorkspaceMemberRole @default(MEMBER)
+  status    InvitationStatus @default(PENDING)
+  expiresAt DateTime
+  createdAt DateTime         @default(now())
+
+  // Relationships
+  workspaceId Int
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  
+  invitedById Int
+  invitedBy   User @relation(fields: [invitedById], references: [id])
+
+  @@map("invitations")
+  @@index([email])
+  @@index([workspaceId])
+}
+
+// Tenant-scoped models (always filtered by workspaceId)
+model Project {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  status      ProjectStatus @default(ACTIVE)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // CRITICAL: Tenant isolation
+  workspaceId Int
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  
+  // Relationships
+  tasks Task[]
+
+  @@map("projects")
+  @@index([workspaceId])
+  @@index([status])
+}
+
+model Task {
+  id          Int        @id @default(autoincrement())
+  title       String
+  description String?
+  status      TaskStatus @default(TODO)
+  priority    Priority   @default(MEDIUM)
+  dueDate     DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // CRITICAL: Tenant isolation (through project)
+  projectId Int
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  assigneeId Int?
+  assignee   User? @relation(fields: [assigneeId], references: [id])
+
+  @@map("tasks")
+  @@index([projectId])
+  @@index([assigneeId])
+  @@index([status])
+}
+
+// Enums
+enum SubscriptionPlan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+}
+
+enum WorkspaceMemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+  GUEST
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
+enum ProjectStatus {
+  ACTIVE
+  ARCHIVED
+  DELETED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  REVIEW
+  DONE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
