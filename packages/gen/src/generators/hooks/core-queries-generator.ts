@@ -6,6 +6,7 @@
 
 import type { ParsedModel, ParsedSchema } from '../../dmmf-parser.js'
 import type { ModelAnalysis } from '../../utils/relationship-analyzer.js'
+import { analyzeModel } from '../../utils/relationship-analyzer.js'
 
 /**
  * Generate core queries for a model (framework-agnostic)
@@ -270,9 +271,7 @@ function generateHelperMutations(
  * Generate core queries index barrel
  */
 export function generateCoreQueriesIndex(models: ParsedModel[], schema: ParsedSchema): string {
-  // Import analyzeModel for this function (used in helper, not main generation path)
-  const { analyzeModel } = require('../../utils/relationship-analyzer.js')
-  
+  // Filter out junction tables (analyzeModel needed for this helper function)
   const nonJunctionModels = models.filter(m => {
     const analysis = analyzeModel(m, schema)
     return !analysis.isJunctionTable
