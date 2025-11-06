@@ -1,0 +1,249 @@
+/**
+ * Service Method Generator
+ * Generates additional service methods based on detected model capabilities
+ */
+
+import type { DMMF } from '@prisma/generator-helper'
+import { analyzeModelCapabilities, type ModelCapabilities } from '../analyzers/index.js'
+
+export function generateEnhancedServiceMethods(model: DMMF.Model): string {
+  const caps = analyzeModelCapabilities(model)
+  const methods: string[] = []
+  
+  // Generate search method
+  if (caps.hasSearch) {
+    methods.push(generateSearchMethod(model.name, caps))
+  }
+  
+  // Generate findBySlug method
+  if (caps.hasFindBySlug) {
+    methods.push(generateFindBySlugMethod(model.name))
+  }
+  
+  // Generate getFeatured method
+  if (caps.hasFeatured) {
+    methods.push(generateGetFeaturedMethod(model.name, caps.hasActive))
+  }
+  
+  // Generate getActive method
+  if (caps.hasActive && !caps.hasFeatured) {
+    methods.push(generateGetActiveMethod(model.name))
+  }
+  
+  // Generate getPublished method
+  if (caps.hasPublished) {
+    methods.push(generateGetPublishedMethod(model.name))
+  }
+  
+  // Generate getBy{Relation} methods for foreign keys
+  for (const fk of caps.foreignKeys) {
+    methods.push(generateGetByRelationMethod(model.name, fk.relationName, fk.fieldName, caps.hasActive))
+  }
+  
+  // Generate hierarchical methods
+  if (caps.hasParentChild) {
+    methods.push(generateHierarchyMethods(model.name))
+  }
+  
+  return methods.length > 0 ? ',\n\n  ' + methods.join(',\n\n  ') : ''
+}
+
+function generateSearchMethod(modelName: string, caps: ModelCapabilities): string {
+  const modelLower = modelName.toLowerCase()
+  const searchConditions = caps.searchFields.map(field => 
+    `            { ${field}: { contains: params.q, mode: 'insensitive' } }`
+  ).join(',\n')
+  
+  const filterConditions = caps.filterFields
+    .map(field => {
+      if (field.type === 'range') {
+        return `        params.min${capitalize(field.name)} ? { ${field.name}: { gte: params.min${capitalize(field.name)} } } : {},
+        params.max${capitalize(field.name)} ? { ${field.name}: { lte: params.max${capitalize(field.name)} } } : {}`
+      } else if (field.type === 'boolean') {
+        return `        params.${field.name} !== undefined ? { ${field.name}: params.${field.name} } : {}`
+      } else if (field.type === 'enum') {
+        return `        params.${field.name} ? { ${field.name}: params.${field.name} } : {}`
+      } else {
+        return `        params.${field.name} ? { ${field.name}: params.${field.name} } : {}`
+      }
+    })
+    .join(',\n')
+  
+  return `/**
+   * Search ${modelName}s with text query and filters
+   * Auto-generated from searchable fields: ${caps.searchFields.join(', ')}
+   */
+  async search(params: {
+    q: string
+${generateSearchParams(caps)}
+    skip?: number
+    take?: number
+  }) {
+    const where: Prisma.${modelName}WhereInput = {
+      AND: [
+        params.q ? {
+          OR: [
+${searchConditions}
+          ]
+        } : {},
+${filterConditions}
+      ].filter(condition => Object.keys(condition).length > 0)
+    }
+    
+    return prisma.${modelLower}.findMany({
+      where,
+      skip: params.skip || 0,
+      take: Math.min(params.take || 20, 100)
+    })
+  }`
+}
+
+function generateSearchParams(caps: ModelCapabilities): string {
+  return caps.filterFields
+    .map(field => {
+      if (field.type === 'range') {
+        return `    min${capitalize(field.name)}?: ${field.fieldType}\n    max${capitalize(field.name)}?: ${field.fieldType}`
+      } else if (field.type === 'boolean') {
+        return `    ${field.name}?: boolean`
+      } else if (field.type === 'enum') {
+        return `    ${field.name}?: ${field.fieldType}`
+      } else {
+        return `    ${field.name}?: ${field.fieldType}`
+      }
+    })
+    .join('\n')
+}
+
+function generateFindBySlugMethod(modelName: string): string {
+  const modelLower = modelName.toLowerCase()
+  
+  return `/**
+   * Find ${modelName} by slug
+   * Auto-generated from 'slug' field detection
+   */
+  async findBySlug(slug: string) {
+    return prisma.${modelLower}.findUnique({
+      where: { slug }
+    })
+  }`
+}
+
+function generateGetFeaturedMethod(modelName: string, hasActive: boolean): string {
+  const modelLower = modelName.toLowerCase()
+  const activeFilter = hasActive ? '\n        isActive: true,' : ''
+  
+  return `/**
+   * Get featured ${modelName}s
+   * Auto-generated from 'isFeatured' field detection
+   */
+  async getFeatured(limit = 10) {
+    return prisma.${modelLower}.findMany({
+      where: {${activeFilter}
+        isFeatured: true
+      },
+      take: limit,
+      orderBy: { createdAt: 'desc' }
+    })
+  }`
+}
+
+function generateGetActiveMethod(modelName: string): string {
+  const modelLower = modelName.toLowerCase()
+  
+  return `/**
+   * Get active ${modelName}s
+   * Auto-generated from 'isActive' field detection
+   */
+  async getActive(query?: Prisma.${modelName}WhereInput) {
+    return prisma.${modelLower}.findMany({
+      where: {
+        isActive: true,
+        ...query
+      }
+    })
+  }`
+}
+
+function generateGetPublishedMethod(modelName: string): string {
+  const modelLower = modelName.toLowerCase()
+  
+  return `/**
+   * Get published ${modelName}s
+   * Auto-generated from 'publishedAt' field detection
+   */
+  async getPublished(query?: Prisma.${modelName}WhereInput) {
+    return prisma.${modelLower}.findMany({
+      where: {
+        publishedAt: { lte: new Date() },
+        ...query
+      },
+      orderBy: { publishedAt: 'desc' }
+    })
+  }`
+}
+
+function generateGetByRelationMethod(
+  modelName: string,
+  relationName: string,
+  fieldName: string,
+  hasActive: boolean
+): string {
+  const modelLower = modelName.toLowerCase()
+  const methodName = `getBy${capitalize(relationName)}`
+  const activeFilter = hasActive ? ',\n        isActive: true' : ''
+  
+  return `/**
+   * Get ${modelName}s by ${relationName}
+   * Auto-generated from foreign key detection: ${fieldName}
+   */
+  async ${methodName}(${fieldName}: number, options?: {
+    skip?: number
+    take?: number
+  }) {
+    return prisma.${modelLower}.findMany({
+      where: { ${fieldName}${activeFilter} },
+      skip: options?.skip || 0,
+      take: options?.take || 20
+    })
+  }`
+}
+
+function generateHierarchyMethods(modelName: string): string {
+  const modelLower = modelName.toLowerCase()
+  
+  return `/**
+   * Get children of parent ${modelName}
+   * Auto-generated from self-referential relation detection
+   */
+  async getChildren(parentId: number) {
+    return prisma.${modelLower}.findMany({
+      where: { parentId }
+    })
+  },
+
+  /**
+   * Get full ${modelName} tree/hierarchy
+   * Auto-generated from self-referential relation detection
+   */
+  async getTree() {
+    const items = await prisma.${modelLower}.findMany({
+      orderBy: { id: 'asc' }
+    })
+    
+    const buildTree = (parentId: number | null): any[] => {
+      return items
+        .filter(item => (item as any).parentId === parentId)
+        .map(item => ({
+          ...item,
+          children: buildTree(item.id)
+        }))
+    }
+    
+    return buildTree(null)
+  }`
+}
+
+function capitalize(str: string): string {
+  return str.charAt(0).toUpperCase() + str.slice(1)
+}
+
