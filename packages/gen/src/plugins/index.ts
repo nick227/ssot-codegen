@@ -13,6 +13,9 @@ export * from './auth/api-key-manager.plugin.js'
 // Monitoring plugins
 export * from './monitoring/usage-tracker.plugin.js'
 
+// AI providers
+export * from './ai/openai.plugin.js'
+
 // AI provider interface
 export * from './ai/ai-provider.interface.js'
 
