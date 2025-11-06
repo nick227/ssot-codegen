@@ -91,12 +91,11 @@ interface AnalysisCache {
 /**
  * Generate all code files from parsed schema
  * OPTIMIZED: Pre-analyze all models once for 60% performance improvement
- * ASYNC: Supports async plugin generation
  */
-export async function generateCode(
+export function generateCode(
   schema: ParsedSchema,
   config: CodeGeneratorConfig
-): Promise<GeneratedFiles> {
+): GeneratedFiles {
   const files: GeneratedFiles = {
     contracts: new Map(),
     validators: new Map(),
@@ -183,31 +182,8 @@ export async function generateCode(
   files.hooks = hooks
   
   // PHASE 5: Generate Feature Plugins (NEW!)
-  if (config.features) {
-    const pluginManager = new PluginManager({
-      schema,
-      projectName: config.projectName || 'Generated Project',
-      framework: config.framework || 'express',
-      outputDir: '', // Will be set by caller
-      features: config.features
-    })
-    
-    // Validate all plugins
-    const validations = await pluginManager.validateAll()
-    const hasErrors = Array.from(validations.values()).some(v => !v.valid)
-    
-    if (hasErrors) {
-      console.warn('\n⚠️  Some plugins have validation errors. Check warnings above.')
-    }
-    
-    // Generate plugin code
-    const pluginOutputs = await pluginManager.generateAll()
-    
-    // Add plugin files to generated files
-    for (const [pluginName, output] of pluginOutputs) {
-      files.plugins!.set(pluginName, output.files)
-    }
-  }
+  // Note: Plugin generation is deferred to index-new.ts for async handling
+  // This keeps generateCode() synchronous for backward compatibility
   
   // PHASE 6: Generate System Checklist
   if (config.generateChecklist !== false) {  // Default: true
