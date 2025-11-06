@@ -3,9 +3,10 @@
  */
 
 import type { ParsedModel } from '../dmmf-parser.js'
+import { generateEnhancedServiceMethods } from './service-method-generator.js'
 
 /**
- * Generate service with full CRUD operations
+ * Generate service with full CRUD operations + auto-detected enhanced methods
  */
 export function generateService(model: ParsedModel): string {
   const modelLower = model.name.toLowerCase()
@@ -117,7 +118,7 @@ export const ${modelLower}Service = {
       where: { id }
     })
     return count > 0
-  }
+  }${generateEnhancedServiceMethods(model)}
 }
 `
 }

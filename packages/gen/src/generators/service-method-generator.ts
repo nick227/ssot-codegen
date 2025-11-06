@@ -3,53 +3,54 @@
  * Generates additional service methods based on detected model capabilities
  */
 
-import type { DMMF } from '@prisma/generator-helper'
+import type { ParsedModel } from '../dmmf-parser.js'
 import { analyzeModelCapabilities, type ModelCapabilities } from '../analyzers/index.js'
 
-export function generateEnhancedServiceMethods(model: DMMF.Model): string {
+export function generateEnhancedServiceMethods(model: ParsedModel): string {
   const caps = analyzeModelCapabilities(model)
   const methods: string[] = []
   
   // Generate search method
   if (caps.hasSearch) {
-    methods.push(generateSearchMethod(model.name, caps))
+    methods.push(generateSearchMethod(model, caps))
   }
   
   // Generate findBySlug method
   if (caps.hasFindBySlug) {
-    methods.push(generateFindBySlugMethod(model.name))
+    methods.push(generateFindBySlugMethod(model))
   }
   
   // Generate getFeatured method
   if (caps.hasFeatured) {
-    methods.push(generateGetFeaturedMethod(model.name, caps.hasActive))
+    methods.push(generateGetFeaturedMethod(model, caps.hasActive))
   }
   
   // Generate getActive method
   if (caps.hasActive && !caps.hasFeatured) {
-    methods.push(generateGetActiveMethod(model.name))
+    methods.push(generateGetActiveMethod(model))
   }
   
   // Generate getPublished method
   if (caps.hasPublished) {
-    methods.push(generateGetPublishedMethod(model.name))
+    methods.push(generateGetPublishedMethod(model))
   }
   
   // Generate getBy{Relation} methods for foreign keys
   for (const fk of caps.foreignKeys) {
-    methods.push(generateGetByRelationMethod(model.name, fk.relationName, fk.fieldName, caps.hasActive))
+    methods.push(generateGetByRelationMethod(model, fk.relationName, fk.fieldName, caps.hasActive))
   }
   
   // Generate hierarchical methods
   if (caps.hasParentChild) {
-    methods.push(generateHierarchyMethods(model.name))
+    methods.push(generateHierarchyMethods(model))
   }
   
   return methods.length > 0 ? ',\n\n  ' + methods.join(',\n\n  ') : ''
 }
 
-function generateSearchMethod(modelName: string, caps: ModelCapabilities): string {
-  const modelLower = modelName.toLowerCase()
+function generateSearchMethod(model: ParsedModel, caps: ModelCapabilities): string {
+  const modelName = model.name
+  const modelLower = model.name.toLowerCase()
   const searchConditions = caps.searchFields.map(field => 
     `            { ${field}: { contains: params.q, mode: 'insensitive' } }`
   ).join(',\n')
@@ -114,8 +115,9 @@ function generateSearchParams(caps: ModelCapabilities): string {
     .join('\n')
 }
 
-function generateFindBySlugMethod(modelName: string): string {
-  const modelLower = modelName.toLowerCase()
+function generateFindBySlugMethod(model: ParsedModel): string {
+  const modelName = model.name
+  const modelLower = model.name.toLowerCase()
   
   return `/**
    * Find ${modelName} by slug
@@ -128,8 +130,9 @@ function generateFindBySlugMethod(modelName: string): string {
   }`
 }
 
-function generateGetFeaturedMethod(modelName: string, hasActive: boolean): string {
-  const modelLower = modelName.toLowerCase()
+function generateGetFeaturedMethod(model: ParsedModel, hasActive: boolean): string {
+  const modelName = model.name
+  const modelLower = model.name.toLowerCase()
   const activeFilter = hasActive ? '\n        isActive: true,' : ''
   
   return `/**
@@ -147,8 +150,9 @@ function generateGetFeaturedMethod(modelName: string, hasActive: boolean): strin
   }`
 }
 
-function generateGetActiveMethod(modelName: string): string {
-  const modelLower = modelName.toLowerCase()
+function generateGetActiveMethod(model: ParsedModel): string {
+  const modelName = model.name
+  const modelLower = model.name.toLowerCase()
   
   return `/**
    * Get active ${modelName}s
@@ -164,8 +168,9 @@ function generateGetActiveMethod(modelName: string): string {
   }`
 }
 
-function generateGetPublishedMethod(modelName: string): string {
-  const modelLower = modelName.toLowerCase()
+function generateGetPublishedMethod(model: ParsedModel): string {
+  const modelName = model.name
+  const modelLower = model.name.toLowerCase()
   
   return `/**
    * Get published ${modelName}s
@@ -183,12 +188,13 @@ function generateGetPublishedMethod(modelName: string): string {
 }
 
 function generateGetByRelationMethod(
-  modelName: string,
+  model: ParsedModel,
   relationName: string,
   fieldName: string,
   hasActive: boolean
 ): string {
-  const modelLower = modelName.toLowerCase()
+  const modelName = model.name
+  const modelLower = model.name.toLowerCase()
   const methodName = `getBy${capitalize(relationName)}`
   const activeFilter = hasActive ? ',\n        isActive: true' : ''
   
@@ -208,8 +214,9 @@ function generateGetByRelationMethod(
   }`
 }
 
-function generateHierarchyMethods(modelName: string): string {
-  const modelLower = modelName.toLowerCase()
+function generateHierarchyMethods(model: ParsedModel): string {
+  const modelName = model.name
+  const modelLower = model.name.toLowerCase()
   
   return `/**
    * Get children of parent ${modelName}

@@ -126,9 +126,9 @@ function detectWorkflows(model: ParsedModel, schema: ParsedSchema): WorkflowDete
   
   // ORDER CHECKOUT WORKFLOW
   if (model.name === 'Order' || (hasField(model, 'status') && hasField(model, 'total'))) {
-    const hasItems = analysis.relationFields.some(r => r.name.toLowerCase().includes('item'))
+    const hasItems = model.relationFields.some((r: ParsedField) => r.name.toLowerCase().includes('item'))
     const hasCoupon = hasField(model, 'couponId')
-    const hasPayment = analysis.relationFields.some(r => r.name === 'payment')
+    const hasPayment = model.relationFields.some((r: ParsedField) => r.name === 'payment')
     
     if (hasItems) {
       workflows.push({

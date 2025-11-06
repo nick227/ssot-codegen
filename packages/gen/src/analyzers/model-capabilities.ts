@@ -3,8 +3,12 @@
  * Detects patterns in Prisma models to auto-generate features
  */
 
-import type { DMMF } from '@prisma/generator-helper'
-import { getSearchableFields, getFilterableFields, type FilterField } from './field-analyzer.js'
+import type { ParsedModel, ParsedSchema } from '../dmmf-parser.js'
+import type { FilterField } from './field-analyzer.js'
+import { 
+  getSearchableFields as getSearchableFieldsParsed, 
+  getFilterableFields as getFilterableFieldsParsed 
+} from './field-analyzer-parsed.js'
 
 export interface ModelCapabilities {
   // Search
@@ -36,9 +40,9 @@ export interface ForeignKeyInfo {
 /**
  * Analyze a model to determine what features to auto-generate
  */
-export function analyzeModelCapabilities(model: DMMF.Model): ModelCapabilities {
-  const searchFields = getSearchableFields(model)
-  const filterFields = getFilterableFields(model)
+export function analyzeModelCapabilities(model: ParsedModel): ModelCapabilities {
+  const searchFields = getSearchableFieldsParsed(model)
+  const filterFields = getFilterableFieldsParsed(model)
   
   const capabilities: ModelCapabilities = {
     // Search capabilities
@@ -64,11 +68,11 @@ export function analyzeModelCapabilities(model: DMMF.Model): ModelCapabilities {
   return capabilities
 }
 
-function hasField(model: DMMF.Model, fieldName: string): boolean {
+function hasField(model: ParsedModel, fieldName: string): boolean {
   return model.fields.some(f => f.name === fieldName)
 }
 
-function hasParentChildRelation(model: DMMF.Model): boolean {
+function hasParentChildRelation(model: ParsedModel): boolean {
   // Detect self-referential relations (e.g., Category.parentId -> Category)
   return model.fields.some(field => 
     field.kind === 'object' && 
@@ -78,7 +82,7 @@ function hasParentChildRelation(model: DMMF.Model): boolean {
   )
 }
 
-function getForeignKeys(model: DMMF.Model): ForeignKeyInfo[] {
+function getForeignKeys(model: ParsedModel): ForeignKeyInfo[] {
   return model.fields
     .filter(field => 
       field.kind === 'object' && 
@@ -96,7 +100,7 @@ function getForeignKeys(model: DMMF.Model): ForeignKeyInfo[] {
 /**
  * Get a summary of what will be generated for a model
  */
-export function getGenerationSummary(model: DMMF.Model): string[] {
+export function getGenerationSummary(model: ParsedModel): string[] {
   const caps = analyzeModelCapabilities(model)
   const features: string[] = []
   
