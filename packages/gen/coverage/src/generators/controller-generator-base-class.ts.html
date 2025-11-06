@@ -30,16 +30,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/1</span>
+                <span class='fraction'>1/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/1</span>
+                <span class='fraction'>1/1</span>
             </div>
         
             
@@ -353,7 +353,15 @@
 <a name='L288'></a><a href='#L288'>288</a>
 <a name='L289'></a><a href='#L289'>289</a>
 <a name='L290'></a><a href='#L290'>290</a>
-<a name='L291'></a><a href='#L291'>291</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L291'></a><a href='#L291'>291</a>
+<a name='L292'></a><a href='#L292'>292</a>
+<a name='L293'></a><a href='#L293'>293</a>
+<a name='L294'></a><a href='#L294'>294</a>
+<a name='L295'></a><a href='#L295'>295</a>
+<a name='L296'></a><a href='#L296'>296</a>
+<a name='L297'></a><a href='#L297'>297</a>
+<a name='L298'></a><a href='#L298'>298</a>
+<a name='L299'></a><a href='#L299'>299</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -364,12 +372,17 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -377,6 +390,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -386,6 +400,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -642,41 +657,49 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >/**<span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" ></span></span></span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * Base Class Controller Generator - Generates minimal controllers using BaseCRUDController
  * Reduces generated code by 80-85%
  */
 &nbsp;
 import type { ParsedModel, ParsedSchema } from '../dmmf-parser.js'
-import { analyzeModel } from '../utils/relationship-analyzer.js'
+import type { ModelAnalysis } from '../utils/relationship-analyzer.js'
+&nbsp;
+// Keep for ReturnType usage
+type AnalysisType = ModelAnalysis
 &nbsp;
 /**
  * Generate controller using BaseCRUDController (minimal boilerplate)
+ * OPTIMIZED: Accepts pre-computed analysis from cache
  */
 <span class="cstat-no" title="statement not covered" >export function generateBaseClassController(</span>
 <span class="cstat-no" title="statement not covered" >  model: ParsedModel,</span>
 <span class="cstat-no" title="statement not covered" >  schema: ParsedSchema,</span>
-<span class="cstat-no" title="statement not covered" >  framework: 'express' | 'fastify' = 'express'</span>
+<span class="cstat-no" title="statement not covered" >  framework: 'express' | 'fastify' = 'express',</span>
+<span class="cstat-no" title="statement not covered" >  analysis: ModelAnalysis  // ⭐ Accept cached analysis</span>
 <span class="cstat-no" title="statement not covered" >): string {</span>
 <span class="cstat-no" title="statement not covered" >  if (framework === 'fastify') {</span>
     // For now, fastify will use old generator
     // TODO: Implement Fastify base class
-<span class="cstat-no" title="statement not covered" >    return generateExpressBaseClassController(model, schema)</span>
+<span class="cstat-no" title="statement not covered" >    return generateExpressBaseClassController(model, schema, analysis)</span>
 <span class="cstat-no" title="statement not covered" >  }</span>
   
-<span class="cstat-no" title="statement not covered" >  return generateExpressBaseClassController(model, schema)</span>
+<span class="cstat-no" title="statement not covered" >  return generateExpressBaseClassController(model, schema, analysis)</span>
 <span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
 /**
  * Generate Express controller using base class
+ * OPTIMIZED: Uses pre-computed analysis instead of re-analyzing
  */
 <span class="cstat-no" title="statement not covered" >function generateExpressBaseClassController(</span>
 <span class="cstat-no" title="statement not covered" >  model: ParsedModel,</span>
-<span class="cstat-no" title="statement not covered" >  schema: ParsedSchema</span>
+<span class="cstat-no" title="statement not covered" >  schema: ParsedSchema,</span>
+<span class="cstat-no" title="statement not covered" >  analysis: ModelAnalysis  // ⭐ Accept cached analysis</span>
 <span class="cstat-no" title="statement not covered" >): string {</span>
-<span class="cstat-no" title="statement not covered" >  const analysis = analyzeModel(model, schema)</span>
-<span class="cstat-no" title="statement not covered" >  const modelLower = model.name.toLowerCase()</span>
+  // Remove: const analysis = analyzeModel(model, schema)
+<span class="cstat-no" title="statement not covered" >  const modelLower = model.nameLower  // Use cached lowercase name</span>
 <span class="cstat-no" title="statement not covered" >  const idType = model.idField?.type === 'String' ? 'string' : 'number'</span>
   
 <span class="cstat-no" title="statement not covered" >  const imports = generateImports(model, modelLower, analysis)</span>
@@ -698,7 +721,7 @@ import { analyzeModel } from '../utils/relationship-analyzer.js'
 /**
  * Generate imports (conditional based on domain methods)
  */
-<span class="cstat-no" title="statement not covered" >function generateImports(model: ParsedModel, modelLower: string, analysis: ReturnType&lt;typeof analyzeModel&gt;): string {</span>
+<span class="cstat-no" title="statement not covered" >function generateImports(model: ParsedModel, modelLower: string, analysis: AnalysisType): string {</span>
   // Check if we need helper functions
 <span class="cstat-no" title="statement not covered" >  const needsHelpers = </span>
 <span class="cstat-no" title="statement not covered" >    analysis.specialFields.slug ||</span>
@@ -717,13 +740,13 @@ import { analyzeModel } from '../utils/relationship-analyzer.js'
   
 <span class="cstat-no" title="statement not covered" >  return `import {</span>
 <span class="cstat-no" title="statement not covered" >  BaseCRUDController${helperImports}</span>
-} from '@gen/base'
-<span class="cstat-no" title="statement not covered" >import { ${modelLower}Service } from '@gen/services/${modelLower}'</span>
+} from '../../base/index.js'
+<span class="cstat-no" title="statement not covered" >import { ${modelLower}Service } from '../../services/${modelLower}/index.js'</span>
 import {
 <span class="cstat-no" title="statement not covered" >  ${model.name}CreateSchema,</span>
 <span class="cstat-no" title="statement not covered" >  ${model.name}UpdateSchema,</span>
 <span class="cstat-no" title="statement not covered" >  ${model.name}QuerySchema</span>
-<span class="cstat-no" title="statement not covered" >} from '@gen/validators/${modelLower}'`</span>
+<span class="cstat-no" title="statement not covered" >} from '../../validators/${modelLower}/index.js'`</span>
 <span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
 /**
@@ -767,7 +790,7 @@ import {
  */
 <span class="cstat-no" title="statement not covered" >function generateDomainMethodExports(</span>
 <span class="cstat-no" title="statement not covered" >  model: ParsedModel,</span>
-<span class="cstat-no" title="statement not covered" >  analysis: ReturnType&lt;typeof analyzeModel&gt;,</span>
+<span class="cstat-no" title="statement not covered" >  analysis: AnalysisType,</span>
 <span class="cstat-no" title="statement not covered" >  modelLower: string,</span>
 <span class="cstat-no" title="statement not covered" >  idType: string</span>
 <span class="cstat-no" title="statement not covered" >): string {</span>
@@ -933,6 +956,7 @@ import {
 <span class="cstat-no" title="statement not covered" >  return methods.length &gt; 0 ? '\n' + methods.join('\n') : ''</span>
 <span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
+&nbsp;
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -940,7 +964,7 @@ import {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-11-05T07:43:54.578Z
+                at 2025-11-06T11:01:53.897Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

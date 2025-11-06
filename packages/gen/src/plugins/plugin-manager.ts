@@ -84,9 +84,9 @@ export class PluginManager {
   }
   
   /**
-   * Validate all plugins
+   * Validate all plugins (synchronous)
    */
-  async validateAll(): Promise<Map<string, ValidationResult>> {
+  validateAll(): Map<string, ValidationResult> {
     const results = new Map<string, ValidationResult>()
     
     for (const [name, plugin] of this.plugins) {
@@ -114,9 +114,9 @@ export class PluginManager {
   }
   
   /**
-   * Generate code for all plugins
+   * Generate code for all plugins (synchronous)
    */
-  async generateAll(): Promise<Map<string, PluginOutput>> {
+  generateAll(): Map<string, PluginOutput> {
     const outputs = new Map<string, PluginOutput>()
     
     for (const [name, plugin] of this.plugins) {
@@ -131,23 +131,13 @@ export class PluginManager {
         continue
       }
       
-      // Run pre-generation hook
-      if (plugin.beforeGeneration) {
-        await plugin.beforeGeneration(this.context)
-      }
-      
-      // Generate
+      // Generate (hooks are optional and will be handled in async context if needed)
       const output = plugin.generate(this.context)
       outputs.set(name, output)
       
       console.log(`   ✅ Generated ${output.files.size} files`)
       console.log(`   ✅ Added ${output.routes.length} routes`)
       console.log(`   ✅ Added ${output.middleware.length} middleware`)
-      
-      // Run post-generation hook
-      if (plugin.afterGeneration) {
-        await plugin.afterGeneration(this.context, output)
-      }
     }
     
     return outputs

@@ -182,8 +182,31 @@ export function generateCode(
   files.hooks = hooks
   
   // PHASE 5: Generate Feature Plugins (NEW!)
-  // Note: Plugin generation is deferred to index-new.ts for async handling
-  // This keeps generateCode() synchronous for backward compatibility
+  if (config.features) {
+    const pluginManager = new PluginManager({
+      schema,
+      projectName: config.projectName || 'Generated Project',
+      framework: config.framework || 'express',
+      outputDir: '',
+      features: config.features
+    })
+    
+    // Validate all plugins (synchronous)
+    const validations = pluginManager.validateAll()
+    const hasErrors = Array.from(validations.values()).some(v => !v.valid)
+    
+    if (hasErrors) {
+      console.warn('\n⚠️  Some plugins have validation errors. Check warnings above.')
+    }
+    
+    // Generate plugin code (synchronous for now)
+    const pluginOutputs = pluginManager.generateAll()
+    
+    // Add plugin files to generated files
+    for (const [pluginName, output] of pluginOutputs) {
+      files.plugins!.set(pluginName, output.files)
+    }
+  }
   
   // PHASE 6: Generate System Checklist
   if (config.generateChecklist !== false) {  // Default: true

@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/103</span>
+                <span class='fraction'>0/107</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/103</span>
+                <span class='fraction'>0/107</span>
             </div>
         
             
@@ -250,7 +250,12 @@
 <a name='L185'></a><a href='#L185'>185</a>
 <a name='L186'></a><a href='#L186'>186</a>
 <a name='L187'></a><a href='#L187'>187</a>
-<a name='L188'></a><a href='#L188'>188</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L188'></a><a href='#L188'>188</a>
+<a name='L189'></a><a href='#L189'>189</a>
+<a name='L190'></a><a href='#L190'>190</a>
+<a name='L191'></a><a href='#L191'>191</a>
+<a name='L192'></a><a href='#L192'>192</a>
+<a name='L193'></a><a href='#L193'>193</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -329,6 +334,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -359,6 +365,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -367,6 +374,8 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -436,8 +445,9 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >/**</span></span></span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >/**<span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" ></span></span></span>
  * DTO Generator - Generates TypeScript DTOs from Prisma models
  */
 &nbsp;
@@ -514,6 +524,7 @@ import { isOptionalForCreate, isNullable } from '../dmmf-parser.js'
  * Generate Query DTO (for filtering, pagination, sorting)
  */
 <span class="cstat-no" title="statement not covered" >export function generateQueryDTO(model: ParsedModel): string {</span>
+<span class="cstat-no" title="statement not covered" >  const modelLower = model.nameLower  // Use cached lowercase name</span>
 <span class="cstat-no" title="statement not covered" >  const idField = model.idField</span>
 <span class="cstat-no" title="statement not covered" >  const idType = idField ? mapPrismaToTypeScript(idField) : 'number'</span>
   
@@ -545,12 +556,15 @@ import { isOptionalForCreate, isNullable } from '../dmmf-parser.js'
 <span class="cstat-no" title="statement not covered" >    }</span>
 <span class="cstat-no" title="statement not covered" >  }).join('\n')</span>
   
-  // Build orderBy type
-<span class="cstat-no" title="statement not covered" >  const scalarOrderFields = model.scalarFields</span>
-<span class="cstat-no" title="statement not covered" >    .map(f =&gt; `    ${f.name}?: 'asc' | 'desc'`)</span>
-<span class="cstat-no" title="statement not covered" >  const relationOrderFields = model.relationFields</span>
-<span class="cstat-no" title="statement not covered" >    .map(f =&gt; `    ${f.name}?: { [key: string]: 'asc' | 'desc' }`)</span>
-<span class="cstat-no" title="statement not covered" >  const orderByFields = [...scalarOrderFields, ...relationOrderFields]</span>
+  // Build orderBy type (single reduce pass instead of two map() + spread)
+<span class="cstat-no" title="statement not covered" >  const orderByFields = model.fields.reduce((acc, f) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    if (f.kind !== 'object') {</span>
+<span class="cstat-no" title="statement not covered" >      acc.push(`    ${f.name}?: 'asc' | 'desc'`)</span>
+<span class="cstat-no" title="statement not covered" >    } else {</span>
+<span class="cstat-no" title="statement not covered" >      acc.push(`    ${f.name}?: { [key: string]: 'asc' | 'desc' }`)</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" >    return acc</span>
+<span class="cstat-no" title="statement not covered" >  }, [] as string[])</span>
 <span class="cstat-no" title="statement not covered" >  const orderByType = orderByFields.length &gt; 0</span>
 <span class="cstat-no" title="statement not covered" >    ? `{\n${orderByFields.join('\n')}\n  }`</span>
 <span class="cstat-no" title="statement not covered" >    : `Record&lt;string, 'asc' | 'desc'&gt;`</span>
@@ -570,7 +584,7 @@ import { isOptionalForCreate, isNullable } from '../dmmf-parser.js'
 <span class="cstat-no" title="statement not covered" >  return `// @generated</span>
 // This file is automatically generated. Do not edit manually.
 &nbsp;
-<span class="cstat-no" title="statement not covered" >import type { ${model.name}ReadDTO } from './${model.name.toLowerCase()}.read.dto.js'</span>
+<span class="cstat-no" title="statement not covered" >import type { ${model.name}ReadDTO } from './${modelLower}.read.dto.js'</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >export interface ${model.name}QueryDTO {</span>
   skip?: number
@@ -624,6 +638,7 @@ import { isOptionalForCreate, isNullable } from '../dmmf-parser.js'
 `
 <span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
+&nbsp;
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -631,7 +646,7 @@ import { isOptionalForCreate, isNullable } from '../dmmf-parser.js'
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-11-05T07:43:54.578Z
+                at 2025-11-06T11:01:53.897Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

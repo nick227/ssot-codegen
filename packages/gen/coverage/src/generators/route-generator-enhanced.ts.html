@@ -25,28 +25,28 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/90</span>
+                <span class='fraction'>0/91</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/1</span>
+                <span class='fraction'>1/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/1</span>
+                <span class='fraction'>1/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/90</span>
+                <span class='fraction'>0/91</span>
             </div>
         
             
@@ -218,7 +218,14 @@
 <a name='L153'></a><a href='#L153'>153</a>
 <a name='L154'></a><a href='#L154'>154</a>
 <a name='L155'></a><a href='#L155'>155</a>
-<a name='L156'></a><a href='#L156'>156</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L156'></a><a href='#L156'>156</a>
+<a name='L157'></a><a href='#L157'>157</a>
+<a name='L158'></a><a href='#L158'>158</a>
+<a name='L159'></a><a href='#L159'>159</a>
+<a name='L160'></a><a href='#L160'>160</a>
+<a name='L161'></a><a href='#L161'>161</a>
+<a name='L162'></a><a href='#L162'>162</a>
+<a name='L163'></a><a href='#L163'>163</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -226,9 +233,15 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -237,6 +250,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -371,32 +385,39 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >/**<span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" ></span></span></span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * Enhanced Route Generator - Generates routes with domain-specific endpoints
  */
 &nbsp;
 import type { ParsedModel, ParsedSchema } from '../dmmf-parser.js'
-import { analyzeModel } from '../utils/relationship-analyzer.js'
+import type { ModelAnalysis } from '../utils/relationship-analyzer.js'
+&nbsp;
+// Helper function
+<span class="cstat-no" title="statement not covered" >function toCamelCase(str: string): string {</span>
+<span class="cstat-no" title="statement not covered" >  return str.charAt(0).toLowerCase() + str.slice(1)</span>
+<span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
 /**
  * Generate enhanced routes with domain methods
  * Returns null if this model should not have routes generated (e.g., junction tables)
+ * OPTIMIZED: Accepts pre-computed analysis from cache
  */
 <span class="cstat-no" title="statement not covered" >export function generateEnhancedRoutes(</span>
 <span class="cstat-no" title="statement not covered" >  model: ParsedModel,</span>
 <span class="cstat-no" title="statement not covered" >  schema: ParsedSchema,</span>
-<span class="cstat-no" title="statement not covered" >  framework: 'express' | 'fastify' = 'express'</span>
+<span class="cstat-no" title="statement not covered" >  framework: 'express' | 'fastify' = 'express',</span>
+<span class="cstat-no" title="statement not covered" >  analysis: ModelAnalysis  // ⭐ Accept cached analysis</span>
 <span class="cstat-no" title="statement not covered" >): string | null {</span>
-<span class="cstat-no" title="statement not covered" >  const analysis = analyzeModel(model, schema)</span>
+  // Remove: const analysis = analyzeModel(model, schema)
   
   // Skip junction tables
 <span class="cstat-no" title="statement not covered" >  if (analysis.isJunctionTable) {</span>
 <span class="cstat-no" title="statement not covered" >    return null</span>
 <span class="cstat-no" title="statement not covered" >  }</span>
   
-<span class="cstat-no" title="statement not covered" >  const modelLower = model.name.toLowerCase()</span>
+<span class="cstat-no" title="statement not covered" >  const modelLower = model.nameLower  // Use cached lowercase name</span>
   
 <span class="cstat-no" title="statement not covered" >  if (framework === 'express') {</span>
 <span class="cstat-no" title="statement not covered" >    return generateExpressRoutes(model, analysis, modelLower)</span>
@@ -410,7 +431,7 @@ import { analyzeModel } from '../utils/relationship-analyzer.js'
  */
 <span class="cstat-no" title="statement not covered" >function generateExpressRoutes(</span>
 <span class="cstat-no" title="statement not covered" >  model: ParsedModel,</span>
-<span class="cstat-no" title="statement not covered" >  analysis: ReturnType&lt;typeof analyzeModel&gt;,</span>
+<span class="cstat-no" title="statement not covered" >  analysis: ModelAnalysis,</span>
 <span class="cstat-no" title="statement not covered" >  modelLower: string</span>
 <span class="cstat-no" title="statement not covered" >): string {</span>
 <span class="cstat-no" title="statement not covered" >  const baseRoutes = generateExpressBaseRoutes(model, modelLower)</span>
@@ -420,7 +441,7 @@ import { analyzeModel } from '../utils/relationship-analyzer.js'
 // This file is automatically generated. Do not edit manually.
 &nbsp;
 import { Router, type Router as RouterType } from 'express'
-<span class="cstat-no" title="statement not covered" >import * as ${modelLower}Controller from '@gen/controllers/${modelLower}'</span>
+<span class="cstat-no" title="statement not covered" >import * as ${modelLower}Controller from '@/controllers/${modelLower}/index.js'</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >export const ${modelLower}Router: RouterType = Router()</span>
 &nbsp;
@@ -458,7 +479,7 @@ import { Router, type Router as RouterType } from 'express'
  */
 <span class="cstat-no" title="statement not covered" >function generateExpressDomainRoutes(</span>
 <span class="cstat-no" title="statement not covered" >  model: ParsedModel,</span>
-<span class="cstat-no" title="statement not covered" >  analysis: ReturnType&lt;typeof analyzeModel&gt;,</span>
+<span class="cstat-no" title="statement not covered" >  analysis: ModelAnalysis,</span>
 <span class="cstat-no" title="statement not covered" >  modelLower: string</span>
 <span class="cstat-no" title="statement not covered" >): string {</span>
 <span class="cstat-no" title="statement not covered" >  const routes: string[] = []</span>
@@ -506,13 +527,13 @@ import { Router, type Router as RouterType } from 'express'
  */
 <span class="cstat-no" title="statement not covered" >function generateFastifyRoutes(</span>
 <span class="cstat-no" title="statement not covered" >  model: ParsedModel,</span>
-<span class="cstat-no" title="statement not covered" >  analysis: ReturnType&lt;typeof analyzeModel&gt;,</span>
+<span class="cstat-no" title="statement not covered" >  analysis: ModelAnalysis,</span>
 <span class="cstat-no" title="statement not covered" >  modelLower: string</span>
 <span class="cstat-no" title="statement not covered" >): string {</span>
 <span class="cstat-no" title="statement not covered" >  return `// @generated</span>
 // Fastify routes - TBD
 import type { FastifyInstance } from 'fastify'
-<span class="cstat-no" title="statement not covered" >import * as ${modelLower}Controller from '@gen/controllers/${modelLower}'</span>
+<span class="cstat-no" title="statement not covered" >import * as ${modelLower}Controller from '@/controllers/${modelLower}'</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >export async function ${modelLower}Routes(fastify: FastifyInstance) {</span>
   // TODO: Generate Fastify routes
@@ -523,10 +544,10 @@ import type { FastifyInstance } from 'fastify'
 /**
  * Determine if a model should have routes generated
  */
-<span class="cstat-no" title="statement not covered" >export function shouldGenerateRoutes(model: ParsedModel, schema: ParsedSchema): boolean {</span>
-<span class="cstat-no" title="statement not covered" >  const analysis = analyzeModel(model, schema)</span>
+<span class="cstat-no" title="statement not covered" >export function shouldGenerateRoutes(model: ParsedModel, schema: ParsedSchema, analysis: ModelAnalysis): boolean {</span>
 <span class="cstat-no" title="statement not covered" >  return !analysis.isJunctionTable</span>
 <span class="cstat-no" title="statement not covered" >}</span>
+&nbsp;
 &nbsp;
 &nbsp;</pre></td></tr></table></pre>
 
@@ -535,7 +556,7 @@ import type { FastifyInstance } from 'fastify'
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-11-05T07:43:54.578Z
+                at 2025-11-06T11:01:53.897Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

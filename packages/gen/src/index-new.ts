@@ -180,7 +180,20 @@ export async function generateFromSchema(config: GeneratorConfig) {
     const generatedFiles = generateCode(parsedSchema, { 
       framework,
       useEnhancedGenerators: !useRegistry, // Legacy mode when not using registry
-      useRegistry // Use registry-based architecture (78% less code)
+      useRegistry, // Use registry-based architecture (78% less code)
+      projectName: config.projectName || path.basename(outputDir),
+      
+      // Feature plugins (NEW!)
+      features: {
+        googleAuth: process.env.ENABLE_GOOGLE_AUTH === 'true' ? {
+          enabled: true,
+          clientId: process.env.GOOGLE_CLIENT_ID,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          callbackURL: process.env.GOOGLE_CALLBACK_URL,
+          strategy: (process.env.AUTH_STRATEGY as 'jwt' | 'session') || 'jwt',
+          userModel: process.env.AUTH_USER_MODEL || 'User'
+        } : undefined
+      }
     })
     
     // Track per-model progress
@@ -425,6 +438,17 @@ async function writeGeneratedFiles(
       if (filename.endsWith('.html')) {
         const publicPath = path.join(cfg.rootDir, '..', 'public', filename)
         writes.push(write(publicPath, content))
+      }
+    }
+  }
+  
+  // Write plugin files (NEW!)
+  if (files.plugins) {
+    for (const [pluginName, pluginFiles] of files.plugins) {
+      for (const [filename, content] of pluginFiles) {
+        const filePath = path.join(cfg.rootDir, filename)
+        writes.push(write(filePath, content))
+        track(`plugin:${pluginName}:${filename}`, filePath, `${cfg.alias}/${filename.replace('.ts', '')}`)
       }
     }
   }
