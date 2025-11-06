@@ -6,43 +6,56 @@
 import type { ParsedModel } from '../dmmf-parser.js'
 import { analyzeModelCapabilities, type ModelCapabilities } from '../analyzers/index.js'
 
-export function generateEnhancedServiceMethods(model: ParsedModel): string {
+/**
+ * Generate enhanced service methods based on detected capabilities
+ * @param model - ParsedModel to analyze
+ * @param existingMethods - Optional set of method names already generated (to prevent duplicates)
+ */
+export function generateEnhancedServiceMethods(
+  model: ParsedModel,
+  existingMethods: Set<string> = new Set()
+): string {
   const caps = analyzeModelCapabilities(model)
   const methods: string[] = []
   
   // Generate search method
-  if (caps.hasSearch) {
+  if (caps.hasSearch && !existingMethods.has('search')) {
     methods.push(generateSearchMethod(model, caps))
   }
   
-  // Generate findBySlug method
-  if (caps.hasFindBySlug) {
+  // Generate findBySlug method (skip if already exists in domain methods)
+  if (caps.hasFindBySlug && !existingMethods.has('findBySlug')) {
     methods.push(generateFindBySlugMethod(model))
   }
   
   // Generate getFeatured method
-  if (caps.hasFeatured) {
+  if (caps.hasFeatured && !existingMethods.has('getFeatured')) {
     methods.push(generateGetFeaturedMethod(model, caps.hasActive))
   }
   
-  // Generate getActive method
-  if (caps.hasActive && !caps.hasFeatured) {
+  // Generate getActive method (skip if getFeatured exists, they're similar)
+  if (caps.hasActive && !caps.hasFeatured && !existingMethods.has('getActive')) {
     methods.push(generateGetActiveMethod(model))
   }
   
-  // Generate getPublished method
-  if (caps.hasPublished) {
+  // Generate getPublished method (skip if listPublished already exists)
+  if (caps.hasPublished && !existingMethods.has('getPublished') && !existingMethods.has('listPublished')) {
     methods.push(generateGetPublishedMethod(model))
   }
   
   // Generate getBy{Relation} methods for foreign keys
   for (const fk of caps.foreignKeys) {
-    methods.push(generateGetByRelationMethod(model, fk.relationName, fk.fieldName, caps.hasActive))
+    const methodName = `getBy${capitalize(fk.relationName)}`
+    if (!existingMethods.has(methodName)) {
+      methods.push(generateGetByRelationMethod(model, fk.relationName, fk.fieldName, caps.hasActive))
+    }
   }
   
   // Generate hierarchical methods
   if (caps.hasParentChild) {
-    methods.push(generateHierarchyMethods(model))
+    if (!existingMethods.has('getChildren') && !existingMethods.has('getTree')) {
+      methods.push(generateHierarchyMethods(model))
+    }
   }
   
   return methods.length > 0 ? ',\n\n  ' + methods.join(',\n\n  ') : ''
@@ -102,14 +115,21 @@ ${filterConditions}
 function generateSearchParams(caps: ModelCapabilities): string {
   return caps.filterFields
     .map(field => {
+      // Map Prisma types to TypeScript types
+      const tsType = field.fieldType === 'Int' ? 'number' :
+                     field.fieldType === 'Float' || field.fieldType === 'Decimal' ? 'number' :
+                     field.fieldType === 'DateTime' ? 'Date | string' :
+                     field.fieldType === 'Boolean' ? 'boolean' :
+                     field.fieldType
+      
       if (field.type === 'range') {
-        return `    min${capitalize(field.name)}?: ${field.fieldType}\n    max${capitalize(field.name)}?: ${field.fieldType}`
+        return `    min${capitalize(field.name)}?: ${tsType}\n    max${capitalize(field.name)}?: ${tsType}`
       } else if (field.type === 'boolean') {
         return `    ${field.name}?: boolean`
       } else if (field.type === 'enum') {
-        return `    ${field.name}?: ${field.fieldType}`
+        return `    ${field.name}?: ${tsType}`
       } else {
-        return `    ${field.name}?: ${field.fieldType}`
+        return `    ${field.name}?: ${tsType}`
       }
     })
     .join('\n')
