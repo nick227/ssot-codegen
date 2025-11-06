@@ -31,6 +31,7 @@ export interface ParsedField {
 
 export interface ParsedModel {
   name: string
+  nameLower: string  // Cached toLowerCase() for performance (used 63× across codebase)
   dbName?: string
   fields: ParsedField[]
   primaryKey?: {
@@ -90,7 +91,7 @@ export function parseDMMF(dmmf: DMMF.Document): ParsedSchema {
 function parseEnums(enums: readonly DMMF.DatamodelEnum[]): ParsedEnum[] {
   return enums.map(e => ({
     name: e.name,
-    values: [...e.values.map(v => v.name)],
+    values: e.values.map(v => v.name),  // Direct assignment (no spread needed)
     documentation: e.documentation
   }))
 }
@@ -104,13 +105,14 @@ function parseModels(models: readonly DMMF.Model[], enumMap: Map<string, ParsedE
     
     return {
       name: model.name,
+      nameLower: '',  // Will be set by enhanceModel
       dbName: model.dbName || undefined,
       fields,
       primaryKey: model.primaryKey ? {
         name: model.primaryKey.name || undefined,
-        fields: [...model.primaryKey.fields]
+        fields: model.primaryKey.fields  // Direct reference (no spread needed)
       } : undefined,
-      uniqueFields: model.uniqueFields.map(uf => [...uf]),
+      uniqueFields: model.uniqueFields,  // Direct reference (no spread needed)
       documentation: model.documentation,
       // These will be filled by enhanceModel
       scalarFields: [],
@@ -168,6 +170,9 @@ function determineFieldKind(
  * Enhance model with derived properties
  */
 function enhanceModel(model: ParsedModel, modelMap: Map<string, ParsedModel>): void {
+  // Cache lowercase name (performance optimization - used 63× across codebase)
+  model.nameLower = model.name.toLowerCase()
+  
   // Find ID field
   model.idField = model.fields.find(f => f.isId)
   

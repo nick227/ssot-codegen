@@ -8,7 +8,7 @@ import type { ParsedModel } from '../dmmf-parser.js'
  * Generate controller with CRUD operations
  */
 export function generateController(model: ParsedModel, framework: 'express' | 'fastify' = 'express'): string {
-  const modelLower = model.name.toLowerCase()
+  const modelLower = model.nameLower  // Use cached lowercase name
   const idType = model.idField?.type === 'String' ? 'string' : 'number'
   const parseId = idType === 'number' 
     ? 'parseInt(req.params.id, 10)'
@@ -262,7 +262,7 @@ export const delete${model.name} = async (
  */
 export function generateControllerBarrel(model: ParsedModel): string {
   return `// @generated barrel
-export * from './${model.name.toLowerCase()}.controller.js'
+export * from './${model.nameLower}.controller.js'
 `
 }
 

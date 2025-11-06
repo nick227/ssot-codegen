@@ -173,6 +173,10 @@ export async function generateFromSchema(config: GeneratorConfig) {
     const cfg = { ...defaultPaths, ...config.paths, rootDir: srcDir }
     const framework = config.framework || 'express'
     const useRegistry = process.env.USE_REGISTRY === 'true' // Enable via env var for now
+    
+    // Performance optimization: Pre-compute model names (used 4× below)
+    const modelNames = parsedSchema.models.map(m => m.name)
+    
     const generatedFiles = generateCode(parsedSchema, { 
       framework,
       useEnhancedGenerators: !useRegistry, // Legacy mode when not using registry
@@ -200,7 +204,7 @@ export async function generateFromSchema(config: GeneratorConfig) {
     
     // Write files to disk
     logger.startPhase('Writing files to disk')
-    await writeGeneratedFiles(generatedFiles, cfg, parsedSchema.models.map(m => m.name))
+    await writeGeneratedFiles(generatedFiles, cfg, modelNames)
     logger.endPhase('Writing files to disk')
     
     // Write base infrastructure
@@ -210,7 +214,7 @@ export async function generateFromSchema(config: GeneratorConfig) {
     
     // Generate barrels
     logger.startPhase('Generating barrel exports')
-    await generateBarrels(cfg, parsedSchema.models.map(m => m.name), generatedFiles)
+    await generateBarrels(cfg, modelNames, generatedFiles)
     logger.endPhase('Generating barrel exports')
     
     // Generate OpenAPI
@@ -221,7 +225,7 @@ export async function generateFromSchema(config: GeneratorConfig) {
     // Generate manifest
     logger.startPhase('Writing manifest')
     const schemaHash = hash(config.schemaText || '')
-    await writeManifest(cfg, schemaHash, parsedSchema.models.map(m => m.name), '0.5.0')
+    await writeManifest(cfg, schemaHash, modelNames, '0.5.0')
     logger.endPhase('Writing manifest', 1)
     
     // Generate tsconfig paths
@@ -274,7 +278,7 @@ export async function generateFromSchema(config: GeneratorConfig) {
     }
     
     return {
-      models: parsedSchema.models.map(m => m.name),
+      models: modelNames,
       files: totalFiles,
       relationships: relationships.length,
       breakdown,

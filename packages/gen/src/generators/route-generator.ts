@@ -98,7 +98,7 @@ export async function ${modelCamel}Routes(fastify: FastifyInstance) {
  */
 export function generateRoutesBarrel(model: ParsedModel): string {
   return `// @generated barrel
-export * from './${model.name.toLowerCase()}.routes.js'
+export * from './${model.nameLower}.routes.js'
 `
 }
 

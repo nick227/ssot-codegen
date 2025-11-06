@@ -9,7 +9,7 @@ import { generateEnhancedServiceMethods } from './service-method-generator.js'
  * Generate service with full CRUD operations + auto-detected enhanced methods
  */
 export function generateService(model: ParsedModel): string {
-  const modelLower = model.name.toLowerCase()
+  const modelLower = model.nameLower  // Use cached lowercase name
   const idType = model.idField?.type === 'String' ? 'string' : 'number'
   
   return `// @generated
@@ -128,7 +128,7 @@ export const ${modelLower}Service = {
  */
 export function generateServiceBarrel(model: ParsedModel): string {
   return `// @generated barrel
-export * from './${model.name.toLowerCase()}.service.js'
+export * from './${model.nameLower}.service.js'
 `
 }
 
