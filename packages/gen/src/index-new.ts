@@ -413,6 +413,22 @@ async function writeGeneratedFiles(
     }
   }
   
+  // Write checklist files (NEW!)
+  if (files.checklist) {
+    for (const [filename, content] of files.checklist) {
+      // Write to both src/checklist/ and public/ for easy access
+      const srcPath = path.join(cfg.rootDir, 'checklist', filename)
+      writes.push(write(srcPath, content))
+      track(`checklist:${filename}`, srcPath, `${cfg.alias}/checklist/${filename}`)
+      
+      // Also copy HTML to public/ for standalone access
+      if (filename.endsWith('.html')) {
+        const publicPath = path.join(cfg.rootDir, '..', 'public', filename)
+        writes.push(write(publicPath, content))
+      }
+    }
+  }
+  
   // Execute ALL writes in parallel (OPTIMIZED!)
   await Promise.all(writes)
 }

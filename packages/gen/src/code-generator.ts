@@ -33,11 +33,16 @@ import { generateAllHooks } from './generators/hooks/index.js'
 import { analyzeModel, type ModelAnalysis } from './utils/relationship-analyzer.js'
 // Registry-based architecture (78% less code)
 import { generateRegistrySystem } from './generators/registry-generator.js'
+// System health check dashboard
+import { generateChecklistSystem } from './generators/checklist-generator.js'
 
 export interface CodeGeneratorConfig {
   framework: 'express' | 'fastify'
   useEnhancedGenerators?: boolean  // Use enhanced generators with relationships and domain logic
   useRegistry?: boolean  // Use registry-based architecture (78% less code)
+  projectName?: string  // Project name for display
+  generateChecklist?: boolean  // Generate system health check dashboard (default: true)
+  autoOpenChecklist?: boolean  // Auto-open checklist in browser (default: false)
 }
 
 export interface GeneratedFiles {
@@ -48,6 +53,7 @@ export interface GeneratedFiles {
   routes: Map<string, string>
   sdk: Map<string, string>  // filename -> content
   registry?: Map<string, string>  // Registry-based architecture files
+  checklist?: Map<string, string>  // System health check dashboard
   hooks: {
     core: Map<string, string>        // Framework-agnostic queries
     react?: Map<string, string>      // React hooks
@@ -143,6 +149,21 @@ export function generateCode(
   // PHASE 4: Generate framework hooks (React by default)
   const hooks = generateAllHooks(schema, { frameworks: ['react'] }, cache.modelAnalysis)  // Pass cached analysis
   files.hooks = hooks
+  
+  // PHASE 5: Generate System Checklist (NEW!)
+  if (config.generateChecklist !== false) {  // Default: true
+    const checklist = generateChecklistSystem(schema, files, {
+      projectName: config.projectName || 'Generated Project',
+      useRegistry: config.useRegistry || false,
+      framework: config.framework || 'express',
+      autoOpen: config.autoOpenChecklist || false,
+      includeEnvironmentChecks: true,
+      includeCodeValidation: true,
+      includeAPITesting: true,
+      includePerformanceMetrics: true
+    })
+    files.checklist = checklist
+  }
   
   return files
 }
