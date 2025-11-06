@@ -1,0 +1,149 @@
+// Comprehensive Test Schema
+// Tests all features: relationships, special fields, multiple models, junction tables
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// User model (for auth plugins)
+model User {
+  id          Int       @id @default(autoincrement())
+  email       String    @unique
+  googleId    String?   @unique  // For Google Auth
+  name        String?
+  role        String    @default("user")
+  avatar      String?
+  posts       Post[]
+  comments    Comment[]
+  apiKeys     ApiKey[]
+  refreshTokens RefreshToken[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// RefreshToken model (for JWT plugin)
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// ApiKey model (for API Key Manager plugin)
+model ApiKey {
+  id          Int       @id @default(autoincrement())
+  key         String    @unique
+  name        String
+  description String?
+  scopes      String[]  @default([])
+  userId      Int?
+  user        User?     @relation(fields: [userId], references: [id])
+  rateLimit   Int?      @default(60)
+  expiresAt   DateTime?
+  lastUsedAt  DateTime?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@index([key])
+  @@index([userId])
+}
+
+// RequestLog model (for Usage Tracker plugin)
+model RequestLog {
+  id            Int       @id @default(autoincrement())
+  method        String
+  path          String
+  statusCode    Int
+  responseTime  Int
+  userId        Int?
+  apiKeyId      Int?
+  userAgent     String?
+  ip            String?
+  error         String?
+  createdAt     DateTime  @default(now())
+  
+  @@index([path])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// UsageMetric model (for Usage Tracker aggregates)
+model UsageMetric {
+  id              Int       @id @default(autoincrement())
+  date            DateTime  @unique
+  totalRequests   Int       @default(0)
+  totalErrors     Int       @default(0)
+  avgResponseTime Float     @default(0)
+  uniqueUsers     Int       @default(0)
+  topEndpoints    String    @default("{}")
+  
+  @@index([date])
+}
+
+// Blog models (test standard CRUD)
+model Post {
+  id          Int       @id @default(autoincrement())
+  title       String
+  slug        String    @unique
+  content     String
+  published   Boolean   @default(false)
+  featured    Boolean   @default(false)
+  viewCount   Int       @default(0)
+  author      User      @relation(fields: [authorId], references: [id])
+  authorId    Int
+  comments    Comment[]
+  tags        PostTag[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@index([slug])
+  @@index([published])
+  @@index([authorId])
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  approved  Boolean  @default(false)
+  post      Post     @relation(fields: [postId], references: [id])
+  postId    Int
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([postId])
+  @@index([authorId])
+}
+
+model Tag {
+  id    Int       @id @default(autoincrement())
+  name  String    @unique
+  slug  String    @unique
+  posts PostTag[]
+}
+
+// Junction table (test junction table filtering)
+model PostTag {
+  post      Post     @relation(fields: [postId], references: [id])
+  postId    Int
+  tag       Tag      @relation(fields: [tagId], references: [id])
+  tagId     Int
+  createdAt DateTime @default(now())
+  
+  @@id([postId, tagId])
+  @@index([postId])
+  @@index([tagId])
+}
+
