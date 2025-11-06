@@ -480,6 +480,36 @@ function generateStaticHTML(
     ::-webkit-scrollbar-thumb:hover {
       background: var(--bg-hover);
     }
+    
+    /* Progress bar */
+    .progress-container {
+      width: 100%;
+      height: 4px;
+      background: var(--bg-primary);
+      border-radius: 2px;
+      overflow: hidden;
+      margin: 15px 0;
+      display: none;
+    }
+    
+    .progress-container.active {
+      display: block;
+    }
+    
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--info), var(--success));
+      border-radius: 2px;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+    
+    .progress-text {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 12px;
+      margin-top: 8px;
+    }
   </style>
 </head>
 <body>
@@ -509,12 +539,12 @@ function generateStaticHTML(
         </div>
         <div class="stat">
           <div class="stat-label">Lines of Code</div>
-          <div class="stat-value">${estimateLineCount(files)}</div>
+          <div class="stat-value">${calculateActualLineCount(files).toLocaleString()}</div>
         </div>
       </div>
       
       <div class="actions">
-        <button class="btn btn-success" onclick="runAllChecks()">
+        <button class="btn btn-success" id="run-all-btn" onclick="runAllChecks()">
           ▶️ Run All Checks
         </button>
         <button class="btn" onclick="testAllModels()">
@@ -523,10 +553,16 @@ function generateStaticHTML(
         <button class="btn-secondary btn" onclick="exportReport()">
           📊 Export Report
         </button>
-        <button class="btn-secondary btn" onclick="window.open('/docs', '_blank')">
+        <button class="btn-secondary btn" onclick="window.open('/api/docs', '_blank')">
           📖 Documentation
         </button>
       </div>
+      
+      <!-- Progress Bar -->
+      <div class="progress-container" id="progress-container">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+      <div class="progress-text" id="progress-text" style="display:none"></div>
     </div>
     
     <!-- Summary -->
@@ -573,20 +609,47 @@ function generateStaticHTML(
     
     // Run all checks
     async function runAllChecks() {
-      console.log('Running all checks...');
-      
-      // Reset summary
-      updateSummary({ passed: 0, warnings: 0, errors: 0, skipped: 0 });
-      
-      // Run each category
-      await runEnvironmentChecks();
-      await runCodeValidation();
-      await checkAdvancedFeatures();
-      
-      // Update summary
-      calculateSummary();
-      
-      console.log('All checks complete!', checkResults);
+      try {
+        console.log('Running all checks...');
+        
+        // Disable button and show loading
+        const btn = document.querySelector('.btn-success')
+        if (btn) {
+          btn.disabled = true
+          btn.innerHTML = '🔄 Running Checks...'
+        }
+        
+        // Reset summary
+        updateSummary({ passed: 0, warnings: 0, errors: 0, skipped: 0 });
+        
+        // Run each category in parallel for speed
+        await Promise.all([
+          runEnvironmentChecks().catch(e => console.error('Environment checks failed:', e)),
+          runCodeValidation().catch(e => console.error('Code validation failed:', e)),
+          checkAdvancedFeatures().catch(e => console.error('Feature checks failed:', e))
+        ]);
+        
+        // Update summary
+        calculateSummary();
+        
+        console.log('All checks complete!', checkResults);
+        
+        // Re-enable button
+        if (btn) {
+          btn.disabled = false
+          btn.innerHTML = '▶️ Run All Checks'
+        }
+      } catch (error) {
+        console.error('Fatal error during checks:', error)
+        alert('Error running checks: ' + (error instanceof Error ? error.message : 'Unknown error'))
+        
+        // Re-enable button
+        const btn = document.querySelector('.btn-success')
+        if (btn) {
+          btn.disabled = false
+          btn.innerHTML = '▶️ Run All Checks'
+        }
+      }
     }
     
     // Environment checks
@@ -598,8 +661,11 @@ function generateStaticHTML(
           test: async () => {
             try {
               const res = await fetch('/api/checklist/database');
-              return res.ok ? 'success' : 'error';
+              if (!res.ok) return 'error';
+              const data = await res.json();
+              return data.status === 'success' ? 'success' : 'error';
             } catch (e) {
+              console.error('DB check failed:', e);
               return 'error';
             }
           }
@@ -608,10 +674,30 @@ function generateStaticHTML(
           id: 'env-vars',
           name: 'Environment Variables',
           test: async () => {
-            // Check required env vars are set
-            const required = ['DATABASE_URL', 'PORT', 'NODE_ENV'];
-            // This would be checked server-side
-            return 'success';
+            try {
+              const res = await fetch('/api/checklist/env');
+              if (!res.ok) return 'warning';
+              const data = await res.json();
+              return data.status;
+            } catch (e) {
+              return 'skip';  // Skip if server not running
+            }
+          }
+        },
+        {
+          id: 'file-permissions',
+          name: 'File Permissions',
+          test: async () => {
+            // Static HTML can't check file permissions
+            return 'skip';
+          }
+        },
+        {
+          id: 'ports',
+          name: 'Port Availability',
+          test: async () => {
+            // Static HTML can't check ports
+            return 'skip';
           }
         }
       ];
@@ -826,7 +912,7 @@ function generateCodeValidationSection(
             <div class="check-icon">✅</div>
             <div class="check-info">
               <div class="check-name">Registry Files</div>
-              <div class="check-detail">${files.registry?.size || 0} files, ~${estimateLineCount(files)} lines</div>
+              <div class="check-detail">${files.registry?.size || 0} files, ${calculateActualLineCount(files).toLocaleString()} lines</div>
             </div>
           </div>
           <div class="check-status success">Generated</div>
@@ -995,7 +1081,9 @@ function generateChecklistAPI(
 // Checklist API endpoints for live system checks
 
 import { Router } from 'express'
-import { prisma } from '../prisma-client.js'
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
 
 export const checklistRouter = Router()
 
@@ -1004,18 +1092,25 @@ export const checklistRouter = Router()
  * Run all checks and return results
  */
 checklistRouter.get('/', async (req, res) => {
-  const results = {
-    timestamp: new Date().toISOString(),
-    project: '${config.projectName}',
-    checks: {
-      environment: await runEnvironmentChecks(),
-      code: await runCodeChecks(),
-      api: await runAPIChecks(),
-      features: await runFeatureChecks()
+  try {
+    const results = {
+      timestamp: new Date().toISOString(),
+      project: '${config.projectName}',
+      checks: {
+        environment: await runEnvironmentChecks(),
+        code: await runCodeChecks(),
+        api: await runAPIChecks(),
+        features: await runFeatureChecks()
+      }
     }
+    
+    res.json(results)
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: error instanceof Error ? error.message : 'Checklist failed'
+    })
   }
-  
-  res.json(results)
 })
 
 /**
@@ -1048,13 +1143,22 @@ checklistRouter.get('/database', async (req, res) => {
 checklistRouter.post('/test/:model', async (req, res) => {
   const { model } = req.params
   
+  // Validate model name (security)
+  const validModels = ${JSON.stringify(schema.models.map(m => m.name))}
+  if (!validModels.includes(model)) {
+    return res.status(400).json({
+      status: 'error',
+      message: \`Invalid model: \${model}\`
+    })
+  }
+  
   try {
     const results = await testModelCRUD(model)
     res.json(results)
   } catch (error) {
     res.status(500).json({
       status: 'error',
-      message: error.message
+      message: error instanceof Error ? error.message : 'Unknown error'
     })
   }
 })
@@ -1101,7 +1205,7 @@ async function checkDatabase() {
     await prisma.$connect()
     return { status: 'success' }
   } catch (e) {
-    return { status: 'error', message: e.message }
+    return { status: 'error', message: e instanceof Error ? e.message : 'Connection failed' }
   }
 }
 
@@ -1180,10 +1284,37 @@ function getTotalFileCount(files: GeneratedFiles): number {
   return count
 }
 
-function estimateLineCount(files: GeneratedFiles): string {
-  // Rough estimate for registry mode
-  const baseLines = 2000
-  return baseLines.toString()
+function calculateActualLineCount(files: GeneratedFiles): number {
+  let lines = 0
+  
+  // Count registry files
+  if (files.registry) {
+    for (const content of files.registry.values()) {
+      lines += content.split('\\n').length
+    }
+  }
+  
+  // Count services
+  for (const content of files.services.values()) {
+    lines += content.split('\\n').length
+  }
+  
+  // Count controllers
+  for (const content of files.controllers.values()) {
+    lines += content.split('\\n').length
+  }
+  
+  // Count routes
+  for (const content of files.routes.values()) {
+    lines += content.split('\\n').length
+  }
+  
+  // Count SDK
+  for (const content of files.sdk.values()) {
+    lines += content.split('\\n').length
+  }
+  
+  return lines
 }
 
 function getAdvancedFeatures(config: ChecklistConfig): Record<string, boolean> {
