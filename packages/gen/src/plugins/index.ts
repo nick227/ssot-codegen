@@ -15,6 +15,12 @@ export * from './monitoring/usage-tracker.plugin.js'
 
 // AI providers
 export * from './ai/openai.plugin.js'
+export * from './ai/claude.plugin.js'
+export * from './ai/gemini.plugin.js'
+export * from './ai/grok.plugin.js'
+export * from './ai/openrouter.plugin.js'
+export * from './ai/lmstudio.plugin.js'
+export * from './ai/ollama.plugin.js'
 
 // AI provider interface
 export * from './ai/ai-provider.interface.js'
