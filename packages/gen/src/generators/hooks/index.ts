@@ -5,6 +5,8 @@
  */
 
 import type { ParsedModel, ParsedSchema } from '../../dmmf-parser.js'
+import type { ModelAnalysis } from '../../utils/relationship-analyzer.js'
+import { analyzeModel } from '../../utils/relationship-analyzer.js'
 import { generateCoreQueries, generateCoreQueriesIndex } from './core-queries-generator.js'
 import { 
   generateReactHooks, 
@@ -44,7 +46,8 @@ export interface GeneratedHooks {
  */
 export function generateAllHooks(
   schema: ParsedSchema,
-  config: HooksConfig = {}
+  config: HooksConfig = {},
+  analysisCache?: Map<string, ModelAnalysis>  // ⭐ Accept cached analysis
 ): GeneratedHooks {
   const frameworks = config.frameworks || ['react']  // Default to React only
   const hooks: GeneratedHooks = {
@@ -60,7 +63,9 @@ export function generateAllHooks(
   
   // Generate per-model
   for (const model of schema.models) {
-    generateModelHooks(model, schema, hooks, frameworks, config)
+    // Get cached analysis or compute on demand (fallback for backward compatibility)
+    const analysis = analysisCache?.get(model.name) || analyzeModel(model, schema)
+    generateModelHooks(model, schema, hooks, frameworks, config, analysis)  // Pass analysis
   }
   
   // Generate index barrels
@@ -105,12 +110,13 @@ function generateModelHooks(
   schema: ParsedSchema,
   hooks: GeneratedHooks,
   frameworks: string[],
-  config: HooksConfig
+  config: HooksConfig,
+  analysis: ModelAnalysis  // ⭐ Accept cached analysis
 ): void {
-  const modelLower = model.name.toLowerCase()
+  const modelLower = model.nameLower  // Use cached lowercase name
   
   // 1. Core queries (always generated, framework-agnostic)
-  const coreQueries = generateCoreQueries(model, schema)
+  const coreQueries = generateCoreQueries(model, schema, analysis)  // Pass cached analysis
   hooks.core.set(`${modelLower}-queries.ts`, coreQueries)
   
   // 2. React adapter (if enabled)

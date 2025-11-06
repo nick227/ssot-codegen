@@ -3,25 +3,32 @@
  */
 
 import type { ParsedModel, ParsedSchema } from '../dmmf-parser.js'
-import { analyzeModel } from '../utils/relationship-analyzer.js'
+import type { ModelAnalysis } from '../utils/relationship-analyzer.js'
+
+// Helper function
+function toCamelCase(str: string): string {
+  return str.charAt(0).toLowerCase() + str.slice(1)
+}
 
 /**
  * Generate enhanced routes with domain methods
  * Returns null if this model should not have routes generated (e.g., junction tables)
+ * OPTIMIZED: Accepts pre-computed analysis from cache
  */
 export function generateEnhancedRoutes(
   model: ParsedModel,
   schema: ParsedSchema,
-  framework: 'express' | 'fastify' = 'express'
+  framework: 'express' | 'fastify' = 'express',
+  analysis: ModelAnalysis  // ⭐ Accept cached analysis
 ): string | null {
-  const analysis = analyzeModel(model, schema)
+  // Remove: const analysis = analyzeModel(model, schema)
   
   // Skip junction tables
   if (analysis.isJunctionTable) {
     return null
   }
   
-  const modelLower = model.name.toLowerCase()
+  const modelLower = model.nameLower  // Use cached lowercase name
   
   if (framework === 'express') {
     return generateExpressRoutes(model, analysis, modelLower)
@@ -35,7 +42,7 @@ export function generateEnhancedRoutes(
  */
 function generateExpressRoutes(
   model: ParsedModel,
-  analysis: ReturnType<typeof analyzeModel>,
+  analysis: ModelAnalysis,
   modelLower: string
 ): string {
   const baseRoutes = generateExpressBaseRoutes(model, modelLower)
@@ -83,7 +90,7 @@ ${modelLower}Router.get('/meta/count', ${modelLower}Controller.count${model.name
  */
 function generateExpressDomainRoutes(
   model: ParsedModel,
-  analysis: ReturnType<typeof analyzeModel>,
+  analysis: ModelAnalysis,
   modelLower: string
 ): string {
   const routes: string[] = []
@@ -131,7 +138,7 @@ ${modelLower}Router.post('/:id/approve', ${modelLower}Controller.approve${model.
  */
 function generateFastifyRoutes(
   model: ParsedModel,
-  analysis: ReturnType<typeof analyzeModel>,
+  analysis: ModelAnalysis,
   modelLower: string
 ): string {
   return `// @generated
@@ -148,8 +155,7 @@ export async function ${modelLower}Routes(fastify: FastifyInstance) {
 /**
  * Determine if a model should have routes generated
  */
-export function shouldGenerateRoutes(model: ParsedModel, schema: ParsedSchema): boolean {
-  const analysis = analyzeModel(model, schema)
+export function shouldGenerateRoutes(model: ParsedModel, schema: ParsedSchema, analysis: ModelAnalysis): boolean {
   return !analysis.isJunctionTable
 }
 

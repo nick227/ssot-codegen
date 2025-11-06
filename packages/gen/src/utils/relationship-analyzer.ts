@@ -147,19 +147,20 @@ const SPECIAL_FIELD_PATTERNS: Record<string, (field: ParsedField) => boolean> = 
 function detectSpecialFields(model: ParsedModel): ModelAnalysis['specialFields'] {
   const fields: ModelAnalysis['specialFields'] = {}
   
-  for (const field of model.scalarFields) {
-    const lowerName = field.name.toLowerCase()  // Compute once per field
-    
-    // Check all patterns in single pass
-    const patternKey = Object.keys(SPECIAL_FIELD_PATTERNS).find(key => 
-      lowerName === key && SPECIAL_FIELD_PATTERNS[key](field)
-    )
-    
-    if (patternKey) {
+  // Build lookup map once: O(n) where n = scalar fields
+  const fieldMap = new Map(
+    model.scalarFields.map(f => [f.name.toLowerCase(), f])
+  )
+  
+  // Check patterns: O(m) where m = 7 patterns
+  // Total complexity: O(n+m) instead of O(n×m)
+  for (const [key, validator] of Object.entries(SPECIAL_FIELD_PATTERNS)) {
+    const field = fieldMap.get(key)
+    if (field && validator(field)) {
       // Map pattern keys to field keys (handle 'deletedat' → 'deletedAt', etc.)
-      const fieldKey = patternKey === 'deletedat' ? 'deletedAt' : 
-                       patternKey === 'parentid' ? 'parentId' : 
-                       patternKey as keyof ModelAnalysis['specialFields']
+      const fieldKey = key === 'deletedat' ? 'deletedAt' : 
+                       key === 'parentid' ? 'parentId' : 
+                       key as keyof ModelAnalysis['specialFields']
       fields[fieldKey] = field
     }
   }

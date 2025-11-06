@@ -12,7 +12,7 @@
  */
 
 import type { ParsedSchema, ParsedModel, ParsedField } from '../dmmf-parser.js'
-import type { ModelAnalysis } from '../analyzers/model-capabilities.js'
+import type { ModelAnalysis } from '../utils/relationship-analyzer.js'
 
 /**
  * Generate the complete registry system

@@ -113,7 +113,7 @@ export function generateCode(
     
     // Still generate DTOs and SDK in registry mode
     for (const model of schema.models) {
-      const modelLower = model.name.toLowerCase()
+      const modelLower = model.nameLower  // Use cached lowercase name
       const dtos = generateAllDTOs(model)
       const dtoMap = new Map<string, string>()
       dtoMap.set(`${modelLower}.create.dto.ts`, dtos.create)
@@ -125,7 +125,7 @@ export function generateCode(
     
     // Generate SDK and hooks
     generateSDKClients(schema, files, cache)
-    const hooks = generateAllHooks(schema, { frameworks: ['react'] })
+    const hooks = generateAllHooks(schema, { frameworks: ['react'] }, cache.modelAnalysis)  // Pass cached analysis
     files.hooks = hooks
     
     return files
@@ -141,7 +141,7 @@ export function generateCode(
   generateSDKClients(schema, files, cache)
   
   // PHASE 4: Generate framework hooks (React by default)
-  const hooks = generateAllHooks(schema, { frameworks: ['react'] })
+  const hooks = generateAllHooks(schema, { frameworks: ['react'] }, cache.modelAnalysis)  // Pass cached analysis
   files.hooks = hooks
   
   return files
@@ -158,7 +158,7 @@ function generateModelCode(
   schema: ParsedSchema,
   cache: AnalysisCache
 ): void {
-  const modelLower = model.name.toLowerCase()
+  const modelLower = model.nameLower  // Use cached lowercase name
   const useEnhanced = config.useEnhancedGenerators ?? true
   
   // Get cached service annotation (already parsed in phase 1)
@@ -238,13 +238,13 @@ function generateModelCode(
   
   // Generate Controller (base class for minimal boilerplate, enhanced for legacy, or basic)
   const controller = useEnhanced
-    ? generateBaseClassController(model, schema, config.framework)
+    ? generateBaseClassController(model, schema, config.framework, analysis!)  // Pass cached analysis
     : generateController(model, config.framework)
-  files.controllers.set(`${modelLower}.controller.ts`, controller)
+  files.controllers.set(`${model.nameLower}.controller.ts`, controller)
   
   // Generate Routes (enhanced or basic)
   const routes = useEnhanced
-    ? generateEnhancedRoutes(model, schema, config.framework)
+    ? generateEnhancedRoutes(model, schema, config.framework, analysis!)  // Pass cached analysis
     : generateRoutes(model, config.framework)
     
   if (routes) {

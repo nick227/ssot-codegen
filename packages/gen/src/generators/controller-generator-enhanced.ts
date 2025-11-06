@@ -3,18 +3,23 @@
  */
 
 import type { ParsedModel, ParsedSchema } from '../dmmf-parser.js'
-import { analyzeModel } from '../utils/relationship-analyzer.js'
+import type { ModelAnalysis } from '../utils/relationship-analyzer.js'
+
+// Keep for ReturnType usage
+type AnalysisType = ModelAnalysis
 
 /**
  * Generate enhanced controller with proper logging
+ * OPTIMIZED: Accepts pre-computed analysis from cache
  */
 export function generateEnhancedController(
   model: ParsedModel,
   schema: ParsedSchema,
-  framework: 'express' | 'fastify' = 'express'
+  framework: 'express' | 'fastify' = 'express',
+  analysis: ModelAnalysis  // ⭐ Accept cached analysis
 ): string {
-  const analysis = analyzeModel(model, schema)
-  const modelLower = model.name.toLowerCase()
+  // Remove: const analysis = analyzeModel(model, schema)
+  const modelLower = model.nameLower  // Use cached lowercase name
   const idType = model.idField?.type === 'String' ? 'string' : 'number'
   const parseId = idType === 'number' 
     ? 'parseInt(req.params.id, 10)'
@@ -32,7 +37,7 @@ export function generateEnhancedController(
  */
 function generateExpressController(
   model: ParsedModel,
-  analysis: ReturnType<typeof analyzeModel>,
+  analysis: AnalysisType,
   modelLower: string,
   idType: string,
   parseId: string
@@ -201,7 +206,7 @@ export const count${model.name}s = async (_req: Request, res: Response) => {
  */
 function generateExpressDomainMethods(
   model: ParsedModel,
-  analysis: ReturnType<typeof analyzeModel>,
+  analysis: AnalysisType,
   modelLower: string,
   idType: string,
   parseId: string
@@ -391,7 +396,7 @@ export const approve${model.name} = async (req: Request, res: Response) => {
  */
 function generateFastifyController(
   model: ParsedModel,
-  analysis: ReturnType<typeof analyzeModel>,
+  analysis: AnalysisType,
   modelLower: string,
   idType: string,
   parseId: string

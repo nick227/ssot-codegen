@@ -110,9 +110,9 @@ function parseModels(models: readonly DMMF.Model[], enumMap: Map<string, ParsedE
       fields,
       primaryKey: model.primaryKey ? {
         name: model.primaryKey.name || undefined,
-        fields: model.primaryKey.fields  // Direct reference (no spread needed)
+        fields: [...model.primaryKey.fields]  // Need mutable array for TypeScript
       } : undefined,
-      uniqueFields: model.uniqueFields,  // Direct reference (no spread needed)
+      uniqueFields: model.uniqueFields.map(uf => [...uf]),  // Need mutable nested arrays for TypeScript
       documentation: model.documentation,
       // These will be filled by enhanceModel
       scalarFields: [],

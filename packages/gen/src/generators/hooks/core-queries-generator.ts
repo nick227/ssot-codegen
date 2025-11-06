@@ -5,18 +5,20 @@
  */
 
 import type { ParsedModel, ParsedSchema } from '../../dmmf-parser.js'
-import { analyzeModel } from '../../utils/relationship-analyzer.js'
+import type { ModelAnalysis } from '../../utils/relationship-analyzer.js'
 
 /**
  * Generate core queries for a model (framework-agnostic)
+ * OPTIMIZED: Accepts pre-computed analysis from cache
  */
 export function generateCoreQueries(
   model: ParsedModel,
-  schema: ParsedSchema
+  schema: ParsedSchema,
+  analysis: ModelAnalysis  // ⭐ Accept cached analysis
 ): string {
-  const analysis = analyzeModel(model, schema)
+  // Remove: const analysis = analyzeModel(model, schema)
   const modelName = model.name
-  const modelLower = model.name.toLowerCase()
+  const modelLower = model.nameLower  // Use cached lowercase name
   const idType = model.idField?.type === 'String' ? 'string' : 'number'
   
   const helperQueries = generateHelperQueries(model, analysis)
@@ -147,7 +149,7 @@ export const ${modelLower}Infinite = {
  */
 function generateHelperQueries(
   model: ParsedModel,
-  analysis: ReturnType<typeof analyzeModel>
+  analysis: ModelAnalysis
 ): string {
   const helpers: string[] = []
   const modelName = model.name
@@ -208,7 +210,7 @@ ${helpers.join(',\n\n')}
  */
 function generateHelperMutations(
   model: ParsedModel,
-  analysis: ReturnType<typeof analyzeModel>
+  analysis: ModelAnalysis
 ): string {
   const helpers: string[] = []
   const modelName = model.name
@@ -268,6 +270,9 @@ function generateHelperMutations(
  * Generate core queries index barrel
  */
 export function generateCoreQueriesIndex(models: ParsedModel[], schema: ParsedSchema): string {
+  // Import analyzeModel for this function (used in helper, not main generation path)
+  const { analyzeModel } = require('../../utils/relationship-analyzer.js')
+  
   const nonJunctionModels = models.filter(m => {
     const analysis = analyzeModel(m, schema)
     return !analysis.isJunctionTable

@@ -4,34 +4,41 @@
  */
 
 import type { ParsedModel, ParsedSchema } from '../dmmf-parser.js'
-import { analyzeModel } from '../utils/relationship-analyzer.js'
+import type { ModelAnalysis } from '../utils/relationship-analyzer.js'
+
+// Keep for ReturnType usage
+type AnalysisType = ModelAnalysis
 
 /**
  * Generate controller using BaseCRUDController (minimal boilerplate)
+ * OPTIMIZED: Accepts pre-computed analysis from cache
  */
 export function generateBaseClassController(
   model: ParsedModel,
   schema: ParsedSchema,
-  framework: 'express' | 'fastify' = 'express'
+  framework: 'express' | 'fastify' = 'express',
+  analysis: ModelAnalysis  // ⭐ Accept cached analysis
 ): string {
   if (framework === 'fastify') {
     // For now, fastify will use old generator
     // TODO: Implement Fastify base class
-    return generateExpressBaseClassController(model, schema)
+    return generateExpressBaseClassController(model, schema, analysis)
   }
   
-  return generateExpressBaseClassController(model, schema)
+  return generateExpressBaseClassController(model, schema, analysis)
 }
 
 /**
  * Generate Express controller using base class
+ * OPTIMIZED: Uses pre-computed analysis instead of re-analyzing
  */
 function generateExpressBaseClassController(
   model: ParsedModel,
-  schema: ParsedSchema
+  schema: ParsedSchema,
+  analysis: ModelAnalysis  // ⭐ Accept cached analysis
 ): string {
-  const analysis = analyzeModel(model, schema)
-  const modelLower = model.name.toLowerCase()
+  // Remove: const analysis = analyzeModel(model, schema)
+  const modelLower = model.nameLower  // Use cached lowercase name
   const idType = model.idField?.type === 'String' ? 'string' : 'number'
   
   const imports = generateImports(model, modelLower, analysis)
@@ -53,7 +60,7 @@ ${crudExports}${domainMethods}
 /**
  * Generate imports (conditional based on domain methods)
  */
-function generateImports(model: ParsedModel, modelLower: string, analysis: ReturnType<typeof analyzeModel>): string {
+function generateImports(model: ParsedModel, modelLower: string, analysis: AnalysisType): string {
   // Check if we need helper functions
   const needsHelpers = 
     analysis.specialFields.slug ||
@@ -122,7 +129,7 @@ export const count${model.name}s = ${modelLower}CRUD.count`
  */
 function generateDomainMethodExports(
   model: ParsedModel,
-  analysis: ReturnType<typeof analyzeModel>,
+  analysis: AnalysisType,
   modelLower: string,
   idType: string
 ): string {

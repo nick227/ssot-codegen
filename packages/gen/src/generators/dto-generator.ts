@@ -107,12 +107,15 @@ export function generateQueryDTO(model: ParsedModel): string {
     }
   }).join('\n')
   
-  // Build orderBy type
-  const scalarOrderFields = model.scalarFields
-    .map(f => `    ${f.name}?: 'asc' | 'desc'`)
-  const relationOrderFields = model.relationFields
-    .map(f => `    ${f.name}?: { [key: string]: 'asc' | 'desc' }`)
-  const orderByFields = [...scalarOrderFields, ...relationOrderFields]
+  // Build orderBy type (single reduce pass instead of two map() + spread)
+  const orderByFields = model.fields.reduce((acc, f) => {
+    if (f.kind !== 'object') {
+      acc.push(`    ${f.name}?: 'asc' | 'desc'`)
+    } else {
+      acc.push(`    ${f.name}?: { [key: string]: 'asc' | 'desc' }`)
+    }
+    return acc
+  }, [] as string[])
   const orderByType = orderByFields.length > 0
     ? `{\n${orderByFields.join('\n')}\n  }`
     : `Record<string, 'asc' | 'desc'>`

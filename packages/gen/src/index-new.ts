@@ -339,78 +339,78 @@ async function writeGeneratedFiles(
   const writes: Promise<void>[] = []
   
   // Collect ALL write operations (no await yet)
-  // Write contracts
-  files.contracts.forEach((fileMap, modelName) => {
-    fileMap.forEach((content, filename) => {
+  // Write contracts (using for-of for better performance)
+  for (const [modelName, fileMap] of files.contracts) {
+    for (const [filename, content] of fileMap) {
       const filePath = path.join(cfg.rootDir, 'contracts', modelName.toLowerCase(), filename)
       writes.push(write(filePath, content))
       track(`contracts:${modelName}:${filename}`, filePath, esmImport(cfg, id('contracts', modelName)))
-    })
-  })
+    }
+  }
   
   // Write validators
-  files.validators.forEach((fileMap, modelName) => {
-    fileMap.forEach((content, filename) => {
+  for (const [modelName, fileMap] of files.validators) {
+    for (const [filename, content] of fileMap) {
       const filePath = path.join(cfg.rootDir, 'validators', modelName.toLowerCase(), filename)
       writes.push(write(filePath, content))
       track(`validators:${modelName}:${filename}`, filePath, esmImport(cfg, id('validators', modelName)))
-    })
-  })
+    }
+  }
   
   // Write services
-  files.services.forEach((content, filename) => {
+  for (const [filename, content] of files.services) {
     const modelName = filename.replace('.service.ts', '').replace('.service.scaffold', '')
     const filePath = path.join(cfg.rootDir, 'services', modelName, filename)
     writes.push(write(filePath, content))
     track(`services:${modelName}:${filename}`, filePath, esmImport(cfg, id('services', modelName)))
-  })
+  }
   
   // Write controllers
-  files.controllers.forEach((content, filename) => {
+  for (const [filename, content] of files.controllers) {
     const modelName = filename.replace('.controller.ts', '')
     const filePath = path.join(cfg.rootDir, 'controllers', modelName, filename)
     writes.push(write(filePath, content))
     track(`controllers:${modelName}:${filename}`, filePath, esmImport(cfg, id('controllers', modelName)))
-  })
+  }
   
   // Write routes
-  files.routes.forEach((content, filename) => {
+  for (const [filename, content] of files.routes) {
     const modelName = filename.replace('.routes.ts', '')
     const filePath = path.join(cfg.rootDir, 'routes', modelName, filename)
     writes.push(write(filePath, content))
     track(`routes:${modelName}:${filename}`, filePath, esmImport(cfg, id('routes', modelName)))
-  })
+  }
   
   // Write registry files (registry-based architecture)
   if (files.registry) {
-    files.registry.forEach((content, filename) => {
+    for (const [filename, content] of files.registry) {
       const filePath = path.join(cfg.rootDir, 'registry', filename)
       writes.push(write(filePath, content))
       track(`registry:${filename}`, filePath, esmImport(cfg, id('registry', undefined, filename)))
-    })
+    }
   }
   
   // Write SDK files
-  files.sdk.forEach((content, filename) => {
+  for (const [filename, content] of files.sdk) {
     const filePath = path.join(cfg.rootDir, 'sdk', filename)
     writes.push(write(filePath, content))
     track(`sdk:${filename}`, filePath, esmImport(cfg, id('sdk', undefined, filename)))
-  })
+  }
   
   // Write hooks files (core queries - framework agnostic)
-  files.hooks.core.forEach((content, filename) => {
+  for (const [filename, content] of files.hooks.core) {
     const filePath = path.join(cfg.rootDir, 'sdk', 'core', 'queries', filename)
     writes.push(write(filePath, content))
     track(`hooks:core:${filename}`, filePath, `${cfg.alias}/sdk/core/queries/${filename.replace('.ts', '')}`)
-  })
+  }
   
   // Write React hooks (if generated)
   if (files.hooks.react) {
-    files.hooks.react.forEach((content, filename) => {
+    for (const [filename, content] of files.hooks.react) {
       const filePath = path.join(cfg.rootDir, 'sdk', 'react', filename)
       writes.push(write(filePath, content))
       track(`hooks:react:${filename}`, filePath, `${cfg.alias}/sdk/react/${filename.replace('.ts', '').replace('.tsx', '')}`)
-    })
+    }
   }
   
   // Execute ALL writes in parallel (OPTIMIZED!)
