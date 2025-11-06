@@ -12,6 +12,7 @@
  */
 
 import type { ParsedModel } from './dmmf-parser.js'
+import { kebabToCamelCase } from './utils/naming.js'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -136,15 +137,15 @@ export function getServiceFilePath(annotation: ServiceAnnotation, projectRoot: s
  * Get service export name (camelCase)
  */
 export function getServiceExportName(annotation: ServiceAnnotation): string {
-  return toCamelCase(annotation.name) + 'Service'
+  return kebabToCamelCase(annotation.name) + 'Service'
 }
 
 /**
  * Convert kebab-case to camelCase
- * @deprecated Use kebabToCamelCase from '../utils/naming.js' instead
+ * @deprecated Use kebabToCamelCase from './utils/naming.js' instead
  * Re-exported for backward compatibility
  */
-export { kebabToCamelCase as toCamelCase } from './utils/naming.js'
+export const toCamelCase = kebabToCamelCase
 
 /**
  * Parse rate limit string to config
