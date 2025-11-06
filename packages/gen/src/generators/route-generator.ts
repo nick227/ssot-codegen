@@ -3,13 +3,7 @@
  */
 
 import type { ParsedModel } from '../dmmf-parser.js'
-
-/**
- * Convert PascalCase to camelCase
- */
-function toCamelCase(str: string): string {
-  return str.charAt(0).toLowerCase() + str.slice(1)
-}
+import { toCamelCase } from '../utils/naming.js'
 
 /**
  * Generate routes

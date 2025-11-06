@@ -5,26 +5,13 @@
 
 import type { ServiceAnnotation } from '../service-linker.js'
 import { inferHTTPMethod, inferRoutePath } from '../service-linker.js'
-
-/**
- * Convert kebab-case to camelCase
- */
-function toCamelCase(str: string): string {
-  return str
-    .split('-')
-    .map((word, index) => 
-      index === 0 
-        ? word.toLowerCase()
-        : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-    )
-    .join('')
-}
+import { kebabToCamelCase } from '../utils/naming.js'
 
 /**
  * Generate SDK client for a service integration
  */
 export function generateServiceSDK(annotation: ServiceAnnotation): string {
-  const serviceName = toCamelCase(annotation.name)
+  const serviceName = kebabToCamelCase(annotation.name)
   const className = `${serviceName.charAt(0).toUpperCase()}${serviceName.slice(1)}Client`
   
   const methods = annotation.methods.map(methodName => {
@@ -94,12 +81,12 @@ export function generateMainSDKWithServices(
   
   const allProperties = [
     ...modelClients.map(m => `    ${m.name}: new ${m.className}(client)`),
-    ...serviceClients.map(s => `    ${toCamelCase(s.annotation.name)}: new ${s.className}(client)`)
+    ...serviceClients.map(s => `    ${kebabToCamelCase(s.annotation.name)}: new ${s.className}(client)`)
   ].join(',\n')
   
   const allTypes = [
     ...modelClients.map(m => `  ${m.name}: ${m.className}`),
-    ...serviceClients.map(s => `  ${toCamelCase(s.annotation.name)}: ${s.className}`)
+    ...serviceClients.map(s => `  ${kebabToCamelCase(s.annotation.name)}: ${s.className}`)
   ].join('\n')
   
   return `// @generated

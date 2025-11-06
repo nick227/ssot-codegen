@@ -61,7 +61,8 @@ export class GoogleAuthPlugin implements FeaturePlugin {
       runtime: {
         'passport': '^0.7.0',
         'passport-google-oauth20': '^2.0.0',
-        'jsonwebtoken': '^9.0.2'
+        'jsonwebtoken': '^9.0.2',
+        'express-rate-limit': '^7.1.5'
       },
       dev: {
         '@types/passport': '^1.0.16',
@@ -286,15 +287,28 @@ export function configureGoogleStrategy() {
 import { Router } from 'express'
 import passport from 'passport'
 import { authService } from '../services/auth.service.js'
+import { rateLimit } from 'express-rate-limit'
 ${this.config.strategy === 'jwt' ? "import { generateToken } from '../utils/jwt.util.js'" : ''}
 
 export const authRouter = Router()
+
+/**
+ * Rate limiter for auth routes (prevent brute force)
+ */
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 attempts per window
+  message: 'Too many authentication attempts, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false,
+})
 
 /**
  * GET /auth/google
  * Initiate Google OAuth flow
  */
 authRouter.get('/google',
+  authLimiter,
   passport.authenticate('google', { 
     scope: ['profile', 'email'],
     ${this.config.strategy === 'session' ? '' : 'session: false'}
@@ -306,6 +320,7 @@ authRouter.get('/google',
  * Google OAuth callback
  */
 authRouter.get('/google/callback',
+  authLimiter,
   passport.authenticate('google', { 
     ${this.config.strategy === 'session' ? 'failureRedirect: \'/login?error=auth_failed\'' : 'session: false, failureRedirect: \'/login?error=auth_failed\''}
   }),
@@ -321,8 +336,31 @@ authRouter.get('/google/callback',
         name: user.name
       })
       
-      // Redirect with token (frontend will store it)
-      res.redirect(\`/auth/success?token=\${token}\`)
+      // SECURITY FIX: Return token via secure HTML page with postMessage
+      // This prevents token from appearing in URLs (logged, cached, leaked via Referer header)
+      res.send(\`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Authentication Success</title>
+          <meta charset="utf-8">
+        </head>
+        <body>
+          <script>
+            // Send token to parent window (if opened from popup)
+            if (window.opener) {
+              window.opener.postMessage({ type: 'AUTH_SUCCESS', token: '\${token}' }, window.location.origin);
+              window.close();
+            } else {
+              // Store token in secure cookie or localStorage and redirect
+              localStorage.setItem('auth_token', '\${token}');
+              window.location.href = '/dashboard';
+            }
+          </script>
+          <p>Authenticated successfully! Redirecting...</p>
+        </body>
+        </html>
+      \`)
       ` : `
       // Session-based - user is already in session
       res.redirect('/dashboard')

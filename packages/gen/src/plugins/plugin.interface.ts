@@ -132,59 +132,10 @@ export interface FeaturePlugin {
 }
 
 /**
- * Plugin registry - manages all enabled plugins
+ * REMOVED: Duplicate PluginRegistry class
+ * Use PluginManager from './plugin-manager.ts' instead
+ * 
+ * This class was redundant and caused confusion about which registry to use.
+ * PluginManager provides the same functionality with a clearer API.
  */
-export class PluginRegistry {
-  private plugins: Map<string, FeaturePlugin> = new Map()
-  
-  register(plugin: FeaturePlugin): void {
-    this.plugins.set(plugin.name, plugin)
-  }
-  
-  get(name: string): FeaturePlugin | undefined {
-    return this.plugins.get(name)
-  }
-  
-  getEnabled(): FeaturePlugin[] {
-    return Array.from(this.plugins.values()).filter(p => p.enabled)
-  }
-  
-  async validateAll(context: PluginContext): Promise<Map<string, ValidationResult>> {
-    const results = new Map<string, ValidationResult>()
-    
-    for (const plugin of this.getEnabled()) {
-      results.set(plugin.name, plugin.validate(context))
-    }
-    
-    return results
-  }
-  
-  async generateAll(context: PluginContext): Promise<Map<string, PluginOutput>> {
-    const outputs = new Map<string, PluginOutput>()
-    
-    for (const plugin of this.getEnabled()) {
-      // Run pre-generation hook
-      if (plugin.beforeGeneration) {
-        await plugin.beforeGeneration(context)
-      }
-      
-      // Generate
-      const output = plugin.generate(context)
-      outputs.set(plugin.name, output)
-      
-      // Run post-generation hook
-      if (plugin.afterGeneration) {
-        await plugin.afterGeneration(context, output)
-      }
-    }
-    
-    return outputs
-  }
-  
-  getHealthChecks(context: PluginContext): HealthCheckSection[] {
-    return this.getEnabled()
-      .filter(p => p.healthCheck)
-      .map(p => p.healthCheck!(context))
-  }
-}
 

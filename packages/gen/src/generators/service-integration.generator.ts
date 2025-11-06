@@ -12,6 +12,7 @@ import {
   inferRoutePath,
   parseRateLimit
 } from '../service-linker.js'
+import { kebabToCamelCase } from '../utils/naming.js'
 
 /**
  * Generate controller for service integration (using BaseServiceController)
@@ -139,7 +140,7 @@ export function generateServiceRoutes(annotation: ServiceAnnotation): string {
     
     // Add rate limiting if specified
     if (annotation.rateLimit) {
-      middlewares.push(`${toCamelCase(annotation.name)}Limiter`)
+      middlewares.push(`${kebabToCamelCase(annotation.name)}Limiter`)
     }
     
     const middlewareStr = middlewares.length > 0 
@@ -147,7 +148,7 @@ export function generateServiceRoutes(annotation: ServiceAnnotation): string {
       : ''
     
     return `// ${methodName} - ${httpMethod.toUpperCase()} ${routePath}
-${toCamelCase(annotation.name)}Router.${httpMethod}('${routePath}', ${middlewareStr}${toCamelCase(annotation.name)}Controller.${methodName})`
+${kebabToCamelCase(annotation.name)}Router.${httpMethod}('${routePath}', ${middlewareStr}${kebabToCamelCase(annotation.name)}Controller.${methodName})`
   }).join('\n\n')
   
   return `// @generated
@@ -155,11 +156,11 @@ ${toCamelCase(annotation.name)}Router.${httpMethod}('${routePath}', ${middleware
 // ${annotation.description || 'Service routes'}
 
 import { Router, type Router as RouterType } from 'express'
-import * as ${toCamelCase(annotation.name)}Controller from '@/controllers/${annotation.name}'
+import * as ${kebabToCamelCase(annotation.name)}Controller from '@/controllers/${annotation.name}'
 ${annotation.auth ? "import { authenticate } from '@/auth/jwt.js'" : ''}
 ${annotation.rateLimit ? "import { rateLimit } from 'express-rate-limit'" : ''}
 
-export const ${toCamelCase(annotation.name)}Router: RouterType = Router()
+export const ${kebabToCamelCase(annotation.name)}Router: RouterType = Router()
 
 ${rateLimiterCode}
 
@@ -174,7 +175,7 @@ function generateRateLimiter(annotation: ServiceAnnotation): string {
   if (!annotation.rateLimit) return ''
   
   const config = parseRateLimit(annotation.rateLimit)
-  const limiterName = `${toCamelCase(annotation.name)}Limiter`
+  const limiterName = `${kebabToCamelCase(annotation.name)}Limiter`
   
   return `// Rate limiting: ${annotation.rateLimit}
 const ${limiterName} = rateLimit({
@@ -188,19 +189,8 @@ const ${limiterName} = rateLimit({
 `
 }
 
-/**
- * Convert kebab-case to camelCase
- */
-function toCamelCase(str: string): string {
-  return str
-    .split('-')
-    .map((word, index) => 
-      index === 0 
-        ? word.toLowerCase()
-        : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-    )
-    .join('')
-}
+// Using shared kebabToCamelCase from utils/naming.ts
+// Removed duplicate implementation
 
 /**
  * Generate service scaffold (if service file doesn't exist)

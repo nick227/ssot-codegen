@@ -4,11 +4,7 @@
 
 import type { ParsedModel, ParsedSchema } from '../dmmf-parser.js'
 import type { ModelAnalysis } from '../utils/relationship-analyzer.js'
-
-// Helper function
-function toCamelCase(str: string): string {
-  return str.charAt(0).toLowerCase() + str.slice(1)
-}
+import { toCamelCase } from '../utils/naming.js'
 
 /**
  * Generate enhanced routes with domain methods
