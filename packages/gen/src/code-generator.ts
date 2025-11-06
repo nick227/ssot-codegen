@@ -35,6 +35,8 @@ import { analyzeModel, type ModelAnalysis } from './utils/relationship-analyzer.
 import { generateRegistrySystem } from './generators/registry-generator.js'
 // System health check dashboard
 import { generateChecklistSystem } from './generators/checklist-generator.js'
+// Feature plugins system
+import { PluginManager } from './plugins/plugin-manager.js'
 
 export interface CodeGeneratorConfig {
   framework: 'express' | 'fastify'
@@ -43,6 +45,18 @@ export interface CodeGeneratorConfig {
   projectName?: string  // Project name for display
   generateChecklist?: boolean  // Generate system health check dashboard (default: true)
   autoOpenChecklist?: boolean  // Auto-open checklist in browser (default: false)
+  
+  // NEW: Feature plugins
+  features?: {
+    googleAuth?: {
+      enabled: boolean
+      clientId?: string
+      clientSecret?: string
+      callbackURL?: string
+      strategy?: 'jwt' | 'session'
+      userModel?: string
+    }
+  }
 }
 
 export interface GeneratedFiles {
@@ -54,6 +68,7 @@ export interface GeneratedFiles {
   sdk: Map<string, string>  // filename -> content
   registry?: Map<string, string>  // Registry-based architecture files
   checklist?: Map<string, string>  // System health check dashboard
+  plugins?: Map<string, Map<string, string>>  // NEW: Plugin-generated files (plugin -> files)
   hooks: {
     core: Map<string, string>        // Framework-agnostic queries
     react?: Map<string, string>      // React hooks
@@ -76,11 +91,12 @@ interface AnalysisCache {
 /**
  * Generate all code files from parsed schema
  * OPTIMIZED: Pre-analyze all models once for 60% performance improvement
+ * ASYNC: Supports async plugin generation
  */
-export function generateCode(
+export async function generateCode(
   schema: ParsedSchema,
   config: CodeGeneratorConfig
-): GeneratedFiles {
+): Promise<GeneratedFiles> {
   const files: GeneratedFiles = {
     contracts: new Map(),
     validators: new Map(),
@@ -89,6 +105,7 @@ export function generateCode(
     routes: new Map(),
     sdk: new Map(),
     registry: undefined,
+    plugins: new Map(),  // NEW: Plugin files
     hooks: {
       core: new Map()
     }
@@ -165,7 +182,34 @@ export function generateCode(
   const hooks = generateAllHooks(schema, { frameworks: ['react'] }, cache.modelAnalysis)  // Pass cached analysis
   files.hooks = hooks
   
-  // PHASE 5: Generate System Checklist (NEW!)
+  // PHASE 5: Generate Feature Plugins (NEW!)
+  if (config.features) {
+    const pluginManager = new PluginManager({
+      schema,
+      projectName: config.projectName || 'Generated Project',
+      framework: config.framework || 'express',
+      outputDir: '', // Will be set by caller
+      features: config.features
+    })
+    
+    // Validate all plugins
+    const validations = await pluginManager.validateAll()
+    const hasErrors = Array.from(validations.values()).some(v => !v.valid)
+    
+    if (hasErrors) {
+      console.warn('\n⚠️  Some plugins have validation errors. Check warnings above.')
+    }
+    
+    // Generate plugin code
+    const pluginOutputs = await pluginManager.generateAll()
+    
+    // Add plugin files to generated files
+    for (const [pluginName, output] of pluginOutputs) {
+      files.plugins!.set(pluginName, output.files)
+    }
+  }
+  
+  // PHASE 6: Generate System Checklist
   if (config.generateChecklist !== false) {  // Default: true
     const checklist = generateChecklistSystem(schema, files, {
       projectName: config.projectName || 'Generated Project',
