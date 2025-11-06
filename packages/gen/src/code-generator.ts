@@ -134,6 +134,21 @@ export function generateCode(
     const hooks = generateAllHooks(schema, { frameworks: ['react'] }, cache.modelAnalysis)  // Pass cached analysis
     files.hooks = hooks
     
+    // Generate System Checklist (REGISTRY MODE)
+    if (config.generateChecklist !== false) {
+      const checklist = generateChecklistSystem(schema, files, {
+        projectName: config.projectName || 'Generated Project',
+        useRegistry: true,
+        framework: config.framework || 'express',
+        autoOpen: config.autoOpenChecklist || false,
+        includeEnvironmentChecks: true,
+        includeCodeValidation: true,
+        includeAPITesting: true,
+        includePerformanceMetrics: true
+      })
+      files.checklist = checklist
+    }
+    
     return files
   }
   
