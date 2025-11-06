@@ -1,10 +1,13 @@
 /**
  * Enhanced Service Generator - Generates services with relationships and domain logic
+ * 
+ * REFACTORED: Now uses shared CRUD template for base methods
  */
 
 import type { ParsedModel, ParsedSchema } from '../dmmf-parser.js'
 import { analyzeModel, generateSummaryInclude } from '../utils/relationship-analyzer.js'
 import { generateEnhancedServiceMethods } from './service-method-generator.js'
+import { generateCRUDServiceMethods } from '../templates/crud-service.template.js'
 
 /**
  * Generate enhanced service with relationships and domain methods
@@ -43,6 +46,7 @@ ${baseMethods}${domainMethods}${enhancedMethods}
 
 /**
  * Generate base CRUD methods with relationship loading
+ * REFACTORED: Now uses shared CRUD template (eliminates ~110 lines)
  */
 function generateBaseMethods(
   model: ParsedModel,
@@ -51,120 +55,20 @@ function generateBaseMethods(
   idType: string
 ): string {
   const includeStmt = generateSummaryInclude(analysis)
+  const hasRelationships = analysis.autoIncludeRelations.length > 0
   
-  return `  /**
-   * List ${model.name} records with pagination${analysis.autoIncludeRelations.length > 0 ? ' and relationships' : ''}
-   */
-  async list(query: ${model.name}QueryDTO) {
-    const { skip = 0, take = 20, orderBy, where } = query
-    
-    const [items, total] = await Promise.all([
-      prisma.${modelLower}.findMany({
-        skip,
-        take,
-        orderBy: orderBy as Prisma.${model.name}OrderByWithRelationInput,
-        where: where as Prisma.${model.name}WhereInput${includeStmt}
-      }),
-      prisma.${modelLower}.count({
-        where: where as Prisma.${model.name}WhereInput,
-      })
-    ])
-    
-    return {
-      data: items,
-      meta: {
-        total,
-        skip,
-        take,
-        hasMore: skip + take < total
-      }
-    }
-  },
+  // Use shared CRUD template for standard operations
+  const crudMethods = generateCRUDServiceMethods({
+    modelName: model.name,
+    modelLower,
+    idType: idType as 'string' | 'number',
+    includeRelationships: hasRelationships,
+    includeStatement: includeStmt,
+    enableLogging: true
+  })
   
-  /**
-   * Find ${model.name} by ID${analysis.autoIncludeRelations.length > 0 ? ' with relationships' : ''}
-   */
-  async findById(id: ${idType}) {
-    return prisma.${modelLower}.findUnique({
-      where: { id }${includeStmt}
-    })
-  },
-  
-  /**
-   * Create ${model.name}
-   */
-  async create(data: ${model.name}CreateDTO) {
-    try {
-      const item = await prisma.${modelLower}.create({
-        data${includeStmt}
-      })
-      logger.info({ ${modelLower}Id: item.id }, '${model.name} created')
-      return item
-    } catch (error) {
-      logger.error({ error, data }, 'Failed to create ${model.name}')
-      throw error
-    }
-  },
-  
-  /**
-   * Update ${model.name}
-   */
-  async update(id: ${idType}, data: ${model.name}UpdateDTO) {
-    try {
-      const item = await prisma.${modelLower}.update({
-        where: { id },
-        data${includeStmt}
-      })
-      logger.info({ ${modelLower}Id: id }, '${model.name} updated')
-      return item
-    } catch (error: any) {
-      if (error.code === 'P2025') {
-        logger.warn({ ${modelLower}Id: id }, '${model.name} not found for update')
-        return null  // Not found
-      }
-      logger.error({ error, ${modelLower}Id: id, data }, 'Failed to update ${model.name}')
-      throw error
-    }
-  },
-  
-  /**
-   * Delete ${model.name}
-   */
-  async delete(id: ${idType}) {
-    try {
-      await prisma.${modelLower}.delete({
-        where: { id }
-      })
-      logger.info({ ${modelLower}Id: id }, '${model.name} deleted')
-      return true
-    } catch (error: any) {
-      if (error.code === 'P2025') {
-        logger.warn({ ${modelLower}Id: id }, '${model.name} not found for delete')
-        return false  // Not found
-      }
-      logger.error({ error, ${modelLower}Id: id }, 'Failed to delete ${model.name}')
-      throw error
-    }
-  },
-  
-  /**
-   * Count ${model.name} records
-   */
-  async count(where?: Prisma.${model.name}WhereInput) {
-    return prisma.${modelLower}.count({ where })
-  },
-  
-  /**
-   * Check if ${model.name} exists
-   */
-  async exists(id: ${idType}) {
-    const count = await prisma.${modelLower}.count({
-      where: { id }
-    })
-    return count > 0
-  },
-  
-  /**
+  // Add bulk operations (specific to enhanced generator)
+  const bulkOperations = `  /**
    * Create multiple ${model.name} records (bulk operation)
    */
   async createMany(data: ${model.name}CreateDTO[]) {
@@ -196,6 +100,8 @@ function generateBaseMethods(
     logger.info({ count: result.count }, '${model.name} bulk deleted')
     return result
   }`
+  
+  return crudMethods + ',\n  \n' + bulkOperations
 }
 
 /**

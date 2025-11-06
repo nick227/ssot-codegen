@@ -321,6 +321,10 @@ interface QueryDTO {
 
 /**
  * Creates a full CRUD service from model configuration
+ * 
+ * NOTE: This is a RUNTIME factory (creates services dynamically),
+ * different from the code generation templates.
+ * Could be refactored to use shared patterns in future.
  */
 export function createCRUDService<T, CreateDTO, UpdateDTO>(config: ModelConfig) {
   const { modelName, prismaModel, includes, customMethods } = config
