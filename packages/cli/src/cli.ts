@@ -2,7 +2,7 @@
 
 import { Command } from 'commander'
 import { generateFromSchema } from '@ssot-codegen/gen'
-import { resolve } from 'path'
+import { resolve, isAbsolute, extname, normalize } from 'path'
 import { existsSync, readdirSync, statSync } from 'fs'
 import chalk from 'chalk'
 
@@ -38,32 +38,62 @@ program
         process.exit(1)
       }
       
-      // Check if it's an example name
-      if (!schemaArg.includes('/') && !schemaArg.includes('\\') && !schemaArg.endsWith('.prisma')) {
-        // Assume it's an example name
-        const examplePath = resolve(process.cwd(), 'examples', schemaArg, 'schema.prisma')
-        if (existsSync(examplePath)) {
-          schemaPath = examplePath
-          console.log(chalk.blue(`📁 Using example: ${schemaArg}`))
-        } else {
-          // Try with prisma/ subdirectory
-          const prismaPath = resolve(process.cwd(), 'examples', schemaArg, 'prisma', 'schema.prisma')
-          if (existsSync(prismaPath)) {
-            schemaPath = prismaPath
-            console.log(chalk.blue(`📁 Using example: ${schemaArg}`))
-          } else {
-            console.error(chalk.red(`❌ Example not found: ${schemaArg}`))
-            console.log(chalk.gray(`   Tried: ${examplePath}`))
-            console.log(chalk.gray(`   Tried: ${prismaPath}`))
-            process.exit(1)
-          }
-        }
-      } else {
-        // It's a file path
-        schemaPath = resolve(process.cwd(), schemaArg)
+      // Normalize and resolve the input
+      const normalizedArg = normalize(schemaArg)
+      
+      // Check if it's a file path (absolute, relative, or has .prisma extension)
+      const looksLikeFilePath = isAbsolute(normalizedArg) || 
+                                 normalizedArg.startsWith('.') ||
+                                 extname(normalizedArg) === '.prisma'
+      
+      if (looksLikeFilePath) {
+        // It's a file path - resolve and validate
+        schemaPath = resolve(process.cwd(), normalizedArg)
+        
         if (!existsSync(schemaPath)) {
           console.error(chalk.red(`❌ Schema file not found: ${schemaPath}`))
           process.exit(1)
+        }
+        
+        if (extname(schemaPath) !== '.prisma') {
+          console.error(chalk.red(`❌ Schema file must have .prisma extension: ${schemaPath}`))
+          process.exit(1)
+        }
+      } else {
+        // Assume it's an example name (no path separators, no extension)
+        const examplePath = resolve(process.cwd(), 'examples', normalizedArg, 'schema.prisma')
+        if (existsSync(examplePath)) {
+          schemaPath = examplePath
+          console.log(chalk.blue(`📁 Using example: ${normalizedArg}`))
+        } else {
+          // Try with prisma/ subdirectory
+          const prismaPath = resolve(process.cwd(), 'examples', normalizedArg, 'prisma', 'schema.prisma')
+          if (existsSync(prismaPath)) {
+            schemaPath = prismaPath
+            console.log(chalk.blue(`📁 Using example: ${normalizedArg}`))
+          } else {
+            console.error(chalk.red(`❌ Example not found: ${normalizedArg}`))
+            console.log(chalk.gray(`   Tried: ${examplePath}`))
+            console.log(chalk.gray(`   Tried: ${prismaPath}`))
+            console.log(chalk.gray('\nAvailable examples:'))
+            
+            // List available examples
+            const examplesDir = resolve(process.cwd(), 'examples')
+            if (existsSync(examplesDir)) {
+              const examples = readdirSync(examplesDir)
+                .filter(f => statSync(resolve(examplesDir, f)).isDirectory())
+                .filter(f => 
+                  existsSync(resolve(examplesDir, f, 'schema.prisma')) ||
+                  existsSync(resolve(examplesDir, f, 'prisma', 'schema.prisma'))
+                )
+              
+              if (examples.length > 0) {
+                examples.forEach(ex => console.log(chalk.gray(`  • ${ex}`)))
+              }
+            }
+            
+            process.exit(1)
+          }
         }
       }
       
