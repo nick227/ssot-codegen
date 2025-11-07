@@ -235,24 +235,25 @@ interface HealthCheckResult {
 Inject custom phases into the generation pipeline:
 
 ```typescript
-import { GenerationPhase, type PhaseContext, type PhaseResult } from '../generator/phase-runner.js'
+import { GenerationPhase, type PhaseContext, type PhaseResult, PhaseResults } from '../generator/phase-runner.js'
 
 class MyCustomPhase extends GenerationPhase {
   readonly name = 'myCustomPhase'
-  readonly order = 100  // Run after standard phases
+  readonly order = 100  // Run after standard phases (0-13)
   
   getDescription(): string {
     return 'Running my custom logic'
   }
   
   async execute(context: PhaseContext): Promise<PhaseResult> {
+    // Read from context
+    const { schema, outputDir } = context
+    
     // Your phase logic here
     const filesGenerated = await this.doCustomWork(context)
     
-    return {
-      success: true,
-      filesGenerated
-    }
+    // Use typed result builder
+    return PhaseResults.success({ customData: 'value' }, filesGenerated)
   }
   
   private async doCustomWork(context: PhaseContext): Promise<number> {
@@ -272,6 +273,110 @@ export class MyPluginWithPhases implements PluginV2 {
     ]
   }
 }
+```
+
+#### Phase Order Reference
+
+Standard phases run in this order (0-13):
+
+| Order | Phase | Description |
+|-------|-------|-------------|
+| 0 | SetupOutputDir | Determines output directory |
+| 1 | ParseSchema | Parses Prisma schema |
+| 2 | ValidateSchema | Validates schema structure |
+| 3 | AnalyzeRelationships | Analyzes model relationships |
+| 4 | GenerateCode | Generates all code files |
+| 5 | WriteFiles | Writes generated files to disk |
+| 6 | WriteInfrastructure | Writes base infrastructure |
+| 7 | GenerateBarrels | Generates barrel exports |
+| 8 | GenerateOpenAPI | Generates OpenAPI spec |
+| 9 | WriteManifest | Writes generation manifest |
+| 10 | GenerateTsConfig | Generates TypeScript config |
+| 11 | WriteStandalone | Writes standalone project files |
+| 12 | WriteTests | Generates test suite |
+| 13 | FormatCode | Formats generated code (optional) |
+
+**Inserting Custom Phases:**
+
+- **Before standard phases**: Use order < 0 (e.g., -1, -10)
+- **Between phases**: Use fractional order (e.g., 4.5 runs between phases 4 and 5)
+- **After standard phases**: Use order > 13 (e.g., 100, 200)
+
+```typescript
+class PreProcessPhase extends GenerationPhase {
+  readonly order = -1  // Runs before everything
+  // ...
+}
+
+class PostProcessPhase extends GenerationPhase {
+  readonly order = 100  // Runs after everything
+  // ...
+}
+
+class InterceptPhase extends GenerationPhase {
+  readonly order = 5.5  // Runs between WriteFiles (5) and WriteInfrastructure (6)
+  // ...
+}
+```
+
+### Plugin-Phase Extension API
+
+PhaseRunner provides methods to programmatically control phase execution:
+
+```typescript
+import { PhaseRunner } from '../generator/phase-runner.js'
+import { createAllPhases } from '../generator/phases/index.js'
+
+// Create runner
+const runner = new PhaseRunner(config, logger)
+
+// Register all standard phases
+const standardPhases = createAllPhases()
+runner.registerPhases(standardPhases)
+
+// Add custom phases
+runner.registerPhase(new MyCustomPhase())
+
+// Run all phases in order
+await runner.run()
+```
+
+**Advanced Pattern: Conditional Phase Injection**
+
+```typescript
+export class ConditionalPlugin implements PluginV2 {
+  name = 'conditional-plugin'
+  version = '1.0.0'
+  description = 'Conditionally adds phases'
+  
+  registerPhases(): GenerationPhase[] {
+    const phases: GenerationPhase[] = []
+    
+    // Always add this phase
+    phases.push(new AlwaysRunPhase())
+    
+    // Conditionally add based on environment
+    if (process.env.ENABLE_EXPERIMENTAL === 'true') {
+      phases.push(new ExperimentalPhase())
+    }
+    
+    return phases
+  }
+}
+```
+
+**Future Enhancement: insertBefore/insertAfter Hooks**
+
+*Note: This API is planned but not yet implemented. Current approach is to use phase order numbers.*
+
+```typescript
+// Planned API (not yet available)
+runner.insertBefore('writeFiles', new PreWritePhase())
+runner.insertAfter('generateCode', new PostGeneratePhase())
+runner.replace('writeTests', new CustomTestPhase())
+```
+
+If you need this functionality now, please open an issue on GitHub!
 ```
 
 ### Lifecycle Hooks

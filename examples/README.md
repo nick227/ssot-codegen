@@ -94,6 +94,16 @@ pnpm gen --schema examples/ecommerce-example/schema.prisma
 pnpm gen --schema examples/02-enterprise-api/schema.prisma
 ```
 
+### 🎨 Image Optimizer Example
+**Purpose:** Image conversion and optimization API  
+**Keys Required:** `DATABASE_URL` (FFmpeg required)  
+**Features:** PNG↔JPG conversion, WebP/AVIF support, batch processing  
+**Best For:** Image processing, media APIs, CDN optimization
+
+```bash
+pnpm gen --schema examples/05-image-optimizer/schema.prisma
+```
+
 ---
 
 ## 🔑 Environment Variables
@@ -172,6 +182,7 @@ pnpm dev  # ✅ All providers work!
 | **Minimal** | ⭐ | 0 | Learning, testing |
 | **Blog** | ⭐⭐ | 0 | Content sites |
 | **AI Chat** | ⭐⭐⭐ | 1+ | AI integrations |
+| **Image Optimizer** | ⭐⭐⭐ | 0 (needs FFmpeg) | Image processing, media APIs |
 | **E-commerce** | ⭐⭐⭐⭐ | 3+ | Online stores |
 | **Enterprise** | ⭐⭐⭐⭐⭐ | Varies | Large systems |
 
@@ -184,6 +195,9 @@ pnpm dev  # ✅ All providers work!
 
 ### I want to test AI features
 → Use **AI Chat** example (requires AI API key)
+
+### I need image processing
+→ Use **Image Optimizer** example (requires FFmpeg installed)
 
 ### I'm building an online store
 → Use **E-commerce** example (requires Stripe + SendGrid)

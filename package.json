@@ -16,6 +16,7 @@
     "typecheck": "pnpm -r --filter ./packages/* exec tsc --noEmit",
     "knip": "knip",
     "madge": "madge --circular --extensions ts packages/gen/src",
+    "validate:barrels": "node scripts/validate-barrels.js",
     "check:all": "pnpm run typecheck && pnpm run lint && pnpm run knip && pnpm run madge",
     "ssot": "node packages/cli/dist/cli.js",
     "examples:all": "pnpm run examples:minimal && pnpm run examples:blog && pnpm run examples:ecommerce && pnpm run examples:ai-chat",

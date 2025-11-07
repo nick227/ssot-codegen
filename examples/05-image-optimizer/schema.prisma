@@ -1,0 +1,220 @@
+// Image Conversion & Optimization API
+// Demonstrates FFmpeg/media processing plugins for image manipulation
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// User model for multi-user support
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  apiKey    String   @unique @default(cuid())
+  
+  images    Image[]
+  jobs      ConversionJob[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("users")
+}
+
+// Image storage and metadata
+model Image {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Original file info
+  originalUrl       String
+  originalFilename  String
+  originalFormat    ImageFormat
+  originalSize      Int     // bytes
+  originalWidth     Int
+  originalHeight    Int
+  
+  // Current state
+  currentUrl        String
+  currentFormat     ImageFormat
+  currentSize       Int
+  currentWidth      Int
+  currentHeight     Int
+  
+  // Optimization metrics
+  isOptimized       Boolean @default(false)
+  optimizationLevel OptimizationLevel?
+  compressionRatio  Float?  // percentage saved
+  
+  // Metadata
+  mimeType          String
+  checksum          String  // SHA256 hash
+  tags              String[]
+  
+  // Conversions performed on this image
+  conversions       ConversionJob[]
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([originalFormat])
+  @@index([createdAt])
+  @@map("images")
+}
+
+// Conversion job tracking
+model ConversionJob {
+  id              String      @id @default(cuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  imageId         String
+  image           Image       @relation(fields: [imageId], references: [id], onDelete: Cascade)
+  
+  // Job details
+  operation       ConversionOperation
+  status          JobStatus   @default(PENDING)
+  progress        Int         @default(0) // 0-100
+  
+  // Input/Output
+  inputFormat     ImageFormat
+  outputFormat    ImageFormat
+  inputSize       Int
+  outputSize      Int?
+  
+  // Conversion settings
+  quality         Int?        // 1-100
+  width           Int?
+  height          Int?
+  maintainAspect  Boolean     @default(true)
+  stripMetadata   Boolean     @default(true)
+  
+  // Results
+  resultUrl       String?
+  errorMessage    String?
+  processingTime  Int?        // milliseconds
+  
+  // FFmpeg details
+  ffmpegCommand   String?
+  ffmpegVersion   String?
+  
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  @@index([userId])
+  @@index([imageId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("conversion_jobs")
+}
+
+// Batch conversion operations
+model BatchJob {
+  id              String      @id @default(cuid())
+  userId          String
+  
+  name            String?
+  operation       ConversionOperation
+  status          JobStatus   @default(PENDING)
+  
+  // Settings applied to all images
+  outputFormat    ImageFormat
+  quality         Int?
+  width           Int?
+  height          Int?
+  optimize        Boolean     @default(true)
+  
+  // Progress tracking
+  totalImages     Int
+  processedImages Int         @default(0)
+  failedImages    Int         @default(0)
+  
+  // Results
+  totalInputSize  Int?
+  totalOutputSize Int?
+  totalSaved      Int?        // bytes saved
+  averageTime     Int?        // ms per image
+  
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  @@index([userId])
+  @@index([status])
+  @@map("batch_jobs")
+}
+
+// Presets for common conversion scenarios
+model ConversionPreset {
+  id              String      @id @default(cuid())
+  userId          String?     // null = system preset
+  
+  name            String
+  description     String?
+  
+  // Conversion settings
+  operation       ConversionOperation
+  outputFormat    ImageFormat
+  quality         Int         @default(85)
+  width           Int?
+  height          Int?
+  maintainAspect  Boolean     @default(true)
+  stripMetadata   Boolean     @default(true)
+  optimize        Boolean     @default(true)
+  
+  // Usage tracking
+  usageCount      Int         @default(0)
+  isPublic        Boolean     @default(false)
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  @@unique([userId, name])
+  @@index([isPublic])
+  @@map("conversion_presets")
+}
+
+// Enums
+enum ImageFormat {
+  JPG
+  JPEG
+  PNG
+  WEBP
+  AVIF
+  GIF
+  BMP
+  TIFF
+}
+
+enum ConversionOperation {
+  CONVERT         // Format conversion
+  OPTIMIZE        // Compress/optimize
+  RESIZE          // Resize dimensions
+  CONVERT_OPTIMIZE // Convert + optimize
+}
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum OptimizationLevel {
+  LOW       // Minimal compression
+  MEDIUM    // Balanced
+  HIGH      // Aggressive compression
+  LOSSLESS  // No quality loss
+}
+

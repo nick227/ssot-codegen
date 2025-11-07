@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Generated code
+generated/
+
+# Database
+*.db
+*.db-journal
+
+# Uploads & temp files
+uploads/
+temp/
+*.tmp
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Test images
+test-image.*
+sample-image.*
+

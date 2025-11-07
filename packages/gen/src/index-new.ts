@@ -51,28 +51,8 @@ const { getDMMF } = require('@prisma/internals')
 
 export * from './project-scaffold.js'
 export * from './dependencies/index.js'
-
-const defaultPaths: PathsConfig = {
-  alias: '@gen',
-  rootDir: './gen',
-  perModelSubfolders: true,
-  useBarrels: true,
-  filenamePattern: 'model.artifact.suffix',
-  layers: {
-    contracts: 'contracts',
-    validators: 'validators',
-    routes: 'routes',
-    controllers: 'controllers',
-    services: 'services',
-    loaders: 'loaders',
-    auth: 'auth',
-    telemetry: 'telemetry',
-    openapi: 'openapi',
-    sdk: 'sdk',
-    manifests: 'manifests',
-    shared: 'shared'
-  }
-}
+export { defaultPaths } from './config/default-paths.js'
+import { defaultPaths } from './config/default-paths.js'
 
 // OPTIMIZED: Async file operations with concurrency throttling (100 max concurrent writes)
 const write = writeFileWithLimit

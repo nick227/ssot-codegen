@@ -153,10 +153,25 @@ See individual example READMEs for patterns.
 
 ## Documentation
 
-- [CLI Usage](docs/CLI_USAGE.md) - Command reference
-- [Project Structure](docs/PROJECT_STRUCTURE.md) - Architecture guide
+### Getting Started
+- [Quick Start](docs/QUICKSTART.md) - Getting started guide
+- [CLI Usage](docs/CLI_USAGE.md) - Command reference and options
 - [Examples Overview](examples/README.md) - Available schemas
-- [Quick Start](docs/QUICKSTART.md) - Getting started
+
+### Architecture
+- [Project Structure](docs/PROJECT_STRUCTURE.md) - Codebase architecture
+- [Phase Runner Architecture](docs/PHASE_RUNNER_ARCHITECTURE.md) - Generation pipeline
+- [Concurrency Throttling](docs/CONCURRENCY_THROTTLING.md) - Performance tuning
+
+### Plugins
+- [Plugin Index](docs/PROVIDER_PLUGINS_INDEX.md) - All available plugins
+- [Plugin Authoring Guide](docs/PLUGIN_AUTHORING_GUIDE.md) - Create custom plugins
+- [Plugin API V2](docs/PLUGIN_API_V2.md) - Plugin API reference
+- [Plugin Configuration](docs/PLUGIN_CONFIGURATION.md) - Configuration guide
+
+### Advanced
+- [Google OAuth Setup](docs/GOOGLE_AUTH_SETUP.md) - OAuth integration guide
+- [CI/CD Integration](docs/CI_CD.md) - Continuous integration setup
 
 ## Development
 

@@ -181,6 +181,10 @@ jobs:
           test -f generated/minimal-1/package.json
           echo "✅ Generation successful on ${{ matrix.os }}"
       
+      - name: Validate barrels (Unix only)
+        if: runner.os == 'Linux'
+        run: pnpm validate:barrels
+      
       - name: Verify generation (Windows)
         if: runner.os == 'Windows'
         shell: pwsh

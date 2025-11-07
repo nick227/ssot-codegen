@@ -8,29 +8,7 @@ import path from 'node:path'
 import { generateCode, countGeneratedFiles } from '../../code-generator.js'
 import { analyzeModel } from '../../utils/relationship-analyzer.js'
 import { GenerationPhase, type PhaseContext, type PhaseResult } from '../phase-runner.js'
-import { PathsConfig } from '../../path-resolver.js'
-
-const defaultPaths: PathsConfig = {
-  alias: '@gen',
-  rootDir: './gen',
-  perModelSubfolders: true,
-  useBarrels: true,
-  filenamePattern: 'model.artifact.suffix',
-  layers: {
-    contracts: 'contracts',
-    validators: 'validators',
-    routes: 'routes',
-    controllers: 'controllers',
-    services: 'services',
-    loaders: 'loaders',
-    auth: 'auth',
-    telemetry: 'telemetry',
-    openapi: 'openapi',
-    sdk: 'sdk',
-    manifests: 'manifests',
-    shared: 'shared'
-  }
-}
+import { defaultPaths } from '../../config/default-paths.js'
 
 export class GenerateCodePhase extends GenerationPhase {
   readonly name = 'generateCode'

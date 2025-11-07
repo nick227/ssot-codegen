@@ -21,6 +21,9 @@ program
   .option('-n, --name <name>', 'Project name (default: derived from schema path)')
   .option('-f, --framework <framework>', 'Framework (express or fastify)', 'express')
   .option('--no-standalone', 'Disable standalone mode (use fixed output dir)')
+  .option('-c, --concurrency <number>', 'Max concurrent file writes (default: 100)', '100')
+  .option('--format', 'Format generated code with Prettier (default: false)')
+  .option('--format-concurrency <number>', 'Max concurrent file formats (default: 10)', '10')
   .action(async (schemaArg: string | undefined, options) => {
     try {
       // Resolve schema path
@@ -65,6 +68,17 @@ program
       }
       
       console.log(chalk.green(`✓ Schema: ${schemaPath}\n`))
+      
+      // Set environment variables from CLI options
+      if (options.concurrency) {
+        process.env.SSOT_WRITE_CONCURRENCY = options.concurrency
+      }
+      if (options.format) {
+        process.env.SSOT_FORMAT_CODE = 'true'
+      }
+      if (options.formatConcurrency) {
+        process.env.SSOT_FORMAT_CONCURRENCY = options.formatConcurrency
+      }
       
       // Generate project
       const result = await generateFromSchema({
