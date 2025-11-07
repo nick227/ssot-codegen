@@ -34,114 +34,143 @@ import type {
   ${modelName}Query,
   ListResponse 
 } from '../../types'
-import { createSDK } from '../../index'
-
-// Create SDK instance for queries (developers can configure this)
-const api = createSDK({ baseUrl: typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000' })
+import type { SDK } from '../../index'
 
 /**
- * ${modelName} query definitions (framework-agnostic)
+ * Stable cache key generator
+ * Serializes objects to ensure React Query cache keys are stable
+ */
+function stableKey(key: string, data?: any): any[] {
+  if (data === undefined || data === null) return [key]
+  if (typeof data === 'object') return [key, JSON.stringify(data)]
+  return [key, data]
+}
+
+/**
+ * ${modelName} query factory - accepts API client for flexibility
  * 
- * These are pure data structures that define WHAT to fetch.
- * Framework adapters (React, Vue, etc.) wrap these with their patterns.
+ * These are pure query definitions that work with ANY SDK instance.
+ * Inject your configured client via factory pattern.
  */
-export const ${modelLower}Queries = {
-  /**
-   * Core queries - Standard CRUD operations
-   */
-  all: {
+export function create${modelName}Queries(api: SDK) {
+  return {
     /**
-     * Get single ${modelName} by ID
+     * Core queries - Standard CRUD operations
      */
-    get: (id: ${idType}) => ({
-      queryKey: ['${modelLower}', id] as const,
-      queryFn: async (): Promise<${modelName} | null> => api.${modelLower}.get(id)
-    }),
-    
-    /**
-     * List ${modelName} records
-     */
-    list: (query?: ${modelName}Query) => ({
-      queryKey: ['${modelLower}s', query] as const,
-      queryFn: async (): Promise<ListResponse<${modelName}>> => api.${modelLower}.list(query)
-    }),
-    
-    /**
-     * Find ${modelName} by any field
-     */
-    findOne: (where: Partial<${modelName}>) => ({
-      queryKey: ['${modelLower}', 'query', where] as const,
-      queryFn: async (): Promise<${modelName} | null> => api.${modelLower}.findOne(where)
-    }),
-    
-    /**
-     * Count ${modelName} records
-     */
-    count: (query?: Pick<${modelName}Query, 'where'>) => ({
-      queryKey: ['${modelLower}s', 'count', query] as const,
-      queryFn: async (): Promise<number> => api.${modelLower}.count(query)
-    })
-  }${helperQueries}
+    all: {
+      /**
+       * Get single ${modelName} by ID
+       */
+      get: (id: ${idType}) => ({
+        queryKey: stableKey('${modelLower}', id),
+        queryFn: async (): Promise<${modelName} | null> => api.${modelLower}.get(id)
+      }),
+      
+      /**
+       * List ${modelName} records
+       */
+      list: (query?: ${modelName}Query) => ({
+        queryKey: stableKey('${modelLower}s', query),
+        queryFn: async (): Promise<ListResponse<${modelName}>> => api.${modelLower}.list(query)
+      }),
+      
+      /**
+       * Find ${modelName} by any field
+       */
+      findOne: (where: Partial<${modelName}>) => ({
+        queryKey: ['${modelLower}', 'query', JSON.stringify(where)],
+        queryFn: async (): Promise<${modelName} | null> => api.${modelLower}.findOne(where)
+      }),
+      
+      /**
+       * Count ${modelName} records
+       */
+      count: (query?: Pick<${modelName}Query, 'where'>) => ({
+        queryKey: stableKey('${modelLower}s:count', query),
+        queryFn: async (): Promise<number> => api.${modelLower}.count(query)
+      })
+    }${helperQueries}
+  }
 }
 
 /**
- * ${modelName} mutation definitions (framework-agnostic)
+ * ${modelName} mutation factory - accepts API client
  */
-export const ${modelLower}Mutations = {
-  /**
-   * Create ${modelName}
-   */
-  create: () => ({
-    mutationKey: ['${modelLower}', 'create'] as const,
-    mutationFn: async (data: ${modelName}Create): Promise<${modelName}> => 
-      api.${modelLower}.create(data)
-  }),
-  
-  /**
-   * Update ${modelName}
-   */
-  update: () => ({
-    mutationKey: ['${modelLower}', 'update'] as const,
-    mutationFn: async ({ id, data }: { id: ${idType}; data: ${modelName}Update }): Promise<${modelName} | null> => 
-      api.${modelLower}.update(id, data)
-  }),
-  
-  /**
-   * Delete ${modelName}
-   */
-  delete: () => ({
-    mutationKey: ['${modelLower}', 'delete'] as const,
-    mutationFn: async (id: ${idType}): Promise<boolean> => 
-      api.${modelLower}.delete(id)
-  })${generateHelperMutations(model, analysis)}
+export function create${modelName}Mutations(api: SDK) {
+  return {
+    /**
+     * Create ${modelName}
+     */
+    create: () => ({
+      mutationKey: ['${modelLower}', 'create'] as const,
+      mutationFn: async (data: ${modelName}Create): Promise<${modelName}> => 
+        api.${modelLower}.create(data)
+    }),
+    
+    /**
+     * Update ${modelName}
+     */
+    update: () => ({
+      mutationKey: ['${modelLower}', 'update'] as const,
+      mutationFn: async ({ id, data }: { id: ${idType}; data: ${modelName}Update }): Promise<${modelName} | null> => 
+        api.${modelLower}.update(id, data)
+    }),
+    
+    /**
+     * Delete ${modelName}
+     */
+    delete: () => ({
+      mutationKey: ['${modelLower}', 'delete'] as const,
+      mutationFn: async (id: ${idType}): Promise<boolean> => 
+        api.${modelLower}.delete(id)
+    })${generateHelperMutations(model, analysis)}
+  }
 }
 
 /**
- * ${modelName} infinite query definition
+ * ${modelName} infinite query factory - accepts API client
  */
-export const ${modelLower}Infinite = {
-  /**
-   * Infinite scroll ${modelName} list
-   */
-  list: (query?: Omit<${modelName}Query, 'skip'>) => {
-    const pageSize = query?.take || 20
-    
-    return {
-      queryKey: ['${modelLower}s', 'infinite', query] as const,
-      queryFn: async (context: { pageParam: number }) => {
-        const page = context.pageParam || 0
-        return api.${modelLower}.list({
-          ...query,
-          skip: page * pageSize,
-          take: pageSize
-        })
-      },
-      getNextPageParam: (lastPage: ListResponse<${modelName}>, allPages: any[]) =>
-        lastPage.meta.hasMore ? allPages.length : undefined,
-      initialPageParam: 0
+export function create${modelName}Infinite(api: SDK) {
+  return {
+    /**
+     * Infinite scroll ${modelName} list
+     */
+    list: (query?: Omit<${modelName}Query, 'skip'>) => {
+      const pageSize = query?.take || 20
+      
+      return {
+        queryKey: stableKey('${modelLower}s:infinite', query),
+        queryFn: async (context: { pageParam: number }) => {
+          const page = context.pageParam || 0
+          return api.${modelLower}.list({
+            ...query,
+            skip: page * pageSize,
+            take: pageSize
+          })
+        },
+        getNextPageParam: (lastPage: ListResponse<${modelName}>, allPages: any[]) =>
+          lastPage.meta.hasMore ? allPages.length : undefined,
+        initialPageParam: 0
+      }
     }
   }
 }
+
+// ============================================
+// Backward compatibility: Default instance
+// ============================================
+// These use window.location.origin which works for simple cases
+// but you should prefer using the factory pattern above
+
+import { createSDK } from '../../index'
+
+const defaultApi = createSDK({ 
+  baseUrl: typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000' 
+})
+
+export const ${modelLower}Queries = create${modelName}Queries(defaultApi)
+export const ${modelLower}Mutations = create${modelName}Mutations(defaultApi)
+export const ${modelLower}Infinite = create${modelName}Infinite(defaultApi)
 `
 }
 
@@ -162,9 +191,9 @@ function generateHelperQueries(
      * Find ${modelName} by slug
      */
     bySlug: (slug: string) => ({
-      queryKey: ['${modelLower}', 'slug', slug] as const,
+      queryKey: ['${modelLower}', 'slug', slug],
       queryFn: async (): Promise<${modelName} | null> => 
-        api.${modelLower}.helpers.findBySlug(slug)
+        api.${modelLower}.helpers?.findBySlug(slug)
     })`)
   }
   
@@ -174,9 +203,9 @@ function generateHelperQueries(
      * List published ${modelName} records
      */
     published: (query?: Omit<${modelName}Query, 'where'>) => ({
-      queryKey: ['${modelLower}s', 'published', query] as const,
+      queryKey: stableKey('${modelLower}s:published', query),
       queryFn: async (): Promise<ListResponse<${modelName}>> => 
-        api.${modelLower}.helpers.listPublished(query)
+        api.${modelLower}.helpers?.listPublished(query)
     })`)
   }
   
@@ -186,9 +215,9 @@ function generateHelperQueries(
      * List pending ${modelName} records
      */
     pending: (query?: Omit<${modelName}Query, 'where'>) => ({
-      queryKey: ['${modelLower}s', 'pending', query] as const,
+      queryKey: stableKey('${modelLower}s:pending', query),
       queryFn: async (): Promise<ListResponse<${modelName}>> => 
-        api.${modelLower}.helpers.listPending(query)
+        api.${modelLower}.helpers?.listPending(query)
     })`)
   }
   
@@ -226,7 +255,7 @@ function generateHelperMutations(
   publish: () => ({
     mutationKey: ['${modelLower}', 'publish'] as const,
     mutationFn: async (id: ${idType}): Promise<${modelName} | null> => 
-      api.${modelLower}.helpers.publish(id)
+      api.${modelLower}.helpers?.publish(id)
   })`)
   
     helpers.push(`  /**
@@ -235,7 +264,7 @@ function generateHelperMutations(
   unpublish: () => ({
     mutationKey: ['${modelLower}', 'unpublish'] as const,
     mutationFn: async (id: ${idType}): Promise<${modelName} | null> => 
-      api.${modelLower}.helpers.unpublish(id)
+      api.${modelLower}.helpers?.unpublish(id)
   })`)
   }
   
@@ -247,7 +276,7 @@ function generateHelperMutations(
   approve: () => ({
     mutationKey: ['${modelLower}', 'approve'] as const,
     mutationFn: async (id: ${idType}): Promise<${modelName} | null> => 
-      api.${modelLower}.helpers.approve(id)
+      api.${modelLower}.helpers?.approve(id)
   })`)
   
     helpers.push(`  /**
@@ -256,7 +285,7 @@ function generateHelperMutations(
   reject: () => ({
     mutationKey: ['${modelLower}', 'reject'] as const,
     mutationFn: async (id: ${idType}): Promise<${modelName} | null> => 
-      api.${modelLower}.helpers.reject(id)
+      api.${modelLower}.helpers?.reject(id)
   })`)
   }
   

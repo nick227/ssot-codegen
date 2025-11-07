@@ -48,6 +48,8 @@ export interface CodeGeneratorConfig {
   projectName?: string  // Project name for display
   generateChecklist?: boolean  // Generate system health check dashboard (default: true)
   autoOpenChecklist?: boolean  // Auto-open checklist in browser (default: false)
+  schemaHash?: string  // Schema hash for version checking
+  toolVersion?: string  // Tool version
   
   // NEW: Feature plugins
   features?: {
@@ -410,8 +412,11 @@ function generateSDKClients(
     : generateMainSDK(schema.models, schema)
   files.sdk.set('index.ts', mainSDK)
   
-  // Generate version file (will be populated with hash later)
-  const versionFile = generateSDKVersion('', '0.5.0')
+  // Generate version file with schema hash
+  const versionFile = generateSDKVersion(
+    config.schemaHash || '', 
+    config.toolVersion || '0.5.0'
+  )
   files.sdk.set('version.ts', versionFile)
   
   // Generate SDK documentation files

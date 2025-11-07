@@ -157,11 +157,17 @@ export async function generateFromSchema(config: GeneratorConfig) {
     // Load and merge plugin configuration from file + env + explicit config
     const features = await mergePluginConfig(config.features, path.dirname(config.schemaPath || process.cwd()))
     
+    // Compute schema hash early for SDK version generation
+    const schemaHash = hash(config.schemaText || '')
+    const version = await getGeneratorVersion()
+    
     const generatedFiles = generateCode(parsedSchema, { 
       framework,
       useEnhancedGenerators: !useRegistry, // Legacy mode when not using registry
       useRegistry, // Use registry-based architecture (78% less code)
       projectName: config.projectName || path.basename(outputDir),
+      schemaHash,
+      toolVersion: version,
       features
     })
     
@@ -204,8 +210,6 @@ export async function generateFromSchema(config: GeneratorConfig) {
     
     // Generate manifest
     logger.startPhase('Writing manifest')
-    const schemaHash = hash(config.schemaText || '')
-    const version = await getGeneratorVersion()
     await writeManifest(cfg, schemaHash, modelNames, version)
     logger.endPhase('Writing manifest', 1)
     
