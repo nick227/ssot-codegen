@@ -33,27 +33,71 @@ import type { BaseAPIClient, QueryOptions } from '@ssot-codegen/sdk-runtime'
 /**
  * ${model.name} SDK Client - Thin Facade Pattern
  * 
- * Provides consistent 7-method interface:
- * - list(query?)         Get multiple records
- * - get(id)              Get one by ID
- * - create(data)         Create new
- * - update(id, data)     Update existing
- * - delete(id)           Remove
- * - findOne(where)       Find by any field
- * - count(query?)        Count records
+ * Core CRUD Methods (work on ALL models):
+ * - list(query?)              Get multiple records with filtering/pagination
+ * - get(id)                   Get one by ID
+ * - create(data)              Create new record
+ * - update(id, data)          Update existing record
+ * - delete(id)                Remove record
+ * - findOne(where)            Find by any field
+ * - count(query?)             Count records with optional filter
+ * 
+ * Bulk Operations:
+ * - createMany(data[])        Create multiple records at once
+ * - updateMany(where, data)   Update all matching records
+ * - deleteMany(where)         Delete all matching records
+ * 
+ * File Operations:
+ * - upload(formData)          Upload single file with metadata
+ * - uploadMany(formData)      Upload multiple files
  * 
  * Plus optional domain shortcuts in .helpers namespace
  * 
- * @example
+ * @example Basic Usage
  * \`\`\`typescript
- * // Core methods (work on ALL models)
- * const posts = await api.post.list({ take: 20 })
+ * const posts = await api.post.list({ take: 20, orderBy: { createdAt: 'desc' } })
  * const post = await api.post.get(123)
  * const bySlug = await api.post.findOne({ slug: 'hello' })
+ * \`\`\`
  * 
- * // Helpers (optional shortcuts)
- * const bySlug = await api.post.helpers.findBySlug('hello')
- * await api.post.helpers.publish(123)
+ * @example Complex Queries
+ * \`\`\`typescript
+ * // Arrays and operators
+ * const posts = await api.post.list({
+ *   where: {
+ *     status: { in: ['PUBLISHED', 'FEATURED'] },
+ *     title: { contains: 'TypeScript' }
+ *   }
+ * })
+ * 
+ * // Multiple orderBy
+ * const sorted = await api.post.list({
+ *   orderBy: { createdAt: 'desc', title: 'asc' }
+ * })
+ * \`\`\`
+ * 
+ * @example Bulk Operations
+ * \`\`\`typescript
+ * // Create many
+ * const posts = await api.post.createMany([
+ *   { title: 'Post 1', content: '...' },
+ *   { title: 'Post 2', content: '...' }
+ * ])
+ * 
+ * // Update many
+ * const result = await api.post.updateMany(
+ *   { status: 'DRAFT' },
+ *   { status: 'PUBLISHED' }
+ * )
+ * console.log(\`Updated \${result.count} posts\`)
+ * \`\`\`
+ * 
+ * @example File Upload
+ * \`\`\`typescript
+ * const formData = new FormData()
+ * formData.append('file', fileBlob, 'image.jpg')
+ * formData.append('title', 'My Image')
+ * const uploaded = await api.image.upload(formData)
  * \`\`\`
  */
 export class ${model.name}Client extends BaseModelClient<
@@ -67,14 +111,8 @@ export class ${model.name}Client extends BaseModelClient<
   }
 
   // ============================================
-  // Core methods inherited from BaseModelClient:
-  // - list(query?)
-  // - get(id)
-  // - create(data)
-  // - update(id, data)
-  // - delete(id)
-  // - findOne(where)
-  // - count(query?)
+  // All methods inherited from BaseModelClient
+  // See class documentation above for full list
   // ============================================
 ${helpers}
 }
