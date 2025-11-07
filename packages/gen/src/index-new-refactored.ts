@@ -59,5 +59,3 @@ export interface GeneratorInput {
   }
 }
 
-export const runGenerator = generateFromSchema
-

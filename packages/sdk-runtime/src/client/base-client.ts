@@ -155,7 +155,7 @@ export class BaseAPIClient {
    */
   async post<T>(
     path: string,
-    body?: any,
+    body?: unknown,
     config?: RequestConfig
   ): Promise<APIResponse<T>> {
     return this.request<T>(
@@ -174,7 +174,7 @@ export class BaseAPIClient {
    */
   async put<T>(
     path: string,
-    body?: any,
+    body?: unknown,
     config?: RequestConfig
   ): Promise<APIResponse<T>> {
     return this.request<T>(
@@ -193,7 +193,7 @@ export class BaseAPIClient {
    */
   async patch<T>(
     path: string,
-    body?: any,
+    body?: unknown,
     config?: RequestConfig
   ): Promise<APIResponse<T>> {
     return this.request<T>(

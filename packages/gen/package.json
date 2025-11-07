@@ -1,6 +1,22 @@
 {
   "name": "@ssot-codegen/gen",
   "version": "0.4.0",
+  "description": "Code generation engine for SSOT Codegen",
+  "author": "SSOT Codegen Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ssot-codegen/ssot-codegen"
+  },
+  "keywords": [
+    "prisma",
+    "codegen",
+    "code-generation",
+    "typescript",
+    "api",
+    "rest",
+    "crud"
+  ],
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -16,10 +32,15 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "pnpm run build",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -30,17 +51,14 @@
   "dependencies": {
     "@prisma/generator-helper": "^5.22.0",
     "@prisma/internals": "^5.22.0",
-    "@ssot-codegen/core": "workspace:*",
     "p-limit": "^5.0.0",
     "prettier": "^3.2.0"
   },
   "peerDependencies": {
     "prisma": "^5.0.0"
   },
-  "bin": {
-    "ssot": "dist/cli.js"
-  },
   "devDependencies": {
+    "@ssot-codegen/core": "workspace:*",
     "@types/prettier": "^2.7.3",
     "@vitest/coverage-v8": "^2.1.0",
     "vitest": "^2.1.0"

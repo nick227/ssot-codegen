@@ -13,8 +13,7 @@ export default defineConfig({
       exclude: [
         'src/**/*.test.ts',
         'src/**/index.ts',
-        'src/__tests__/**',
-        'src/cli.ts'
+        'src/__tests__/**'
       ]
     }
   }

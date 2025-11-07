@@ -2,17 +2,21 @@
 
 import { Command } from 'commander'
 import { generateFromSchema } from '@ssot-codegen/gen'
-import { resolve, isAbsolute, extname, normalize, dirname, basename } from 'path'
+import { resolve, isAbsolute, extname, normalize } from 'path'
 import { existsSync, readdirSync, statSync, writeFileSync, readFileSync } from 'fs'
 import { execSync } from 'child_process'
+import { createRequire } from 'module'
 import chalk from 'chalk'
+
+const require = createRequire(import.meta.url)
+const packageJson = require('../package.json')
 
 const program = new Command()
 
 program
   .name('ssot')
   .description('SSOT Codegen - Generate full-stack APIs from Prisma schemas')
-  .version('0.5.0')
+  .version(packageJson.version, '-v, --version', 'Display version number')
 
 program
   .command('generate')
@@ -194,7 +198,7 @@ LOG_LEVEL=info
                 stdio: 'inherit'
               })
               console.log(chalk.green('  ✓ Prisma client generated'))
-            } catch (prismaError) {
+            } catch {
               console.log(chalk.yellow('  ⚠️  Prisma generation failed (install prisma and run: pnpm exec prisma generate)'))
             }
             
@@ -207,7 +211,7 @@ LOG_LEVEL=info
                   stdio: 'inherit'
                 })
                 console.log(chalk.green('  ✓ All tests passed!'))
-              } catch (testError) {
+              } catch {
                 console.log(chalk.yellow('  ⚠️  Some tests failed (this is OK if database is not set up)'))
               }
             }

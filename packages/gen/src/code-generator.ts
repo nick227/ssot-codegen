@@ -64,26 +64,9 @@ export interface CodeGeneratorConfig {
   }
 }
 
-export interface GeneratedFiles {
-  contracts: Map<string, Map<string, string>>  // model -> filename -> content
-  validators: Map<string, Map<string, string>>
-  services: Map<string, string>
-  controllers: Map<string, string>
-  routes: Map<string, string>
-  sdk: Map<string, string>  // filename -> content
-  registry?: Map<string, string>  // Registry-based architecture files
-  checklist?: Map<string, string>  // System health check dashboard
-  plugins?: Map<string, Map<string, string>>  // NEW: Plugin-generated files (plugin -> files)
-  pluginOutputs?: Map<string, any>  // Plugin outputs with envVars and deps
-  hooks: {
-    core: Map<string, string>        // Framework-agnostic queries
-    react?: Map<string, string>      // React hooks
-    vue?: Map<string, string>        // Vue composables
-    zustand?: Map<string, string>    // Zustand stores
-    vanilla?: Map<string, string>    // Vanilla JS stores
-    angular?: Map<string, string>    // Angular services
-  }
-}
+// GeneratedFiles type moved to generator/types.ts to break circular dependency
+import type { GeneratedFiles } from './generator/types.js'
+export type { GeneratedFiles } from './generator/types.js'
 
 /**
  * Analysis cache for optimization

@@ -290,7 +290,7 @@ export abstract class BaseModelClient<ReadDTO, CreateDTO, UpdateDTO, QueryDTO> {
    * Build query string from QueryDTO
    * Supports complex queries, arrays, nested objects, and orderBy objects
    */
-  protected buildQueryString(query: any): string {
+  protected buildQueryString(query: Record<string, unknown>): string {
     if (!query) return ''
     
     const params = new URLSearchParams()
@@ -314,14 +314,15 @@ export abstract class BaseModelClient<ReadDTO, CreateDTO, UpdateDTO, QueryDTO> {
     }
 
     // Filtering - use JSON serialization for complex queries
-    if (query.where) {
+    if (query.where && typeof query.where === 'object') {
+      const where = query.where as Record<string, unknown>
       // Check if query is complex (has arrays, nested objects, or operators)
-      if (this.isComplexQuery(query.where)) {
+      if (this.isComplexQuery(where)) {
         // Serialize entire where clause as JSON for complex queries
-        params.set('where', JSON.stringify(query.where))
+        params.set('where', JSON.stringify(where))
       } else {
         // Simple queries can use flat params for better readability
-        this.addWhereParams(params, query.where)
+        this.addWhereParams(params, where)
       }
     }
 
@@ -332,7 +333,7 @@ export abstract class BaseModelClient<ReadDTO, CreateDTO, UpdateDTO, QueryDTO> {
   /**
    * Check if a where clause is complex and needs JSON serialization
    */
-  private isComplexQuery(where: any): boolean {
+  private isComplexQuery(where: Record<string, unknown>): boolean {
     if (!where || typeof where !== 'object') return false
     
     // Check for Prisma operators (AND, OR, NOT)
@@ -355,7 +356,7 @@ export abstract class BaseModelClient<ReadDTO, CreateDTO, UpdateDTO, QueryDTO> {
    * Add simple where clause parameters to URLSearchParams
    * For flat, simple queries only
    */
-  private addWhereParams(params: URLSearchParams, where: any, prefix: string = 'where'): void {
+  private addWhereParams(params: URLSearchParams, where: Record<string, unknown>, prefix: string = 'where'): void {
     for (const [field, filter] of Object.entries(where)) {
       if (filter === undefined || filter === null) continue
       
@@ -380,11 +381,12 @@ export abstract class BaseModelClient<ReadDTO, CreateDTO, UpdateDTO, QueryDTO> {
    */
   private serializeWhere(where: Partial<ReadDTO>): string {
     const params = new URLSearchParams()
+    const whereObj = where as Record<string, unknown>
     
-    if (this.isComplexQuery(where)) {
-      params.set('where', JSON.stringify(where))
+    if (this.isComplexQuery(whereObj)) {
+      params.set('where', JSON.stringify(whereObj))
     } else {
-      this.addWhereParams(params, where)
+      this.addWhereParams(params, whereObj)
     }
     
     return params.toString()

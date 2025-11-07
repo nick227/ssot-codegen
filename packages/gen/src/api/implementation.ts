@@ -19,9 +19,9 @@ import type { GeneratorConfig } from '../generator/types.js'
 import type { 
   GenerateOptions, 
   GenerateResult, 
-  ProgressEvent,
-  GeneratorError 
-} from './public-api.js'
+  ProgressEvent
+} from './types.js'
+import { GeneratorError } from './types.js'
 
 const require = createRequire(import.meta.url)
 const { getDMMF } = require('@prisma/internals')

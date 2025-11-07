@@ -47,7 +47,7 @@ pnpm install && pnpm dev  # ✅ Works!
 ## 📋 Examples Overview
 
 ### 🎯 Minimal Example
-**Purpose:** Simplest possible schema  
+**Purpose:** Simplest possible schema (User + Post)  
 **Keys Required:** Just `DATABASE_URL`  
 **Best For:** Learning basics, quick testing
 
@@ -55,14 +55,54 @@ pnpm install && pnpm dev  # ✅ Works!
 pnpm gen --schema examples/minimal/schema.prisma
 ```
 
-### 📝 Blog Example
-**Purpose:** Basic blog with posts, comments, users  
+### 📝 Basic Blog Example
+**Purpose:** Registry pattern demonstration  
 **Keys Required:** `DATABASE_URL`  
-**Keys Optional:** Google OAuth, S3 storage  
-**Best For:** Content management, authentication
+**Features:** Posts, Comments, Search  
+**Best For:** Understanding the registry pattern
+
+```bash
+pnpm gen --schema examples/01-basic-blog/schema.prisma
+```
+
+### 📚 Blog Example (Full Featured)
+**Purpose:** Production blog platform  
+**Keys Required:** `DATABASE_URL`  
+**Features:** Authors, Posts, Comments, Categories, Tags  
+**Best For:** Content management systems
 
 ```bash
 pnpm gen --schema examples/blog-example/schema.prisma
+```
+
+### 🏢 Enterprise API Example
+**Purpose:** All enterprise features demonstrated  
+**Keys Required:** `DATABASE_URL`, `REDIS_URL` (optional)  
+**Features:** Auth, RBAC, Caching, Events, Search  
+**Best For:** Production APIs, enterprise applications
+
+```bash
+pnpm gen --schema examples/02-enterprise-api/schema.prisma
+```
+
+### 🏢 Multi-Tenant SaaS Example
+**Purpose:** Multi-tenant architecture  
+**Keys Required:** `DATABASE_URL`  
+**Features:** Workspace isolation, Team management, Subscriptions  
+**Best For:** SaaS platforms, B2B applications
+
+```bash
+pnpm gen --schema examples/03-multi-tenant/schema.prisma
+```
+
+### 🎨 Image Optimizer Example
+**Purpose:** Image conversion and optimization API  
+**Keys Required:** `DATABASE_URL` (FFmpeg required)  
+**Features:** PNG↔JPG conversion, WebP/AVIF support, batch processing  
+**Best For:** Image processing, media APIs, CDN optimization
+
+```bash
+pnpm gen --schema examples/05-image-optimizer/schema.prisma
 ```
 
 ### 🤖 AI Chat Example
@@ -77,31 +117,12 @@ pnpm gen --schema examples/ai-chat-example/schema.prisma
 
 ### 🛍️ E-commerce Example
 **Purpose:** Full e-commerce platform  
-**Keys Required:** `DATABASE_URL`, Payment provider, Email  
-**Providers:** Stripe/PayPal, SendGrid, S3/Cloudinary  
-**Best For:** Online stores, payment processing
+**Keys Required:** `DATABASE_URL`  
+**Features:** Products, Orders, Payments, Reviews, Inventory  
+**Best For:** Online stores, marketplace platforms
 
 ```bash
 pnpm gen --schema examples/ecommerce-example/schema.prisma
-```
-
-### 🏢 Enterprise API Example
-**Purpose:** Large-scale API with multiple services  
-**Keys Required:** Varies by enabled services  
-**Best For:** Microservices, complex systems
-
-```bash
-pnpm gen --schema examples/02-enterprise-api/schema.prisma
-```
-
-### 🎨 Image Optimizer Example
-**Purpose:** Image conversion and optimization API  
-**Keys Required:** `DATABASE_URL` (FFmpeg required)  
-**Features:** PNG↔JPG conversion, WebP/AVIF support, batch processing  
-**Best For:** Image processing, media APIs, CDN optimization
-
-```bash
-pnpm gen --schema examples/05-image-optimizer/schema.prisma
 ```
 
 ---
@@ -180,30 +201,41 @@ pnpm dev  # ✅ All providers work!
 | Example | Complexity | API Keys Required | Best For |
 |---------|-----------|------------------|----------|
 | **Minimal** | ⭐ | 0 | Learning, testing |
-| **Blog** | ⭐⭐ | 0 | Content sites |
-| **AI Chat** | ⭐⭐⭐ | 1+ | AI integrations |
-| **Image Optimizer** | ⭐⭐⭐ | 0 (needs FFmpeg) | Image processing, media APIs |
-| **E-commerce** | ⭐⭐⭐⭐ | 3+ | Online stores |
-| **Enterprise** | ⭐⭐⭐⭐⭐ | Varies | Large systems |
+| **01-basic-blog** | ⭐⭐ | 0 | Registry pattern basics |
+| **blog-example** | ⭐⭐ | 0 | Full blog platform |
+| **02-enterprise-api** | ⭐⭐⭐⭐ | 0-1 | Enterprise features |
+| **03-multi-tenant** | ⭐⭐⭐⭐ | 0 | SaaS platforms |
+| **05-image-optimizer** | ⭐⭐⭐ | 0 (needs FFmpeg) | Image processing |
+| **ai-chat-example** | ⭐⭐⭐ | 1+ | AI integrations |
+| **ecommerce-example** | ⭐⭐⭐⭐⭐ | 0-3 | Online stores |
 
 ---
 
 ## 🎯 Choosing an Example
 
 ### I'm just learning
-→ Start with **Minimal** or **Blog** example
+→ Start with **Minimal** example
 
-### I want to test AI features
-→ Use **AI Chat** example (requires AI API key)
+### I want to understand the registry pattern
+→ Use **01-basic-blog** example
+
+### I'm building a content site
+→ Use **blog-example** (full featured)
+
+### I need enterprise features (auth, RBAC, caching)
+→ Use **02-enterprise-api** example
+
+### I'm building a SaaS platform
+→ Use **03-multi-tenant** example
 
 ### I need image processing
-→ Use **Image Optimizer** example (requires FFmpeg installed)
+→ Use **05-image-optimizer** example (requires FFmpeg)
+
+### I want to integrate AI features
+→ Use **ai-chat-example** (requires AI API keys)
 
 ### I'm building an online store
-→ Use **E-commerce** example (requires Stripe + SendGrid)
-
-### I need complex relationships
-→ Use **Enterprise API** example
+→ Use **ecommerce-example**
 
 ---
 

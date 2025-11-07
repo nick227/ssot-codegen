@@ -25,7 +25,7 @@
  */
 
 import type { BaseContext } from '../typed-context.js'
-import type { PhaseResult } from '../phase-runner.js'
+import type { PhaseResult } from '../types.js'
 
 // ============================================================================
 // HOOK TYPES

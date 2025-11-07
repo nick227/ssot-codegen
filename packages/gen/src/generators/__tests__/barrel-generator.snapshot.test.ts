@@ -8,7 +8,6 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { generateBarrelIndex } from '../../index-new.js'
 
 describe('Barrel Generation Snapshots', () => {
   describe('Model Barrel Exports', () => {
@@ -54,7 +53,7 @@ describe('Barrel Generation Snapshots', () => {
   })
 })
 
-// Helper function (this exists in index-new.ts but extracting for testing)
+// Helper function for testing barrel exports
 function generateBarrelExports(files: string[], type: string): string {
   return `// @generated barrel
 // Auto-generated ${type} exports

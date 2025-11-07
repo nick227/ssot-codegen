@@ -57,20 +57,9 @@ export interface PhaseContext {
   [key: string]: unknown
 }
 
-/**
- * Phase Result - Return value from phase execution
- * 
- * @property success - Whether the phase completed successfully
- * @property data - Optional data to store in context for subsequent phases
- * @property filesGenerated - Number of files created by this phase (for logging)
- * @property error - Error object if phase failed
- */
-export interface PhaseResult<TData = unknown> {
-  success: boolean
-  data?: TData
-  filesGenerated?: number
-  error?: Error
-}
+// PhaseResult moved to generator/types.ts to break circular dependency
+import type { PhaseResult } from './types.js'
+export type { PhaseResult } from './types.js'
 
 /**
  * Strongly-typed phase result builders for common scenarios

@@ -17,8 +17,8 @@ build/
 # Example .env files are ALSO ignored (users create their own)
 examples/**/.env
 
-# Generated projects' .env files
-generated/**/.env
+# Generated projects (entire directory)
+generated/
 
 # OS files
 .DS_Store

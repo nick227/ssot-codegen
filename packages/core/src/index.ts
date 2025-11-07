@@ -6,7 +6,10 @@ export interface StubDMMF { models: { name: string; fields: FieldMeta[] }[] }
 export const normalize = (dmmf: StubDMMF | unknown): Normalized => {
   const list = (dmmf as { models?: unknown[] })?.models
   if (!Array.isArray(list)) return { models: [{ name: 'User', fields: [{name:'id', type:'number'},{name:'name', type:'string'}] }] }
-  return { models: list.map((m: any) => ({ name: m.name, fields: m.fields ?? [] })) }
+  return { models: list.map((m: unknown) => ({ 
+    name: (m as {name?: string}).name || '', 
+    fields: ((m as {fields?: unknown[]}).fields ?? []) as FieldMeta[] 
+  })) }
 }
 export const pascal = (s:string) => s.replace(/(^|[_-])(\w)/g, (_match:string, _prefix:string, c:string)=>c.toUpperCase())
 export const camel = (s:string) => s.replace(/[-_](\w)/g, (_match:string, c:string)=>c.toUpperCase()).replace(/^(\w)/, (m:string)=>m.toLowerCase())

@@ -32,12 +32,6 @@ export function getNextProjectFolder(generatedDir: string, projectBaseName: stri
   return `${projectBaseName}-${nextNumber}`
 }
 
-/**
- * Legacy function for backwards compatibility
- */
-export function getNextGenFolder(baseDir: string): string {
-  return getNextProjectFolder(baseDir, 'gen')
-}
 
 /**
  * Escape special regex characters in project name

@@ -97,3 +97,4 @@ function generateFastifyRoutesTemplated(
     .buildWithNewline()
 }
 
+

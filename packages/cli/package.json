@@ -1,17 +1,41 @@
 {
   "name": "@ssot-codegen/cli",
   "version": "0.4.0",
+  "description": "Command-line interface for SSOT Codegen - Generate full-stack APIs from Prisma schemas",
+  "author": "SSOT Codegen Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ssot-codegen/ssot-codegen"
+  },
+  "keywords": [
+    "cli",
+    "prisma",
+    "codegen",
+    "generator",
+    "typescript",
+    "api",
+    "rest"
+  ],
   "type": "module",
-  "description": "CLI tool for SSOT Codegen",
   "bin": {
     "ssot": "./dist/cli.js"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "pnpm run build",
     "dev": "tsc -p tsconfig.json --watch"
   },
   "dependencies": {
-    "@ssot-codegen/gen": "workspace:*",
+    "@ssot-codegen/gen": "^0.4.0",
     "commander": "^12.0.0",
     "chalk": "^5.3.0"
   },

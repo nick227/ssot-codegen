@@ -8,8 +8,7 @@ import { defaultPaths } from './config/default-paths.js'
 export * from './project-scaffold.js'
 export * from './dependencies/index.js'
 
-// Use PhaseRunner-based generator (refactored architecture)
-// Legacy generator available via: import { generateFromSchema } from './index-new.js'
+// PhaseRunner-based generator (refactored architecture)
 export { generateFromSchema } from './index-new-refactored.js'
 
 export interface GeneratorConfig {

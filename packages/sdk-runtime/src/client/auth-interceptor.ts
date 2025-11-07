@@ -45,9 +45,9 @@ export function createAuthInterceptor(authConfig: AuthConfig) {
  * Create refresh token handler
  */
 export function createRefreshHandler(authConfig: AuthConfig) {
-  return async (error: any): Promise<boolean> => {
+  return async (error: unknown): Promise<boolean> => {
     // Only handle 401 errors
-    if (!error || error.status !== 401) return false
+    if (!error || (error as {status?: number}).status !== 401) return false
     
     // No refresh token configured
     if (!authConfig.refreshToken || !authConfig.onRefresh) return false

@@ -11,6 +11,9 @@
   "scripts": {
     "build": "pnpm -r --filter ./packages/* run build",
     "clean": "rimraf packages/*/dist",
+    "clean:build": "rimraf packages/*/dist packages/*/*.tsbuildinfo",
+    "clean:deps": "rimraf node_modules packages/*/node_modules examples/*/node_modules",
+    "clean:all": "pnpm run clean:build && pnpm run clean:deps && rimraf coverage .nyc_output generated/* *.log",
     "lint": "eslint \"packages/*/src/**/*.ts\"",
     "lint:fix": "eslint \"packages/*/src/**/*.ts\" --fix",
     "typecheck": "pnpm -r --filter ./packages/* exec tsc --noEmit",
@@ -19,6 +22,7 @@
     "validate:barrels": "node scripts/validate-barrels.js",
     "check:all": "pnpm run typecheck && pnpm run lint && pnpm run knip && pnpm run madge",
     "ssot": "node packages/cli/dist/cli.js",
+    "prepublish": "pnpm run build && pnpm run check:all",
     "examples:all": "pnpm run examples:minimal && pnpm run examples:blog && pnpm run examples:ecommerce && pnpm run examples:ai-chat",
     "examples:minimal": "cd examples/minimal && pnpm run generate",
     "examples:blog": "cd examples/blog-example && pnpm run generate",
