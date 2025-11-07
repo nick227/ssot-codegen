@@ -1,33 +1,55 @@
-# Generated standalone projects
-generated/
-
 # Dependencies
 node_modules/
+.pnpm-store/
 
 # Build outputs
-packages/*/dist/
+dist/
+build/
 *.tsbuildinfo
 
-# Coverage
-packages/*/coverage/
-
-# Environment
+# Environment variables (IMPORTANT: Protect API keys)
 .env
 .env.local
-.env.*.local
+.env.development
+.env.test
+.env.production
+
+# Example .env files are ALSO ignored (users create their own)
+examples/**/.env
+
+# Generated projects' .env files
+generated/**/.env
+
+# OS files
+.DS_Store
+Thumbs.db
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# OS
-.DS_Store
-Thumbs.db
+*~
 
 # Logs
 *.log
 npm-debug.log*
-yarn-debug.log*
 pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+*.local
+.cache/
+.temp/
+tmp/
+
+# Keep these example files (safe, no real keys)
+!.env.example
+!.env.development.template
+!env.development.template
+!examples/**/.env.example
