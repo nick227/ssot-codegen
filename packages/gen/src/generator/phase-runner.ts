@@ -189,8 +189,8 @@ export class PhaseRunner {
       // Sort phases by order
       const sortedPhases = [...this.phases].sort((a, b) => a.order - b.order)
       
-      // Track phase performance metrics
-      const phaseMetrics: Array<{ phase: string; duration: number; filesGenerated: number }> = []
+      // Initialize phase metrics array in context
+      this.context.phaseMetrics = []
       
       // Execute each phase
       for (const phase of sortedPhases) {
@@ -213,8 +213,9 @@ export class PhaseRunner {
           // Store result in context for subsequent phases
           this.context[phase.name] = result.data
           
+          // Store phase metrics immediately (so manifest phase can access them)
           const phaseDuration = performance.now() - phaseStartTime
-          phaseMetrics.push({
+          this.context.phaseMetrics.push({
             phase: phase.name,
             duration: Math.round(phaseDuration),
             filesGenerated: result.filesGenerated || 0
@@ -226,9 +227,6 @@ export class PhaseRunner {
           throw error
         }
       }
-      
-      // Store metrics in context for manifest
-      this.context.phaseMetrics = phaseMetrics
       
       // Build final result from context
       const result: GeneratorResult = {

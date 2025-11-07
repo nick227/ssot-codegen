@@ -6,7 +6,10 @@ import { PathsConfig, filePath, esmImport } from './path-resolver.js'
 
 export * from './project-scaffold.js'
 export * from './dependencies/index.js'
-export { generateFromSchema } from './index-new.js'
+
+// Use PhaseRunner-based generator (refactored architecture)
+// Legacy generator available via: import { generateFromSchema } from './index-new.js'
+export { generateFromSchema } from './index-new-refactored.js'
 
 export interface GeneratorConfig {
   output?: string

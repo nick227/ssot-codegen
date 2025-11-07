@@ -7,6 +7,7 @@
 import path from 'node:path'
 import { GenerationPhase, type PhaseContext, type PhaseResult } from '../phase-runner.js'
 import { writeFile, trackPath, generateEsmPath } from '../phase-utilities.js'
+import { toKebabCase } from '../../utils/naming.js'
 import {
   generateContractsBarrel,
   generateValidatorsBarrel,
@@ -44,12 +45,12 @@ export class GenerateBarrelsPhase extends GenerationPhase {
     
     // Single pass through models
     for (const modelName of modelNames) {
-      const modelLower = modelName.toLowerCase()
+      const modelKebab = toKebabCase(modelName)
       
       // Contracts
       if (generatedFiles.contracts.has(modelName)) {
         layerModels.contracts.push(modelName)
-        const barrelPath = path.join(cfg.rootDir, 'contracts', modelLower, 'index.ts')
+        const barrelPath = path.join(cfg.rootDir, 'contracts', modelKebab, 'index.ts')
         const barrelContent = generateContractsBarrel(modelName)
         writes.push(writeFile(barrelPath, barrelContent))
         trackPath(`contracts:${modelName}:index`, barrelPath, generateEsmPath(cfg, 'contracts', modelName))
@@ -58,34 +59,34 @@ export class GenerateBarrelsPhase extends GenerationPhase {
       // Validators
       if (generatedFiles.validators.has(modelName)) {
         layerModels.validators.push(modelName)
-        const barrelPath = path.join(cfg.rootDir, 'validators', modelLower, 'index.ts')
+        const barrelPath = path.join(cfg.rootDir, 'validators', modelKebab, 'index.ts')
         const barrelContent = generateValidatorsBarrel(modelName)
         writes.push(writeFile(barrelPath, barrelContent))
         trackPath(`validators:${modelName}:index`, barrelPath, generateEsmPath(cfg, 'validators', modelName))
       }
       
-      // Services
-      if (generatedFiles.services.has(`${modelLower}.service.ts`) || generatedFiles.services.has(`${modelLower}.service.scaffold.ts`)) {
+      // Services (check for kebab-case filenames)
+      if (generatedFiles.services.has(`${modelKebab}.service.ts`) || generatedFiles.services.has(`${modelKebab}.service.scaffold.ts`)) {
         layerModels.services.push(modelName)
-        const barrelPath = path.join(cfg.rootDir, 'services', modelLower, 'index.ts')
+        const barrelPath = path.join(cfg.rootDir, 'services', modelKebab, 'index.ts')
         const barrelContent = generateServiceBarrel(modelName)
         writes.push(writeFile(barrelPath, barrelContent))
         trackPath(`services:${modelName}:index`, barrelPath, generateEsmPath(cfg, 'services', modelName))
       }
       
-      // Controllers
-      if (generatedFiles.controllers.has(`${modelLower}.controller.ts`)) {
+      // Controllers (check for kebab-case filenames)
+      if (generatedFiles.controllers.has(`${modelKebab}.controller.ts`)) {
         layerModels.controllers.push(modelName)
-        const barrelPath = path.join(cfg.rootDir, 'controllers', modelLower, 'index.ts')
+        const barrelPath = path.join(cfg.rootDir, 'controllers', modelKebab, 'index.ts')
         const barrelContent = generateControllerBarrel(modelName)
         writes.push(writeFile(barrelPath, barrelContent))
         trackPath(`controllers:${modelName}:index`, barrelPath, generateEsmPath(cfg, 'controllers', modelName))
       }
       
-      // Routes
-      if (generatedFiles.routes.has(`${modelLower}.routes.ts`)) {
+      // Routes (check for kebab-case filenames)
+      if (generatedFiles.routes.has(`${modelKebab}.routes.ts`)) {
         layerModels.routes.push(modelName)
-        const barrelPath = path.join(cfg.rootDir, 'routes', modelLower, 'index.ts')
+        const barrelPath = path.join(cfg.rootDir, 'routes', modelKebab, 'index.ts')
         const barrelContent = generateRoutesBarrel(modelName)
         writes.push(writeFile(barrelPath, barrelContent))
         trackPath(`routes:${modelName}:index`, barrelPath, generateEsmPath(cfg, 'routes', modelName))

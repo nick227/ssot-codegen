@@ -1,8 +1,9 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
     "paths": {
       "@gen/*": [
-        "C:\\wamp64\\www\\ssot-codegen\\generated\\05-image-optimizer-1\\src/*"
+        "C:\\wamp64\\www\\ssot-codegen\\generated\\minimal-3\\src/*"
       ]
     }
   }

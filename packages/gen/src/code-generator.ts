@@ -10,6 +10,7 @@
  */
 
 import type { ParsedSchema, ParsedModel } from './dmmf-parser.js'
+import { toKebabCase } from './utils/naming.js'
 import { generateAllDTOs } from './generators/dto-generator.js'
 import { generateAllValidators } from './generators/validator-generator.js'
 import { generateService } from './generators/service-generator.js'
@@ -262,6 +263,7 @@ function generateModelCode(
   cache: AnalysisCache
 ): void {
   const modelLower = model.nameLower  // Use cached lowercase name
+  const modelKebab = toKebabCase(model.name)  // Use kebab-case for filenames
   const useEnhanced = config.useEnhancedGenerators ?? true
   
   // Get cached service annotation (already parsed in phase 1)
@@ -279,18 +281,18 @@ function generateModelCode(
     // Generate DTOs (useful for type system even for junction tables)
     const dtos = generateAllDTOs(model)
     const dtoMap = new Map<string, string>()
-    dtoMap.set(`${modelLower}.create.dto.ts`, dtos.create)
-    dtoMap.set(`${modelLower}.update.dto.ts`, dtos.update)
-    dtoMap.set(`${modelLower}.read.dto.ts`, dtos.read)
-    dtoMap.set(`${modelLower}.query.dto.ts`, dtos.query)
+    dtoMap.set(`${modelKebab}.create.dto.ts`, dtos.create)
+    dtoMap.set(`${modelKebab}.update.dto.ts`, dtos.update)
+    dtoMap.set(`${modelKebab}.read.dto.ts`, dtos.read)
+    dtoMap.set(`${modelKebab}.query.dto.ts`, dtos.query)
     files.contracts.set(model.name, dtoMap)
     
     // Generate Validators (useful for type system)
     const validators = generateAllValidators(model)
     const validatorMap = new Map<string, string>()
-    validatorMap.set(`${modelLower}.create.zod.ts`, validators.create)
-    validatorMap.set(`${modelLower}.update.zod.ts`, validators.update)
-    validatorMap.set(`${modelLower}.query.zod.ts`, validators.query)
+    validatorMap.set(`${modelKebab}.create.zod.ts`, validators.create)
+    validatorMap.set(`${modelKebab}.update.zod.ts`, validators.update)
+    validatorMap.set(`${modelKebab}.query.zod.ts`, validators.query)
     files.validators.set(model.name, validatorMap)
     
     // Skip services, controllers, and routes for junction tables
@@ -300,25 +302,25 @@ function generateModelCode(
   // Generate DTOs (always needed for non-junction models)
   const dtos = generateAllDTOs(model)
   const dtoMap = new Map<string, string>()
-  dtoMap.set(`${modelLower}.create.dto.ts`, dtos.create)
-  dtoMap.set(`${modelLower}.update.dto.ts`, dtos.update)
-  dtoMap.set(`${modelLower}.read.dto.ts`, dtos.read)
-  dtoMap.set(`${modelLower}.query.dto.ts`, dtos.query)
+  dtoMap.set(`${modelKebab}.create.dto.ts`, dtos.create)
+  dtoMap.set(`${modelKebab}.update.dto.ts`, dtos.update)
+  dtoMap.set(`${modelKebab}.read.dto.ts`, dtos.read)
+  dtoMap.set(`${modelKebab}.query.dto.ts`, dtos.query)
   files.contracts.set(model.name, dtoMap)
   
   // Generate Validators (always needed)
   const validators = generateAllValidators(model)
   const validatorMap = new Map<string, string>()
-  validatorMap.set(`${modelLower}.create.zod.ts`, validators.create)
-  validatorMap.set(`${modelLower}.update.zod.ts`, validators.update)
-  validatorMap.set(`${modelLower}.query.zod.ts`, validators.query)
+  validatorMap.set(`${modelKebab}.create.zod.ts`, validators.create)
+  validatorMap.set(`${modelKebab}.update.zod.ts`, validators.update)
+  validatorMap.set(`${modelKebab}.query.zod.ts`, validators.query)
   files.validators.set(model.name, validatorMap)
   
   // Generate Service (enhanced or basic)
   const service = useEnhanced 
     ? generateEnhancedService(model, schema)
     : generateService(model)
-  files.services.set(`${modelLower}.service.ts`, service)
+  files.services.set(`${modelKebab}.service.ts`, service)
   
   // If this model has @service annotation, generate service integration
   if (serviceAnnotation) {
@@ -343,7 +345,7 @@ function generateModelCode(
   const controller = useEnhanced
     ? generateBaseClassController(model, schema, config.framework, analysis!)  // Pass cached analysis
     : generateController(model, config.framework)
-  files.controllers.set(`${model.nameLower}.controller.ts`, controller)
+  files.controllers.set(`${modelKebab}.controller.ts`, controller)
   
   // Generate Routes (enhanced or basic)
   const routes = useEnhanced
@@ -351,7 +353,7 @@ function generateModelCode(
     : generateRoutes(model, config.framework)
     
   if (routes) {
-    files.routes.set(`${modelLower}.routes.ts`, routes)
+    files.routes.set(`${modelKebab}.routes.ts`, routes)
   }
 }
 

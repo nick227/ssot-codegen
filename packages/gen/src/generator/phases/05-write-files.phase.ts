@@ -7,6 +7,7 @@
 import path from 'node:path'
 import { GenerationPhase, type PhaseContext, type PhaseResult } from '../phase-runner.js'
 import { writeFile, trackPath, createPathId, generateEsmPath } from '../phase-utilities.js'
+import { toKebabCase } from '../../utils/naming.js'
 
 export class WriteFilesPhase extends GenerationPhase {
   readonly name = 'writeFiles'
@@ -27,8 +28,9 @@ export class WriteFilesPhase extends GenerationPhase {
     
     // Write contracts
     for (const [modelName, fileMap] of generatedFiles.contracts) {
+      const modelKebab = toKebabCase(modelName)
       for (const [filename, content] of fileMap) {
-        const filePath = path.join(cfg.rootDir, 'contracts', modelName.toLowerCase(), filename)
+        const filePath = path.join(cfg.rootDir, 'contracts', modelKebab, filename)
         writes.push(writeFile(filePath, content))
         trackPath(`contracts:${modelName}:${filename}`, filePath, generateEsmPath(cfg, 'contracts', modelName))
       }
@@ -36,8 +38,9 @@ export class WriteFilesPhase extends GenerationPhase {
     
     // Write validators
     for (const [modelName, fileMap] of generatedFiles.validators) {
+      const modelKebab = toKebabCase(modelName)
       for (const [filename, content] of fileMap) {
-        const filePath = path.join(cfg.rootDir, 'validators', modelName.toLowerCase(), filename)
+        const filePath = path.join(cfg.rootDir, 'validators', modelKebab, filename)
         writes.push(writeFile(filePath, content))
         trackPath(`validators:${modelName}:${filename}`, filePath, generateEsmPath(cfg, 'validators', modelName))
       }
@@ -45,8 +48,9 @@ export class WriteFilesPhase extends GenerationPhase {
     
     // Write services
     for (const [filename, content] of generatedFiles.services) {
-      const modelName = filename.replace('.service.ts', '').replace('.service.scaffold', '')
-      const filePath = path.join(cfg.rootDir, 'services', modelName, filename)
+      const modelName = filename.replace('.service.ts', '').replace('.service.scaffold.ts', '')
+      const modelKebab = toKebabCase(modelName)
+      const filePath = path.join(cfg.rootDir, 'services', modelKebab, filename)
       writes.push(writeFile(filePath, content))
       trackPath(`services:${modelName}:${filename}`, filePath, generateEsmPath(cfg, 'services', modelName))
     }
@@ -54,7 +58,8 @@ export class WriteFilesPhase extends GenerationPhase {
     // Write controllers
     for (const [filename, content] of generatedFiles.controllers) {
       const modelName = filename.replace('.controller.ts', '')
-      const filePath = path.join(cfg.rootDir, 'controllers', modelName, filename)
+      const modelKebab = toKebabCase(modelName)
+      const filePath = path.join(cfg.rootDir, 'controllers', modelKebab, filename)
       writes.push(writeFile(filePath, content))
       trackPath(`controllers:${modelName}:${filename}`, filePath, generateEsmPath(cfg, 'controllers', modelName))
     }
@@ -62,7 +67,8 @@ export class WriteFilesPhase extends GenerationPhase {
     // Write routes
     for (const [filename, content] of generatedFiles.routes) {
       const modelName = filename.replace('.routes.ts', '')
-      const filePath = path.join(cfg.rootDir, 'routes', modelName, filename)
+      const modelKebab = toKebabCase(modelName)
+      const filePath = path.join(cfg.rootDir, 'routes', modelKebab, filename)
       writes.push(writeFile(filePath, content))
       trackPath(`routes:${modelName}:${filename}`, filePath, generateEsmPath(cfg, 'routes', modelName))
     }
