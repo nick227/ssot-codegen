@@ -64,18 +64,27 @@ beforeAll(async () => {
 afterEach(async () => {
   // Clean up test data between tests
   // This helps maintain test isolation
-  const tablenames = await prisma.$queryRaw<Array<{ tablename: string }>>\`
-    SELECT tablename FROM pg_tables WHERE schemaname='public'
-  \`
   
-  for (const { tablename } of tablenames) {
-    if (tablename !== '_prisma_migrations') {
-      try {
-        await prisma.$executeRawUnsafe(\`TRUNCATE TABLE "\${tablename}" CASCADE;\`)
-      } catch (error) {
-        console.log(\`Error truncating \${tablename}\`, error)
+  // NOTE: This uses PostgreSQL-specific syntax
+  // For other databases, adapt the cleanup strategy
+  try {
+    const tablenames = await prisma.$queryRaw<Array<{ tablename: string }>>\`
+      SELECT tablename FROM pg_tables WHERE schemaname='public'
+    \`
+    
+    for (const { tablename } of tablenames) {
+      if (tablename !== '_prisma_migrations') {
+        try {
+          await prisma.$executeRawUnsafe(\`TRUNCATE TABLE "\${tablename}" CASCADE;\`)
+        } catch (error) {
+          console.log(\`Error truncating \${tablename}\`, error)
+        }
       }
     }
+  } catch (error) {
+    // For non-PostgreSQL databases, you may need to manually delete records
+    // Example: await prisma.user.deleteMany()
+    console.warn('Database cleanup failed:', error)
   }
 })
 

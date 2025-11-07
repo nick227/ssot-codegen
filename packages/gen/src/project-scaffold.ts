@@ -6,6 +6,7 @@ import {
   generateLogger as genLogger, 
   generateRequestLogger as genRequestLogger 
 } from './templates/logger.template.js'
+import { generateExpressTypes, generateFastifyTypes } from './templates/types.template.js'
 
 const ensureDir = async (p: string) => await fs.mkdir(p, { recursive: true })
 const write = async (file: string, content: string) => { 
@@ -229,6 +230,15 @@ export const generateRequestLogger = async (cfg: ScaffoldConfig) => {
   const requestLoggerPath = path.join(cfg.projectRoot, 'src', 'request-logger.ts')
   await write(requestLoggerPath, content)
   return requestLoggerPath
+}
+
+export const generateTypeDeclarations = async (cfg: ScaffoldConfig) => {
+  const content = cfg.framework === 'express' 
+    ? generateExpressTypes() 
+    : generateFastifyTypes()
+  const typesPath = path.join(cfg.projectRoot, 'src', 'types.d.ts')
+  await write(typesPath, content)
+  return typesPath
 }
 
 export const generateMiddleware = async (cfg: ScaffoldConfig) => {
@@ -850,6 +860,7 @@ export const scaffoldProject = async (cfg: ScaffoldConfig): Promise<string[]> =>
     generateConfig(cfg),
     generateLogger(cfg),
     generateRequestLogger(cfg),
+    generateTypeDeclarations(cfg),
     generateMiddleware(cfg),
     generateApp(cfg),
     generateServer(cfg),
