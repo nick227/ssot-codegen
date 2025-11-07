@@ -35,6 +35,7 @@ import {
   generateVitestConfig, 
   generateTestSetup 
 } from './generators/test-generator.js'
+import { mergePluginConfig } from './utils/config-loader.js'
 import type {
   GeneratorConfig,
   GeneratorResult,
@@ -174,23 +175,15 @@ export async function generateFromSchema(config: GeneratorConfig) {
     // Performance optimization: Pre-compute model names (used 4× below)
     const modelNames = parsedSchema.models.map(m => m.name)
     
+    // Load and merge plugin configuration from file + env + explicit config
+    const features = await mergePluginConfig(config.features, path.dirname(config.schemaPath || process.cwd()))
+    
     const generatedFiles = generateCode(parsedSchema, { 
       framework,
       useEnhancedGenerators: !useRegistry, // Legacy mode when not using registry
       useRegistry, // Use registry-based architecture (78% less code)
       projectName: config.projectName || path.basename(outputDir),
-      
-      // Feature plugins (NEW!)
-      features: {
-        googleAuth: process.env.ENABLE_GOOGLE_AUTH === 'true' ? {
-          enabled: true,
-          clientId: process.env.GOOGLE_CLIENT_ID,
-          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          callbackURL: process.env.GOOGLE_CALLBACK_URL,
-          strategy: (process.env.AUTH_STRATEGY as 'jwt' | 'session') || 'jwt',
-          userModel: process.env.AUTH_USER_MODEL || 'User'
-        } : undefined
-      }
+      features
     })
     
     // Track per-model progress

@@ -11,6 +11,8 @@
 import type { ParsedSchema } from '../dmmf-parser.js'
 import type { GeneratorConfig, GeneratorResult } from './types.js'
 import type { CLILogger } from '../utils/cli-logger.js'
+import type { PathsConfig } from '../path-resolver.js'
+import type { GeneratedFiles } from '../code-generator.js'
 
 export interface PhaseContext {
   config: GeneratorConfig
@@ -19,6 +21,11 @@ export interface PhaseContext {
   schemaContent?: string
   outputDir?: string
   modelNames?: string[]
+  pathsConfig?: PathsConfig
+  generatedFiles?: GeneratedFiles
+  relationshipCount?: number
+  totalFiles?: number
+  breakdown?: Array<{ layer: string; count: number }>
   [key: string]: unknown
 }
 
