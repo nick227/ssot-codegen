@@ -21,7 +21,8 @@
     "@prisma/generator-helper": "^5.22.0",
     "@prisma/internals": "^5.22.0",
     "@ssot-codegen/core": "workspace:*",
-    "p-limit": "^5.0.0"
+    "p-limit": "^5.0.0",
+    "prettier": "^3.2.0"
   },
   "peerDependencies": {
     "prisma": "^5.0.0"
@@ -30,6 +31,7 @@
     "ssot": "dist/cli.js"
   },
   "devDependencies": {
+    "@types/prettier": "^2.7.3",
     "@vitest/coverage-v8": "^2.1.0",
     "vitest": "^2.1.0"
   }

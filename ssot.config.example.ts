@@ -1,18 +1,23 @@
 /**
- * SSOT Codegen Plugin Configuration
+ * SSOT Codegen Plugin Configuration Example
  * 
  * This file demonstrates how to configure feature plugins for code generation.
- * Rename to `ssot.config.ts` to use in your project.
+ * 
+ * USAGE:
+ * 1. Copy this file to your project root as `ssot.config.js` (JavaScript format recommended)
+ * 2. Enable the plugins you want to use
+ * 3. Run: pnpm ssot generate your-schema.prisma
  * 
  * Configuration Priority:
- * 1. Explicit config passed to generator
- * 2. This config file (ssot.config.ts/js/json)
- * 3. Environment variables
+ * 1. Explicit config passed to generator (highest)
+ * 2. This config file (ssot.config.js/json/package.json)
+ * 3. Environment variables (lowest)
+ * 
+ * NOTE: For JavaScript version, remove type imports and change to:
+ *   export default { features: { ... } }
  */
 
-import type { PluginFeatureConfig } from './packages/gen/src/plugins/plugin-manager.js'
-
-const config: { features: PluginFeatureConfig } = {
+const config = {
   features: {
     // ========================================
     // Authentication Providers

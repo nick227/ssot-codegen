@@ -33,6 +33,8 @@ export interface StandaloneProjectOptions {
   schemaContent: string
   schemaPath?: string
   generatedFiles?: GeneratedFiles
+  serviceNames?: string[]
+  hasPlugins?: boolean
 }
 
 export interface TestSuiteOptions {

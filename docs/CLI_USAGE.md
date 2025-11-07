@@ -289,7 +289,13 @@ OPENAI_API_KEY="sk-..."
 ANTHROPIC_API_KEY="sk-ant-..."
 GEMINI_API_KEY="..."
 
+# Performance tuning
+SSOT_WRITE_CONCURRENCY=100  # Max concurrent file writes (default: 100)
+SSOT_FORMAT_CODE=true        # Format generated code with Prettier (default: false)
+SSOT_FORMAT_CONCURRENCY=10   # Max concurrent file formats (default: 10)
+
 # See: env.development.template for all options
+# See: CONCURRENCY_THROTTLING.md for performance tuning
 ```
 
 ### Generated Project Configuration
@@ -450,5 +456,7 @@ Register in `packages/gen/src/plugins/plugin-manager.ts`.
 - [Quick Start Guide](QUICKSTART.md) - First-time setup
 - [Project Structure](PROJECT_STRUCTURE.md) - Architecture details
 - [Plugin Index](PROVIDER_PLUGINS_INDEX.md) - All available plugins
+- [Plugin Authoring Guide](PLUGIN_AUTHORING_GUIDE.md) - Create custom plugins
 - [Google OAuth Setup](GOOGLE_AUTH_SETUP.md) - OAuth credentials guide
+- [Concurrency Throttling](CONCURRENCY_THROTTLING.md) - Performance tuning guide
 

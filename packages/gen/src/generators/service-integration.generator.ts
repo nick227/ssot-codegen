@@ -43,7 +43,7 @@ export const ${methodName} = controller.wrap(
 // Using BaseServiceController to eliminate boilerplate
 
 import { BaseServiceController } from '@/base'
-import { ${serviceName} } from '@/services/${annotation.name}.service.js'
+import { ${serviceName} } from '@/services/${annotation.name}/${annotation.name}.service.scaffold.js'
 
 ${controllerSetup}
 
@@ -151,9 +151,11 @@ export function generateServiceRoutes(annotation: ServiceAnnotation): string {
 ${kebabToCamelCase(annotation.name)}Router.${httpMethod}('${routePath}', ${middlewareStr}${kebabToCamelCase(annotation.name)}Controller.${methodName})`
   }).join('\n\n')
   
+  const description = annotation.description?.replace(/\n/g, '\n// ') || 'Service routes'
+  
   return `// @generated
 // Service Integration Routes for ${annotation.name}
-// ${annotation.description || 'Service routes'}
+// ${description}
 
 import { Router, type Router as RouterType } from 'express'
 import * as ${kebabToCamelCase(annotation.name)}Controller from '@/controllers/${annotation.name}'
@@ -209,7 +211,7 @@ export function generateServiceScaffold(annotation: ServiceAnnotation): string {
   // Generate method scaffolds
   const methodScaffolds = annotation.methods.map((methodName, index) => {
     return generateMethodScaffold(annotation, methodName, index)
-  }).join('\n\n')
+  }).join(',\n\n')
   
   return `/**
  * ${annotation.name} Service
@@ -277,21 +279,32 @@ function getProviderImports(provider?: string): string {
   if (!provider) return ''
   
   const imports: Record<string, string> = {
-    'openai': `// TODO: Install OpenAI SDK: npm install openai
-import OpenAI from 'openai'`,
-    'anthropic': `// TODO: Install Anthropic SDK: npm install @anthropic-ai/sdk
-import Anthropic from '@anthropic-ai/sdk'`,
-    's3': `// TODO: Install AWS SDK: npm install @aws-sdk/client-s3
+    'openai': `// Use the generated OpenAI plugin
+import { openaiService, openaiProvider } from '@/ai/openai.js'`,
+    'anthropic': `// Use the generated Claude plugin
+import { claudeService, claudeProvider } from '@/ai/claude.js'`,
+    'claude': `// Use the generated Claude plugin
+import { claudeService, claudeProvider } from '@/ai/claude.js'`,
+    's3': `// Use the generated S3 plugin (if enabled)
+// import { s3Service } from '@/storage/s3.js'
+// Or import SDK directly if plugin not enabled:
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3'`,
-    'cloudflare': `// TODO: Install Cloudflare SDK: npm install @cloudflare/workers-types @aws-sdk/client-s3
-// Cloudflare R2 is S3-compatible
+    'cloudflare': `// Use the generated R2 plugin (if enabled)
+// import { r2Service } from '@/storage/r2.js'
+// Or import SDK directly if plugin not enabled:
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'`,
-    'stripe': `// TODO: Install Stripe SDK: npm install stripe
+    'stripe': `// Use the generated Stripe plugin (if enabled)
+// import { stripeService } from '@/payments/stripe.js'
+// Or import SDK directly if plugin not enabled:
 import Stripe from 'stripe'`,
-    'sendgrid': `// TODO: Install SendGrid SDK: npm install @sendgrid/mail
+    'sendgrid': `// Use the generated SendGrid plugin (if enabled)
+// import { sendgridService } from '@/email/sendgrid.js'
+// Or import SDK directly if plugin not enabled:
 import sgMail from '@sendgrid/mail'`,
-    'google': `// TODO: Install Google Auth SDK: npm install google-auth-library
+    'google': `// Use the generated Google Auth plugin (if enabled)
+// import { googleAuthService } from '@/auth/google-auth.js'
+// Or import SDK directly if plugin not enabled:
 import { OAuth2Client } from 'google-auth-library'`
   }
   
@@ -305,14 +318,12 @@ function getProviderSetup(provider?: string): string {
   if (!provider) return ''
   
   const setups: Record<string, string> = {
-    'openai': `// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-})`,
-    'anthropic': `// Initialize Anthropic client
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY
-})`,
+    'openai': `// OpenAI plugin provides openaiService with chat(), embed(), etc.
+// Example: const response = await openaiService.chat('Hello!')`,
+    'anthropic': `// Claude plugin provides claudeService with chat(), etc.
+// Example: const response = await claudeService.chat('Hello!')`,
+    'claude': `// Claude plugin provides claudeService with chat(), etc.
+// Example: const response = await claudeService.chat('Hello!')`,
     's3': `// Initialize S3 client
 const s3 = new S3Client({
   region: process.env.AWS_REGION || 'us-east-1',

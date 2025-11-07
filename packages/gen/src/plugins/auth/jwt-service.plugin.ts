@@ -826,7 +826,8 @@ export {
 } from './utils/jwt.util.js'
 
 export { 
-  requireAuth, 
+  requireAuth,
+  requireAuth as authenticate,  // Alias for backward compatibility
   optionalAuth,
   requireRole,
   requireFreshToken

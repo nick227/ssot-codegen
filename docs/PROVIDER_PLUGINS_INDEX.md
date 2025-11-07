@@ -6,8 +6,8 @@
 
 ## 📊 Overview
 
-**Total Categories:** 9  
-**Total Providers:** 50+  
+**Total Categories:** 11  
+**Total Providers:** 80+  
 **Status:** Architecture ready, implementing providers
 
 ---
@@ -162,6 +162,67 @@
 
 ---
 
+### 10. 🎬 FFmpeg & Media Processing (18 services)
+
+**Core FFmpeg Operations:**
+| Service | Priority | Capability | Status | Plugin File |
+|---------|----------|------------|--------|-------------|
+| **FFmpeg Core** | HIGH | Video encoding/transcoding | 📋 Planned | `media/ffmpeg-core.plugin.ts` |
+| **Video Transcode** | HIGH | Format conversion | 📋 Planned | `media/video-transcode.plugin.ts` |
+| **Audio Extract** | HIGH | Extract audio tracks | 📋 Planned | `media/audio-extract.plugin.ts` |
+| **Video Compress** | HIGH | Size optimization | 📋 Planned | `media/video-compress.plugin.ts` |
+| **Thumbnail Generator** | HIGH | Video thumbnails | 📋 Planned | `media/thumbnail-gen.plugin.ts` |
+
+**Image Processing:**
+| Service | Priority | Capability | Status | Plugin File |
+|---------|----------|------------|--------|-------------|
+| **Image Encode** | HIGH | Format conversion | 📋 Planned | `media/image-encode.plugin.ts` |
+| **Image Optimize** | HIGH | Compression, WebP | 📋 Planned | `media/image-optimize.plugin.ts` |
+| **Image Resize** | HIGH | Scaling, cropping | 📋 Planned | `media/image-resize.plugin.ts` |
+
+**Audio Processing:**
+| Service | Priority | Capability | Status | Plugin File |
+|---------|----------|------------|--------|-------------|
+| **Audio Transcode** | HIGH | Format conversion | 📋 Planned | `media/audio-transcode.plugin.ts` |
+| **Audio Normalize** | MEDIUM | Volume leveling | 📋 Planned | `media/audio-normalize.plugin.ts` |
+| **Audio Denoise** | MEDIUM | Noise reduction | 📋 Planned | `media/audio-denoise.plugin.ts` |
+
+**Filters & Effects:**
+| Service | Priority | Capability | Status | Plugin File |
+|---------|----------|------------|--------|-------------|
+| **Video Filters** | MEDIUM | Color, brightness, effects | 📋 Planned | `media/video-filters.plugin.ts` |
+| **Audio Filters** | MEDIUM | EQ, reverb, effects | 📋 Planned | `media/audio-filters.plugin.ts` |
+| **Watermark** | LOW | Overlay images/text | 📋 Planned | `media/watermark.plugin.ts` |
+
+**Subtitles & Captions:**
+| Service | Priority | Capability | Status | Plugin File |
+|---------|----------|------------|--------|-------------|
+| **Subtitle Embed** | MEDIUM | Burn-in subtitles | 📋 Planned | `media/subtitle-embed.plugin.ts` |
+| **Caption Generate** | MEDIUM | Auto-generate from audio | 📋 Planned | `media/caption-generate.plugin.ts` |
+
+**Complex Pipelines:**
+| Service | Priority | Capability | Status | Plugin File |
+|---------|----------|------------|--------|-------------|
+| **Slideshow Generator** | HIGH | Images → Video | 📋 Planned | `media/slideshow-gen.plugin.ts` |
+| **Video Compositor** | MEDIUM | Multi-source composition | 📋 Planned | `media/video-compositor.plugin.ts` |
+
+---
+
+### 11. 🎤 Whisper & Audio Transcription (5 providers)
+
+**OpenAI Whisper Implementations:**
+| Provider | Priority | Type | Status | Plugin File |
+|----------|----------|------|--------|-------------|
+| **OpenAI Whisper API** | HIGH | Cloud API | 📋 Planned | `whisper/openai-whisper.plugin.ts` |
+| **Whisper.cpp** | HIGH | Local C++ | 📋 Planned | `whisper/whisper-cpp.plugin.ts` |
+| **Faster Whisper** | HIGH | Local GPU-optimized | 📋 Planned | `whisper/faster-whisper.plugin.ts` |
+| **Whisper JAX** | MEDIUM | Local TPU/GPU | 📋 Planned | `whisper/whisper-jax.plugin.ts` |
+| **Whisper Streaming** | MEDIUM | Real-time transcription | 📋 Planned | `whisper/whisper-stream.plugin.ts` |
+
+**Integration Note:** Complements existing voice AI (Deepgram, AssemblyAI) with OpenAI's Whisper models for offline/self-hosted transcription.
+
+---
+
 ## 🎯 Recommended Implementation Priority
 
 ### Phase 1: Foundation (DONE ✅)
@@ -279,10 +340,39 @@ packages/gen/src/plugins/
 │   ├── logrocket.plugin.ts        # 📋 Planned
 │   └── index.ts
 │
-└── search/                         # Search Engines
-    ├── algolia.plugin.ts          # 📋 Planned
-    ├── meilisearch.plugin.ts      # 📋 Planned
-    ├── typesense.plugin.ts        # 📋 Planned
+├── search/                         # Search Engines
+│   ├── algolia.plugin.ts          # 📋 Planned
+│   ├── meilisearch.plugin.ts      # 📋 Planned
+│   ├── typesense.plugin.ts        # 📋 Planned
+│   └── index.ts
+│
+├── media/                          # FFmpeg & Media Processing
+│   ├── ffmpeg-core.plugin.ts     # 📋 Planned
+│   ├── video-transcode.plugin.ts # 📋 Planned
+│   ├── audio-extract.plugin.ts   # 📋 Planned
+│   ├── video-compress.plugin.ts  # 📋 Planned
+│   ├── thumbnail-gen.plugin.ts   # 📋 Planned
+│   ├── image-encode.plugin.ts    # 📋 Planned
+│   ├── image-optimize.plugin.ts  # 📋 Planned
+│   ├── image-resize.plugin.ts    # 📋 Planned
+│   ├── audio-transcode.plugin.ts # 📋 Planned
+│   ├── audio-normalize.plugin.ts # 📋 Planned
+│   ├── audio-denoise.plugin.ts   # 📋 Planned
+│   ├── video-filters.plugin.ts   # 📋 Planned
+│   ├── audio-filters.plugin.ts   # 📋 Planned
+│   ├── watermark.plugin.ts       # 📋 Planned
+│   ├── subtitle-embed.plugin.ts  # 📋 Planned
+│   ├── caption-generate.plugin.ts# 📋 Planned
+│   ├── slideshow-gen.plugin.ts   # 📋 Planned
+│   ├── video-compositor.plugin.ts# 📋 Planned
+│   └── index.ts
+│
+└── whisper/                        # Whisper Transcription
+    ├── openai-whisper.plugin.ts   # 📋 Planned
+    ├── whisper-cpp.plugin.ts      # 📋 Planned
+    ├── faster-whisper.plugin.ts   # 📋 Planned
+    ├── whisper-jax.plugin.ts      # 📋 Planned
+    ├── whisper-stream.plugin.ts   # 📋 Planned
     └── index.ts
 ```
 
@@ -717,6 +807,27 @@ features: {
 | **AssemblyAI** | STT | $$ | Great | Batch processing |
 | **OpenAI TTS** | TTS | $ | Good | Cost-effective |
 
+### Whisper Transcription
+
+| Provider | Type | Cost | Speed | Best For |
+|----------|------|------|-------|----------|
+| **OpenAI Whisper API** | API | $ | Fast | Cloud, simple setup |
+| **Whisper.cpp** | Local | Free | Medium | Privacy, offline |
+| **Faster Whisper** | Local | Free | Very Fast | GPU servers, high volume |
+| **Whisper JAX** | Local | Free | Very Fast | TPU/GPU optimization |
+| **Whisper Streaming** | Local | Free | Real-time | Live transcription |
+
+### Media Processing
+
+| Service | Type | Complexity | Hardware | Best For |
+|---------|------|------------|----------|----------|
+| **Video Transcode** | Core | Medium | GPU-optimal | Format conversion |
+| **Audio Processing** | Core | Low | CPU | Audio enhancement |
+| **Image Optimize** | Core | Low | CPU | Web optimization |
+| **Slideshow Gen** | Pipeline | High | GPU-optimal | Content creation |
+| **Video Compositor** | Pipeline | High | GPU-required | Multi-source video |
+| **Subtitle Embed** | Utility | Low | CPU | Accessibility |
+
 ### Storage
 
 | Provider | Cost | Egress | Best For |
@@ -788,6 +899,683 @@ const response = await ai.chat([
 
 **Total:** 20-26 hours for complete plugin ecosystem
 
+### Phase 2E: FFmpeg & Media Processing (12-16 hours)
+- [ ] FFmpeg core plugin
+- [ ] Video transcoding services
+- [ ] Audio processing services
+- [ ] Image optimization services
+- [ ] Filter plugins
+- [ ] Subtitle/caption services
+- [ ] Pipeline orchestrator
+- [ ] Slideshow generator
+- [ ] Video compositor
+
+### Phase 2F: Whisper Integration (4-6 hours)
+- [ ] OpenAI Whisper API plugin
+- [ ] Whisper.cpp local plugin
+- [ ] Faster Whisper plugin
+- [ ] Streaming Whisper plugin
+- [ ] Integration with existing voice tools
+
+**Updated Total:** 36-48 hours for complete plugin ecosystem including media processing
+
+---
+
+## 🎬 FFmpeg & Media Processing - Detailed Design
+
+### Core Architecture
+
+**Plugin Capability Discovery:**
+```typescript
+// Servers declare their media processing capabilities
+features: {
+  media: {
+    enabled: true,
+    ffmpegPath: env.FFMPEG_PATH || 'ffmpeg',
+    capabilities: [
+      'video-transcode',
+      'audio-extract',
+      'thumbnail-gen',
+      'image-optimize',
+      'slideshow-gen'
+    ],
+    hardware: {
+      gpu: true,              // Hardware acceleration
+      codec: 'h264_nvenc'     // GPU codec
+    }
+  }
+}
+```
+
+### Individual Service Plugins
+
+#### 1. FFmpeg Core Plugin
+**Config:**
+```typescript
+features: {
+  ffmpegCore: {
+    enabled: true,
+    ffmpegPath: env.FFMPEG_PATH || '/usr/bin/ffmpeg',
+    ffprobePath: env.FFPROBE_PATH || '/usr/bin/ffprobe',
+    tempDir: env.TEMP_DIR || '/tmp/media',
+    maxConcurrent: 3,
+    timeout: 300000,  // 5 minutes
+    hardware: {
+      acceleration: env.HW_ACCEL || 'auto',  // auto, cuda, vaapi, qsv
+      devices: env.GPU_DEVICES || '0'
+    }
+  }
+}
+```
+
+**Generates:**
+- `media/services/ffmpeg.service.ts` - Core FFmpeg wrapper
+- `media/utils/ffmpeg-helpers.ts` - Command builders
+- `media/types/media.types.ts` - Type definitions
+
+#### 2. Video Transcode Plugin
+**Config:**
+```typescript
+features: {
+  videoTranscode: {
+    enabled: true,
+    presets: {
+      web: {
+        codec: 'h264',
+        quality: 'high',
+        format: 'mp4'
+      },
+      mobile: {
+        codec: 'h264',
+        quality: 'medium',
+        maxResolution: '720p'
+      },
+      streaming: {
+        codec: 'h264',
+        format: 'hls',
+        segments: true
+      }
+    },
+    formats: ['mp4', 'webm', 'mov', 'avi', 'mkv']
+  }
+}
+```
+
+**Endpoints:**
+```
+POST /api/media/video/transcode     # Transcode video
+POST /api/media/video/batch         # Batch transcode
+GET  /api/media/video/progress/:id  # Check progress
+GET  /api/media/video/formats       # Supported formats
+```
+
+#### 3. Audio Extract & Process Plugin
+**Config:**
+```typescript
+features: {
+  audioProcessing: {
+    enabled: true,
+    extract: true,
+    transcode: true,
+    normalize: true,
+    denoise: true,
+    formats: ['mp3', 'aac', 'wav', 'flac', 'opus']
+  }
+}
+```
+
+**Endpoints:**
+```
+POST /api/media/audio/extract       # Extract from video
+POST /api/media/audio/transcode     # Convert formats
+POST /api/media/audio/normalize     # Level volume
+POST /api/media/audio/denoise       # Remove noise
+```
+
+#### 4. Image Processing Plugin
+**Config:**
+```typescript
+features: {
+  imageProcessing: {
+    enabled: true,
+    formats: ['jpg', 'png', 'webp', 'avif'],
+    operations: {
+      resize: true,
+      optimize: true,
+      convert: true,
+      thumbnail: true
+    },
+    optimization: {
+      quality: 85,
+      progressive: true,
+      stripMetadata: true
+    }
+  }
+}
+```
+
+**Endpoints:**
+```
+POST /api/media/image/resize        # Resize images
+POST /api/media/image/optimize      # Compress/optimize
+POST /api/media/image/convert       # Format conversion
+POST /api/media/image/thumbnail     # Generate thumbnails
+```
+
+#### 5. Video Filters Plugin
+**Config:**
+```typescript
+features: {
+  videoFilters: {
+    enabled: true,
+    filters: {
+      color: ['brightness', 'contrast', 'saturation', 'hue'],
+      effects: ['blur', 'sharpen', 'denoise'],
+      transform: ['rotate', 'crop', 'scale', 'flip'],
+      overlay: ['watermark', 'text', 'image']
+    }
+  }
+}
+```
+
+#### 6. Subtitle & Caption Plugin
+**Config:**
+```typescript
+features: {
+  subtitles: {
+    enabled: true,
+    formats: ['srt', 'vtt', 'ass'],
+    operations: {
+      embed: true,      // Burn into video
+      extract: true,    // Extract from video
+      generate: true,   // Auto-generate with AI
+      translate: true   // Translate subtitles
+    }
+  }
+}
+```
+
+### Complex Pipeline Plugins
+
+#### 7. Slideshow Generator Plugin
+**Config:**
+```typescript
+features: {
+  slideshowGenerator: {
+    enabled: true,
+    transitions: ['fade', 'slide', 'zoom', 'dissolve'],
+    imageDuration: 5,        // seconds per image
+    transitionDuration: 1,   // seconds
+    audioSync: true,         // Sync to audio length
+    outputFormats: ['mp4', 'webm']
+  }
+}
+```
+
+**Multi-Step Process:**
+```typescript
+// Example: Audio → AI Images → Slideshow
+{
+  pipeline: 'audio-to-slideshow',
+  steps: [
+    { service: 'whisper', action: 'transcribe' },
+    { service: 'openai', action: 'generate-images' },
+    { service: 'slideshow', action: 'compose' }
+  ]
+}
+```
+
+**Endpoints:**
+```
+POST /api/media/slideshow/create         # Create from images
+POST /api/media/slideshow/from-audio     # Audio → Slideshow
+POST /api/media/slideshow/from-text      # Text → Voice → Slideshow
+GET  /api/media/slideshow/templates      # Pre-built templates
+```
+
+#### 8. Video Compositor Plugin
+**Config:**
+```typescript
+features: {
+  videoCompositor: {
+    enabled: true,
+    maxInputs: 10,
+    features: {
+      multiTrack: true,
+      overlays: true,
+      transitions: true,
+      effects: true
+    },
+    outputProfiles: ['web', 'social', 'broadcast']
+  }
+}
+```
+
+**Composition Types:**
+- Picture-in-picture
+- Split screen
+- Video collage
+- Multi-camera angles
+- Overlay graphics
+
+---
+
+## 🎤 Whisper Integration - Detailed Design
+
+### Whisper Plugin Variants
+
+#### A. OpenAI Whisper API Plugin
+**Config:**
+```typescript
+features: {
+  whisperAPI: {
+    enabled: true,
+    apiKey: env.OPENAI_API_KEY,
+    model: 'whisper-1',
+    language: 'en',  // or 'auto'
+    features: {
+      translate: true,      // Translate to English
+      timestamps: true,     // Word-level timestamps
+      format: 'json'       // json, text, srt, vtt
+    }
+  }
+}
+```
+
+**Endpoints:**
+```
+POST /api/whisper/transcribe       # File → Text
+POST /api/whisper/translate        # File → English text
+POST /api/whisper/timed            # File → Timestamped transcript
+```
+
+#### B. Whisper.cpp Local Plugin
+**Config:**
+```typescript
+features: {
+  whisperCpp: {
+    enabled: true,
+    modelPath: env.WHISPER_MODEL_PATH || './models/ggml-base.en.bin',
+    models: ['tiny', 'base', 'small', 'medium', 'large'],
+    threads: 4,
+    language: 'en',
+    features: {
+      offline: true,
+      realtime: false
+    }
+  }
+}
+```
+
+**Benefits:**
+- No API costs
+- Complete privacy
+- Offline capable
+- Fast local inference
+
+#### C. Faster Whisper Plugin
+**Config:**
+```typescript
+features: {
+  fasterWhisper: {
+    enabled: true,
+    modelSize: 'base',  // tiny, base, small, medium, large
+    device: 'cuda',     // cpu, cuda
+    computeType: 'float16',
+    beamSize: 5,
+    language: 'en'
+  }
+}
+```
+
+**Performance:** 4x faster than original Whisper with same accuracy
+
+#### D. Whisper Streaming Plugin
+**Config:**
+```typescript
+features: {
+  whisperStreaming: {
+    enabled: true,
+    model: 'base',
+    chunkDuration: 5,    // seconds
+    overlap: 1,          // seconds
+    realtime: true
+  }
+}
+```
+
+**Use Cases:**
+- Live transcription
+- Real-time captions
+- Voice commands
+- Meeting transcription
+
+---
+
+## 🔧 Media Pipeline Orchestration
+
+### Pipeline Templates
+
+#### Template 1: Audio → AI Slideshow
+```typescript
+{
+  name: 'audio-to-slideshow',
+  description: 'Generate slideshow from audio with AI images',
+  steps: [
+    {
+      plugin: 'whisperCpp',
+      action: 'transcribe',
+      input: 'audio.mp3',
+      output: 'transcript.json'
+    },
+    {
+      plugin: 'openai',
+      action: 'extract-scenes',
+      input: 'transcript.json',
+      output: 'scenes.json'
+    },
+    {
+      plugin: 'openai',
+      action: 'generate-images',
+      input: 'scenes.json',
+      output: 'images/*.png'
+    },
+    {
+      plugin: 'imageOptimize',
+      action: 'optimize',
+      input: 'images/*.png'
+    },
+    {
+      plugin: 'slideshowGen',
+      action: 'compose',
+      inputs: ['images/*.png', 'audio.mp3'],
+      output: 'slideshow.mp4'
+    }
+  ]
+}
+```
+
+#### Template 2: Text → Voice → Slideshow
+```typescript
+{
+  name: 'text-to-slideshow',
+  description: 'Generate slideshow from text with AI voice and images',
+  steps: [
+    {
+      plugin: 'openai',
+      action: 'enhance-script',
+      input: 'script.txt',
+      output: 'enhanced-script.txt'
+    },
+    {
+      plugin: 'elevenlabs',
+      action: 'synthesize',
+      input: 'enhanced-script.txt',
+      output: 'voiceover.mp3'
+    },
+    {
+      plugin: 'openai',
+      action: 'generate-images',
+      input: 'enhanced-script.txt',
+      output: 'images/*.png'
+    },
+    {
+      plugin: 'slideshowGen',
+      action: 'compose',
+      inputs: ['images/*.png', 'voiceover.mp3'],
+      output: 'slideshow.mp4'
+    }
+  ]
+}
+```
+
+#### Template 3: Video → Transcribe → Subtitle → Translate
+```typescript
+{
+  name: 'video-subtitle-pipeline',
+  description: 'Extract audio, transcribe, embed subtitles',
+  steps: [
+    {
+      plugin: 'audioExtract',
+      action: 'extract',
+      input: 'video.mp4',
+      output: 'audio.wav'
+    },
+    {
+      plugin: 'whisperCpp',
+      action: 'transcribe',
+      input: 'audio.wav',
+      output: 'subtitles.srt'
+    },
+    {
+      plugin: 'openai',
+      action: 'translate',
+      input: 'subtitles.srt',
+      outputs: ['subtitles-es.srt', 'subtitles-fr.srt']
+    },
+    {
+      plugin: 'subtitleEmbed',
+      action: 'embed',
+      inputs: ['video.mp4', 'subtitles.srt'],
+      output: 'video-with-subs.mp4'
+    }
+  ]
+}
+```
+
+#### Template 4: Podcast Production Pipeline
+```typescript
+{
+  name: 'podcast-production',
+  description: 'Complete podcast processing pipeline',
+  steps: [
+    {
+      plugin: 'audioDenoise',
+      action: 'denoise',
+      input: 'raw-audio.wav',
+      output: 'clean-audio.wav'
+    },
+    {
+      plugin: 'audioNormalize',
+      action: 'normalize',
+      input: 'clean-audio.wav',
+      output: 'normalized-audio.wav'
+    },
+    {
+      plugin: 'whisperCpp',
+      action: 'transcribe',
+      input: 'normalized-audio.wav',
+      output: 'transcript.txt'
+    },
+    {
+      plugin: 'openai',
+      action: 'generate-shownotes',
+      input: 'transcript.txt',
+      output: 'shownotes.md'
+    },
+    {
+      plugin: 'audioTranscode',
+      action: 'transcode',
+      input: 'normalized-audio.wav',
+      outputs: ['podcast.mp3', 'podcast.opus']
+    },
+    {
+      plugin: 'thumbnailGen',
+      action: 'generate',
+      input: 'podcast-cover.png',
+      output: 'thumbnail.jpg'
+    }
+  ]
+}
+```
+
+### Server Capability Composition
+
+**Individual Service Provider:**
+```typescript
+// Server specializes in one capability
+features: {
+  videoTranscode: {
+    enabled: true,
+    hardware: { gpu: true, codec: 'h264_nvenc' }
+  }
+}
+```
+
+**Multi-Service Provider:**
+```typescript
+// Server offers multiple related services
+features: {
+  videoTranscode: { enabled: true },
+  audioExtract: { enabled: true },
+  thumbnailGen: { enabled: true },
+  videoCompress: { enabled: true }
+}
+```
+
+**Complete Media Server:**
+```typescript
+// Full-featured media processing server
+features: {
+  ffmpegCore: { enabled: true },
+  videoTranscode: { enabled: true },
+  audioProcessing: { enabled: true },
+  imageProcessing: { enabled: true },
+  videoFilters: { enabled: true },
+  subtitles: { enabled: true },
+  slideshowGen: { enabled: true },
+  videoCompositor: { enabled: true }
+}
+```
+
+**AI-Enhanced Media Server:**
+```typescript
+// Media + AI capabilities
+features: {
+  // Media processing
+  ffmpegCore: { enabled: true },
+  videoTranscode: { enabled: true },
+  slideshowGen: { enabled: true },
+  
+  // AI services
+  whisperCpp: { enabled: true },
+  openai: { enabled: true },
+  elevenlabs: { enabled: true },
+  
+  // Storage
+  r2: { enabled: true }
+}
+```
+
+### Client-Side Pipeline Discovery
+
+**Generated API:**
+```typescript
+// Client discovers available pipelines
+GET /api/media/capabilities
+{
+  services: ['video-transcode', 'audio-extract', 'whisper-cpp'],
+  pipelines: ['audio-to-slideshow', 'video-subtitle-pipeline'],
+  hardware: { gpu: true, codec: 'h264_nvenc' }
+}
+
+// Execute pipeline
+POST /api/media/pipeline/execute
+{
+  template: 'audio-to-slideshow',
+  input: 'audio.mp3',
+  options: {
+    imageStyle: 'photorealistic',
+    transitionType: 'fade'
+  }
+}
+```
+
+---
+
+## 📦 Pre-Built Solution Bundles
+
+### Bundle 1: Content Creation Suite
+```typescript
+{
+  bundle: 'content-creation',
+  includes: [
+    'openai',
+    'elevenlabs',
+    'whisperCpp',
+    'slideshowGen',
+    'videoCompositor',
+    'imageOptimize',
+    'r2'
+  ],
+  pipelines: [
+    'text-to-slideshow',
+    'audio-to-slideshow',
+    'podcast-production'
+  ]
+}
+```
+
+### Bundle 2: Video Platform Backend
+```typescript
+{
+  bundle: 'video-platform',
+  includes: [
+    'videoTranscode',
+    'thumbnailGen',
+    'subtitleEmbed',
+    'whisperCpp',
+    'videoCompress',
+    's3'
+  ],
+  pipelines: [
+    'video-upload-processing',
+    'video-subtitle-pipeline',
+    'thumbnail-generation'
+  ]
+}
+```
+
+### Bundle 3: Podcast Studio
+```typescript
+{
+  bundle: 'podcast-studio',
+  includes: [
+    'audioDenoise',
+    'audioNormalize',
+    'audioTranscode',
+    'whisperCpp',
+    'openai',
+    'imageOptimize'
+  ],
+  pipelines: [
+    'podcast-production',
+    'shownotes-generation',
+    'audio-enhancement'
+  ]
+}
+```
+
+### Bundle 4: Social Media Automation
+```typescript
+{
+  bundle: 'social-media-automation',
+  includes: [
+    'videoCompress',
+    'imageResize',
+    'subtitleEmbed',
+    'videoFilters',
+    'thumbnailGen',
+    'r2'
+  ],
+  pipelines: [
+    'instagram-video-prep',
+    'youtube-shorts-creator',
+    'tiktok-video-optimizer'
+  ]
+}
+```
+
 ---
 
 ## 🎯 Immediate Next Steps
@@ -857,6 +1645,7 @@ docs/plugins/
 ├── INDEX.md                    # This document
 ├── ARCHITECTURE.md             # Plugin system design
 ├── API_REFERENCE.md            # Plugin API docs
+├── PIPELINE_GUIDE.md           # Media pipeline patterns
 │
 ├── auth/
 │   ├── GOOGLE_AUTH.md
@@ -876,6 +1665,22 @@ docs/plugins/
 │   ├── DEEPGRAM.md ⭐
 │   └── ELEVENLABS.md ⭐
 │
+├── whisper/
+│   ├── OVERVIEW.md
+│   ├── OPENAI_WHISPER.md
+│   ├── WHISPER_CPP.md
+│   ├── FASTER_WHISPER.md
+│   └── STREAMING.md
+│
+├── media/
+│   ├── OVERVIEW.md
+│   ├── FFMPEG_SETUP.md
+│   ├── VIDEO_PROCESSING.md
+│   ├── AUDIO_PROCESSING.md
+│   ├── IMAGE_PROCESSING.md
+│   ├── PIPELINES.md
+│   └── BUNDLES.md
+│
 └── storage/
     ├── S3.md
     ├── R2.md
@@ -890,7 +1695,583 @@ docs/plugins/
 
 1. **AI Providers** (OpenAI, Claude, Gemini, Grok, OpenRouter)?
 2. **Voice AI** (Deepgram + ElevenLabs)?
-3. **Complete the stack** (AI + Voice + Storage + Payments)?
+3. **Whisper Tools** (OpenAI Whisper API, Whisper.cpp, Faster Whisper)?
+4. **FFmpeg & Media** (Video/Audio/Image processing, Filters, Pipelines)?
+5. **Complete Media Stack** (AI + Voice + Whisper + FFmpeg + Storage)?
+6. **Pre-Built Bundles** (Content Creation, Video Platform, Podcast Studio)?
+
+**All infrastructure is ready. Just say the word!** 🎯
+
+---
+
+## 💫 Real-World Usage Examples
+
+### Example 1: Content Creator's Dream Setup
+```typescript
+// ssot.config.ts
+features: {
+  // AI for content generation
+  openai: {
+    enabled: true,
+    apiKey: env.OPENAI_API_KEY,
+    models: ['gpt-4', 'dall-e-3']
+  },
+  
+  // Voice generation
+  elevenlabs: {
+    enabled: true,
+    apiKey: env.ELEVENLABS_API_KEY,
+    defaultVoice: 'rachel'
+  },
+  
+  // Local transcription (no API costs!)
+  whisperCpp: {
+    enabled: true,
+    modelPath: './models/ggml-base.en.bin'
+  },
+  
+  // Media processing
+  ffmpegCore: { enabled: true },
+  videoTranscode: { enabled: true },
+  slideshowGen: { enabled: true },
+  imageOptimize: { enabled: true },
+  subtitleEmbed: { enabled: true },
+  
+  // Storage
+  r2: {
+    enabled: true,
+    accountId: env.CF_ACCOUNT_ID,
+    accessKeyId: env.R2_ACCESS_KEY_ID,
+    secretAccessKey: env.R2_SECRET_ACCESS_KEY
+  }
+}
+```
+
+**Generated Backend Provides:**
+```bash
+POST /api/ai/generate-script          # GPT-4 creates video script
+POST /api/ai/generate-images          # DALL-E creates visuals
+POST /api/voice/synthesize            # ElevenLabs creates voiceover
+POST /api/media/slideshow/create      # Combines into video
+POST /api/whisper/transcribe          # Creates subtitles
+POST /api/media/subtitle/embed        # Burns in subtitles
+POST /api/storage/upload              # Uploads to R2/CDN
+```
+
+**Complete Workflow:**
+```typescript
+// 1. Generate script with AI
+const script = await fetch('/api/ai/generate-script', {
+  method: 'POST',
+  body: JSON.stringify({
+    topic: 'Introduction to TypeScript',
+    duration: '5 minutes'
+  })
+});
+
+// 2. Generate voiceover
+const audio = await fetch('/api/voice/synthesize', {
+  method: 'POST',
+  body: JSON.stringify({
+    text: script.content,
+    voice: 'rachel'
+  })
+});
+
+// 3. Generate images for each scene
+const images = await fetch('/api/ai/generate-images', {
+  method: 'POST',
+  body: JSON.stringify({
+    scenes: script.scenes
+  })
+});
+
+// 4. Create slideshow video
+const video = await fetch('/api/media/slideshow/create', {
+  method: 'POST',
+  body: JSON.stringify({
+    images: images.urls,
+    audio: audio.url,
+    transition: 'fade'
+  })
+});
+
+// 5. Generate and embed subtitles
+const transcript = await fetch('/api/whisper/transcribe', {
+  method: 'POST',
+  body: JSON.stringify({
+    audioUrl: audio.url
+  })
+});
+
+const finalVideo = await fetch('/api/media/subtitle/embed', {
+  method: 'POST',
+  body: JSON.stringify({
+    videoUrl: video.url,
+    subtitles: transcript.srt
+  })
+});
+
+// 6. Upload to CDN
+const published = await fetch('/api/storage/upload', {
+  method: 'POST',
+  body: JSON.stringify({
+    file: finalVideo.url,
+    path: 'videos/typescript-intro.mp4'
+  })
+});
+
+console.log(`Video published: ${published.cdnUrl}`);
+```
+
+**Result:** Text → Video with AI voice and images, fully automated!
+
+### Example 2: Video Platform Backend
+```typescript
+// ssot.config.ts for a YouTube-like platform
+features: {
+  // Media processing
+  videoTranscode: {
+    enabled: true,
+    presets: ['web', 'mobile', 'streaming']
+  },
+  videoCompress: { enabled: true },
+  thumbnailGen: { enabled: true },
+  
+  // Subtitles & accessibility
+  whisperCpp: { enabled: true },
+  subtitleEmbed: { enabled: true },
+  
+  // Storage
+  s3: {
+    enabled: true,
+    bucket: 'my-video-platform'
+  },
+  
+  // Analytics
+  googleAnalytics: { enabled: true },
+  
+  // Auth
+  googleAuth: { enabled: true }
+}
+```
+
+**Generated Endpoints:**
+```bash
+POST /api/videos/upload               # Upload video
+POST /api/videos/process              # Transcode all formats
+GET  /api/videos/:id/progress         # Processing status
+POST /api/videos/:id/subtitles        # Generate subtitles
+GET  /api/videos/:id/thumbnails       # Get thumbnails
+GET  /api/videos/:id/stream           # HLS streaming
+```
+
+### Example 3: Podcast Production API
+```typescript
+// ssot.config.ts
+features: {
+  // Audio processing
+  audioDenoise: { enabled: true },
+  audioNormalize: { enabled: true },
+  audioTranscode: {
+    enabled: true,
+    formats: ['mp3', 'opus', 'aac']
+  },
+  
+  // Transcription
+  whisperCpp: {
+    enabled: true,
+    modelSize: 'medium'  // Better accuracy
+  },
+  
+  // AI enhancement
+  openai: {
+    enabled: true,
+    models: ['gpt-4']
+  },
+  
+  // Distribution
+  sendgrid: { enabled: true },  // Email subscribers
+  r2: { enabled: true }         // CDN hosting
+}
+```
+
+**Automated Podcast Pipeline:**
+```typescript
+// Single API call processes entire podcast!
+POST /api/podcast/produce
+{
+  "audioFile": "raw-episode-42.wav",
+  "title": "Episode 42: AI in 2025",
+  "description": "We discuss...",
+  "coverImage": "episode-42-cover.png"
+}
+
+// Backend automatically:
+// 1. Denoises audio
+// 2. Normalizes volume
+// 3. Transcribes with Whisper
+// 4. Generates shownotes with GPT-4
+// 5. Creates multiple formats (mp3, opus)
+// 6. Uploads to CDN
+// 7. Emails subscribers
+// 8. Returns RSS feed entry
+```
+
+### Example 4: AI-Powered Media Server (Self-Hosted)
+```typescript
+// Perfect for privacy-conscious users or high-volume processing
+features: {
+  // Local AI (no API costs!)
+  lmstudio: {
+    enabled: true,
+    endpoint: 'http://localhost:1234/v1'
+  },
+  whisperCpp: {
+    enabled: true,
+    modelPath: './models/ggml-large-v3.bin'
+  },
+  
+  // Full FFmpeg suite
+  ffmpegCore: { enabled: true },
+  videoTranscode: {
+    enabled: true,
+    hardware: { acceleration: 'cuda' }  // GPU acceleration
+  },
+  audioProcessing: { enabled: true },
+  imageProcessing: { enabled: true },
+  videoFilters: { enabled: true },
+  subtitles: { enabled: true },
+  slideshowGen: { enabled: true },
+  videoCompositor: { enabled: true },
+  
+  // Local storage
+  localStorage: {
+    enabled: true,
+    path: '/mnt/media-storage'
+  }
+}
+```
+
+**Benefits:**
+- ✅ Zero API costs
+- ✅ Complete privacy
+- ✅ Offline capable
+- ✅ GPU-accelerated
+- ✅ Unlimited processing
+
+**Perfect for:**
+- Home media servers
+- Corporate internal use
+- High-volume processing
+- Sensitive content
+
+---
+
+## 🎬 The Power of Composition
+
+**Key Insight:** Developers can mix and match capabilities to create specialized solutions!
+
+### Minimal Setup (Single Service)
+```typescript
+features: {
+  videoTranscode: { enabled: true }
+}
+// Just video transcoding
+```
+
+### Medium Setup (Related Services)
+```typescript
+features: {
+  videoTranscode: { enabled: true },
+  audioExtract: { enabled: true },
+  thumbnailGen: { enabled: true }
+}
+// Basic video processing
+```
+
+### Power Setup (Full Suite + AI)
+```typescript
+features: {
+  // Media
+  ffmpegCore: { enabled: true },
+  videoTranscode: { enabled: true },
+  slideshowGen: { enabled: true },
+  
+  // AI
+  openai: { enabled: true },
+  whisperCpp: { enabled: true },
+  elevenlabs: { enabled: true },
+  
+  // Storage
+  r2: { enabled: true }
+}
+// Complete content creation platform!
+```
+
+**Each server advertises its capabilities, clients discover and compose workflows dynamically!**
+
+---
+
+## 🏁 Summary
+
+**New Additions:**
+- 🎬 **18 FFmpeg/Media plugins** covering video, audio, image processing
+- 🎤 **5 Whisper variants** for local and cloud transcription
+- 🔧 **Pipeline orchestration** for complex multi-step workflows
+- 📦 **4 pre-built bundles** for common use cases
+- 🎯 **Service discovery** allowing flexible server compositions
+
+**Total Plugin Ecosystem:**
+- **11 categories**
+- **80+ providers and services**
+- **Composable architecture**
+- **Local and cloud options**
+- **Zero to full-featured in minutes**
+
+**The Vision:** Developers generate backends with exactly the capabilities they need, servers advertise what they offer, and clients orchestrate sophisticated media workflows through simple API calls.
+
+---
+
+## 🔍 Technical Implementation Notes
+
+### How Plugin Discovery Works
+
+**1. Capability Registration:**
+```typescript
+// Each plugin registers its capabilities
+export const videoTranscodePlugin: ServerPlugin = {
+  name: 'video-transcode',
+  category: 'media',
+  priority: 'high',
+  
+  capabilities: {
+    formats: ['mp4', 'webm', 'mov', 'avi'],
+    codecs: ['h264', 'vp9', 'av1'],
+    hardware: ['cpu', 'cuda', 'vaapi']
+  },
+  
+  endpoints: [
+    { method: 'POST', path: '/api/media/video/transcode' },
+    { method: 'GET', path: '/api/media/video/formats' }
+  ]
+};
+```
+
+**2. Server Capability Manifest:**
+```typescript
+// Generated at build time
+GET /api/capabilities
+{
+  "server": "media-processor-01",
+  "version": "1.0.0",
+  "plugins": {
+    "media": [
+      {
+        "name": "video-transcode",
+        "capabilities": { /* ... */ },
+        "endpoints": [ /* ... */ ]
+      },
+      {
+        "name": "audio-extract",
+        "capabilities": { /* ... */ },
+        "endpoints": [ /* ... */ ]
+      }
+    ],
+    "ai": [
+      {
+        "name": "whisper-cpp",
+        "capabilities": { /* ... */ },
+        "endpoints": [ /* ... */ ]
+      }
+    ]
+  },
+  "pipelines": [
+    {
+      "name": "video-subtitle-pipeline",
+      "steps": [ /* ... */ ],
+      "requirements": ["audio-extract", "whisper-cpp", "subtitle-embed"]
+    }
+  ]
+}
+```
+
+**3. Client-Side Discovery:**
+```typescript
+// SDK automatically discovers and validates
+const client = await SSOTClient.create('http://localhost:3000');
+
+// Check if pipeline is available
+if (client.hasPipeline('video-subtitle-pipeline')) {
+  const result = await client.executePipeline('video-subtitle-pipeline', {
+    input: 'video.mp4',
+    options: { language: 'en' }
+  });
+}
+
+// Or use individual services
+if (client.hasCapability('video-transcode')) {
+  await client.media.video.transcode({
+    input: 'video.mov',
+    format: 'mp4',
+    codec: 'h264'
+  });
+}
+```
+
+### Pipeline Orchestration Engine
+
+**Generated Pipeline Executor:**
+```typescript
+// packages/gen/src/pipelines/pipeline-executor.ts
+export class PipelineExecutor {
+  async execute(
+    pipeline: Pipeline,
+    input: PipelineInput,
+    options?: PipelineOptions
+  ): Promise<PipelineResult> {
+    const context = new ExecutionContext();
+    
+    for (const step of pipeline.steps) {
+      // Validate dependencies
+      await this.validateStep(step);
+      
+      // Execute step
+      const result = await this.executeStep(step, context);
+      
+      // Store result for next step
+      context.set(step.output, result);
+      
+      // Emit progress event
+      this.emit('progress', {
+        step: step.name,
+        progress: context.progress
+      });
+    }
+    
+    return context.getFinalResult();
+  }
+  
+  private async executeStep(
+    step: PipelineStep,
+    context: ExecutionContext
+  ): Promise<unknown> {
+    const plugin = this.plugins.get(step.plugin);
+    const input = context.get(step.input);
+    
+    return await plugin.execute(step.action, input);
+  }
+}
+```
+
+### Type-Safe Pipeline Definitions
+
+**Generated TypeScript Types:**
+```typescript
+// Automatically generated from plugin configuration
+export interface MediaCapabilities {
+  videoTranscode?: {
+    formats: ('mp4' | 'webm' | 'mov' | 'avi')[];
+    codecs: ('h264' | 'vp9' | 'av1')[];
+  };
+  
+  audioExtract?: {
+    formats: ('mp3' | 'aac' | 'wav')[];
+  };
+  
+  whisperCpp?: {
+    models: ('tiny' | 'base' | 'small' | 'medium' | 'large')[];
+    languages: string[];
+  };
+}
+
+export interface PipelineTemplates {
+  'audio-to-slideshow': {
+    input: { audio: string };
+    options?: { imageStyle?: string; transition?: string };
+    output: { video: string; transcript: string };
+  };
+  
+  'video-subtitle-pipeline': {
+    input: { video: string };
+    options?: { language?: string; format?: 'srt' | 'vtt' };
+    output: { video: string; subtitles: string };
+  };
+}
+
+// Type-safe pipeline execution
+const result = await client.executePipeline('audio-to-slideshow', {
+  input: { audio: 'audio.mp3' },
+  options: { imageStyle: 'photorealistic' }
+});
+// result is typed as PipelineTemplates['audio-to-slideshow']['output']
+```
+
+### Progressive Enhancement Pattern
+
+**Servers can start minimal and grow:**
+```typescript
+// Day 1: Just video transcoding
+features: {
+  videoTranscode: { enabled: true }
+}
+
+// Day 30: Add subtitles
+features: {
+  videoTranscode: { enabled: true },
+  whisperCpp: { enabled: true },
+  subtitleEmbed: { enabled: true }
+}
+// → Automatically unlocks "video-subtitle-pipeline"!
+
+// Day 60: Full AI capabilities
+features: {
+  videoTranscode: { enabled: true },
+  whisperCpp: { enabled: true },
+  subtitleEmbed: { enabled: true },
+  openai: { enabled: true },
+  elevenlabs: { enabled: true },
+  slideshowGen: { enabled: true }
+}
+// → Automatically unlocks "audio-to-slideshow" and "text-to-slideshow"!
+```
+
+**No code changes needed - pipelines activate automatically when dependencies are met!**
+
+---
+
+## 🎯 Next Implementation Steps
+
+### Recommended Order:
+
+**Phase 1: Foundation** (6-8 hours)
+1. FFmpeg core plugin with command builder utilities
+2. Basic video transcode plugin
+3. Audio extract plugin
+4. Image optimize plugin
+5. Pipeline executor framework
+
+**Phase 2: Whisper Integration** (4-6 hours)
+1. OpenAI Whisper API plugin
+2. Whisper.cpp local plugin
+3. Integration with existing voice tools
+4. Subtitle generation utilities
+
+**Phase 3: Advanced Media** (8-10 hours)
+1. Video filters and effects
+2. Subtitle embed plugin
+3. Slideshow generator
+4. Video compositor
+5. All audio processing plugins
+
+**Phase 4: Pipelines & Bundles** (4-6 hours)
+1. Pre-built pipeline templates
+2. Solution bundles
+3. Capability discovery API
+4. Pipeline orchestration
+5. Progress tracking and events
+
+**Total:** 22-30 hours for complete implementation
 
 **All infrastructure is ready. Just say the word!** 🎯
 

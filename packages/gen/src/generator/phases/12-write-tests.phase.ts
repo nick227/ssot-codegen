@@ -55,7 +55,7 @@ export class WriteTestsPhase extends GenerationPhase {
     
     return {
       success: true,
-      filesGenerated: 3
+      filesGenerated: writes.length
     }
   }
 }

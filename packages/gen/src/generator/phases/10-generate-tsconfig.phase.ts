@@ -37,7 +37,7 @@ export class GenerateTsConfigPhase extends GenerationPhase {
     
     return {
       success: true,
-      filesGenerated: 1
+      filesGenerated: 1 // Single file always
     }
   }
 }

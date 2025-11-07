@@ -55,7 +55,7 @@ export * from './base-service-controller.js'
     
     return {
       success: true,
-      filesGenerated: 2
+      filesGenerated: writes.length
     }
   }
 }

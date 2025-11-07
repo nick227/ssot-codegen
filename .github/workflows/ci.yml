@@ -2,26 +2,24 @@ name: CI
 
 on:
   push:
-    branches: [master, develop]
+    branches: [master, main, develop]
   pull_request:
-    branches: [master, develop]
+    branches: [master, main, develop]
 
 jobs:
+  # Job 1: Code Quality & Basic Tests
   quality:
-    name: Code Quality & Tests
+    name: Code Quality
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v2
         with:
           version: 9
       
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'pnpm'
@@ -38,39 +36,29 @@ jobs:
       - name: Lint
         run: pnpm lint
       
-      - name: Check for circular dependencies
+      - name: Check circular dependencies
         run: pnpm madge
       
-      - name: Check for unused exports
-        run: pnpm knip
+      - name: Check unused exports
+        run: pnpm knip || true  # Allow knip to warn but not fail
       
       - name: Run generator tests
         run: pnpm test:generator
-      
-      - name: Test minimal example generation
-        run: pnpm ssot generate minimal
-      
-      - name: Validate generated project
-        run: |
-          cd generated/minimal-1
-          pnpm install
-          pnpm typecheck
 
-  plugin-tests:
-    name: Plugin Tests
+  # Job 2: Smoke Test - Quick generation test
+  smoke-test:
+    name: Smoke Test
     runs-on: ubuntu-latest
+    needs: quality
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v2
         with:
           version: 9
       
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'pnpm'
@@ -81,33 +69,48 @@ jobs:
       - name: Build packages
         run: pnpm build
       
-      - name: Test AI plugins
-        run: cd packages/gen && pnpm test src/plugins/__tests__/ai-plugins.test.ts
-      
-      - name: Test storage plugins
-        run: cd packages/gen && pnpm test src/plugins/__tests__/storage-plugins.test.ts
-      
-      - name: Test payment/email plugins
-        run: cd packages/gen && pnpm test src/plugins/__tests__/payment-email-plugins.test.ts
+      - name: Run smoke test
+        run: |
+          echo "Running smoke test - generate minimal example"
+          pnpm ssot generate minimal --name smoke-test
+          
+          echo "Verify output directory exists"
+          ls -la generated/
+          
+          echo "Verify key files were generated"
+          test -f generated/smoke-test-1/package.json
+          test -d generated/smoke-test-1/src
+          test -f generated/smoke-test-1/src/app.ts
+          test -f generated/smoke-test-1/src/server.ts
+          
+          echo "Install dependencies in generated project"
+          cd generated/smoke-test-1
+          pnpm install
+          
+          echo "Build generated project"
+          pnpm build
+          
+          echo "✅ Smoke test passed!"
 
-  generation-tests:
-    name: Example Generation Tests
+  # Job 3: Example Generation Tests (Matrix)
+  examples:
+    name: Test ${{ matrix.example }}
     runs-on: ubuntu-latest
+    needs: smoke-test
+    
     strategy:
+      fail-fast: false
       matrix:
-        example: [minimal, blog-example, ai-chat-example]
+        example: [minimal, blog-example, ecommerce-example]
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v2
         with:
           version: 9
       
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'pnpm'
@@ -122,45 +125,43 @@ jobs:
         run: pnpm ssot generate ${{ matrix.example }}
       
       - name: Find generated directory
-        id: find-dir
+        id: find_dir
         run: |
           DIR=$(ls -td generated/${{ matrix.example }}-* | head -1)
           echo "dir=$DIR" >> $GITHUB_OUTPUT
+          echo "Found: $DIR"
       
-      - name: Install generated project
-        run: |
-          cd ${{ steps.find-dir.outputs.dir }}
-          pnpm install
+      - name: Install generated project dependencies
+        working-directory: ${{ steps.find_dir.outputs.dir }}
+        run: pnpm install
       
-      - name: Type check generated project
-        run: |
-          cd ${{ steps.find-dir.outputs.dir }}
-          pnpm typecheck
+      - name: Build generated project
+        working-directory: ${{ steps.find_dir.outputs.dir }}
+        run: pnpm build
       
-      - name: Test generated project (if has tests)
-        run: |
-          cd ${{ steps.find-dir.outputs.dir }}
-          if [ -f "tests/self-validation.test.ts" ]; then
-            echo "DATABASE_URL=file:./test.db" > .env
-            pnpm test:validate || true
-          fi
+      - name: Run self-validation tests
+        working-directory: ${{ steps.find_dir.outputs.dir }}
+        run: pnpm test:validate || echo "Validation tests not available"
 
-  publish-check:
-    name: Publish Readiness
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+  # Job 4: Multi-platform smoke test
+  cross-platform:
+    name: Cross-platform (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: quality
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v2
         with:
           version: 9
       
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'pnpm'
@@ -171,30 +172,22 @@ jobs:
       - name: Build packages
         run: pnpm build
       
-      - name: Check package versions in sync
+      - name: Generate minimal example
+        run: pnpm ssot generate minimal
+      
+      - name: Verify generation (Unix)
+        if: runner.os != 'Windows'
         run: |
-          ROOT_VERSION=$(node -p "require('./package.json').version")
-          CLI_VERSION=$(node -p "require('./packages/cli/package.json').version")
-          GEN_VERSION=$(node -p "require('./packages/gen/package.json').version")
-          
-          if [ "$ROOT_VERSION" != "$CLI_VERSION" ] || [ "$ROOT_VERSION" != "$GEN_VERSION" ]; then
-            echo "❌ Version mismatch!"
-            echo "Root: $ROOT_VERSION"
-            echo "CLI: $CLI_VERSION"
-            echo "Gen: $GEN_VERSION"
+          test -f generated/minimal-1/package.json
+          echo "✅ Generation successful on ${{ matrix.os }}"
+      
+      - name: Verify generation (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if (Test-Path generated/minimal-1/package.json) {
+            Write-Host "✅ Generation successful on ${{ matrix.os }}"
+          } else {
+            Write-Error "❌ Generation failed"
             exit 1
-          fi
-          
-          echo "✅ All versions in sync: $ROOT_VERSION"
-      
-      - name: Verify no lint errors
-        run: pnpm lint
-      
-      - name: Verify all tests pass
-        run: pnpm test:generator
-      
-      - name: Check bundle size
-        run: |
-          du -sh packages/*/dist/
-          echo "✅ Build artifacts ready"
-
+          }

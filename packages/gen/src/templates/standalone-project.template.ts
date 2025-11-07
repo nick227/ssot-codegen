@@ -7,6 +7,10 @@ export interface StandaloneProjectOptions {
   framework: 'express' | 'fastify'
   databaseProvider: 'postgresql' | 'mysql' | 'sqlite'
   models: string[]
+  pluginDependencies?: Record<string, string>
+  pluginDevDependencies?: Record<string, string>
+  serviceNames?: string[]  // Service integration route names (e.g., ['ai-agent', 'file-storage'])
+  hasPlugins?: boolean  // Whether any plugins were generated
 }
 
 export const packageJsonTemplate = (options: StandaloneProjectOptions) => `{
@@ -41,7 +45,7 @@ export const packageJsonTemplate = (options: StandaloneProjectOptions) => `{
     "http-errors": "^2.0.0",
     "pino": "^9.5.0",
     "pino-http": "^10.3.0",
-    "zod": "^3.25.0"
+    "zod": "^3.25.0"${options.pluginDependencies && Object.keys(options.pluginDependencies).length > 0 ? ',\n    ' + Object.entries(options.pluginDependencies).map(([pkg, ver]) => `"${pkg}": "${ver}"`).join(',\n    ') : ''}
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
@@ -53,7 +57,7 @@ export const packageJsonTemplate = (options: StandaloneProjectOptions) => `{
     "tsc-alias": "^1.8.16",
     "tsx": "^4.20.0",
     "typescript": "^5.9.0",
-    "vitest": "^2.1.0"
+    "vitest": "^2.1.0"${options.pluginDevDependencies && Object.keys(options.pluginDevDependencies).length > 0 ? ',\n    ' + Object.entries(options.pluginDevDependencies).map(([pkg, ver]) => `"${pkg}": "${ver}"`).join(',\n    ') : ''}
   },
   "_generatedBy": "ssot-codegen standalone generator"
 }
@@ -318,18 +322,46 @@ export const notFoundHandler = (req: Request, res: Response) => {
 /**
  * Convert PascalCase to camelCase for variable names
  */
+import { toKebabCase } from '../utils/naming.js'
+
 const toCamelCase = (str: string): string => {
   return str.charAt(0).toLowerCase() + str.slice(1)
 }
 
-export const appTemplate = (models: string[]) => {
+export const appTemplate = (models: string[], serviceNames?: string[], hasPlugins?: boolean) => {
   const routeImports = models
-    .map(m => `import { ${toCamelCase(m)}Router } from './routes/${m.toLowerCase()}/index.js'`)
+    .map(m => `import { ${toCamelCase(m)}Router } from './routes/${toKebabCase(m)}/index.js'`)
     .join('\n')
   
   const routeRegistrations = models
-    .map(m => `  app.use(\`\${config.api.prefix}/${m.toLowerCase()}s\`, ${toCamelCase(m)}Router)`)
+    .map(m => `  app.use(\`\${config.api.prefix}/${toKebabCase(m)}s\`, ${toCamelCase(m)}Router)`)
     .join('\n')
+  
+  // Add service route imports
+  const serviceImports = serviceNames && serviceNames.length > 0
+    ? serviceNames
+        .map(s => `import { ${toCamelCase(s.replace(/-/g, ''))}Router } from './routes/${s}/index.js'`)
+        .join('\n')
+    : ''
+  
+  // Add service route registrations
+  const serviceRegistrations = serviceNames && serviceNames.length > 0
+    ? serviceNames
+        .map(s => `  app.use(\`\${config.api.prefix}/${s}\`, ${toCamelCase(s.replace(/-/g, ''))}Router)`)
+        .join('\n')
+    : ''
+  
+  // Add plugin route imports
+  const pluginImports = hasPlugins
+    ? `import { usageRouter } from './monitoring/routes/usage.routes.js'
+import { checklistRouter } from './checklist/checklist.api.js'`
+    : ''
+  
+  // Add plugin route registrations
+  const pluginRegistrations = hasPlugins
+    ? `  app.use(\`\${config.api.prefix}/usage\`, usageRouter)
+  app.use(\`\${config.api.prefix}/checklist\`, checklistRouter)`
+    : ''
 
   return `import express from 'express'
 import cors from 'cors'
@@ -339,7 +371,7 @@ import 'express-async-errors'
 import config from './config.js'
 import { errorHandler, notFoundHandler } from './middleware.js'
 import { httpLogger, logger } from './logger.js'
-${routeImports}
+${routeImports}${serviceImports ? '\n' + serviceImports : ''}${pluginImports ? '\n' + pluginImports : ''}
 
 // Configure rate limiting
 const limiter = rateLimit({
@@ -373,8 +405,10 @@ export const createApp = async (): Promise<express.Application> => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() })
   })
 
-  // API Routes
+  // API Routes (CRUD)
 ${routeRegistrations}
+${serviceRegistrations ? '\n  // Service Routes\n' + serviceRegistrations : ''}
+${pluginRegistrations ? '\n  // Plugin Routes\n' + pluginRegistrations : ''}
 
   // Error handling
   app.use(notFoundHandler)

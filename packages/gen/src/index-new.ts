@@ -37,6 +37,7 @@ import {
 } from './generators/test-generator.js'
 import { writeFile as writeFileWithLimit } from './generator/phase-utilities.js'
 import { mergePluginConfig } from './utils/config-loader.js'
+import { toKebabCase } from './utils/naming.js'
 import type {
   GeneratorConfig,
   GeneratorResult,
@@ -242,6 +243,18 @@ export async function generateFromSchema(config: GeneratorConfig) {
         return !analysis.isJunctionTable
       })
       
+      // Extract service names from generated routes
+      const serviceNames: string[] = []
+      for (const routeFile of generatedFiles.routes.keys()) {
+        if (routeFile.includes('.routes.ts') && !routeFile.includes('/')) {
+          // Service routes are at root level: 'ai-agent.routes.ts'
+          const serviceName = routeFile.replace('.routes.ts', '')
+          if (!nonJunctionModels.find(m => m.name.toLowerCase() === serviceName)) {
+            serviceNames.push(serviceName)
+          }
+        }
+      }
+      
       await writeStandaloneProjectFiles({
         outputDir,
         projectName: config.projectName || path.basename(outputDir),
@@ -249,7 +262,9 @@ export async function generateFromSchema(config: GeneratorConfig) {
         models: nonJunctionModels.map(m => m.name),
         schemaContent,
         schemaPath: config.schemaPath,
-        generatedFiles
+        generatedFiles,
+        serviceNames,
+        hasPlugins: generatedFiles.plugins && generatedFiles.plugins.size > 0
       })
       logger.endPhase('Writing standalone project files', 8)
       
@@ -343,7 +358,8 @@ async function writeGeneratedFiles(
   // Write contracts (using for-of for better performance)
   for (const [modelName, fileMap] of files.contracts) {
     for (const [filename, content] of fileMap) {
-      const filePath = path.join(cfg.rootDir, 'contracts', modelName.toLowerCase(), filename)
+      const modelKebab = toKebabCase(modelName)
+      const filePath = path.join(cfg.rootDir, 'contracts', modelKebab, filename)
       writes.push(write(filePath, content))
       track(`contracts:${modelName}:${filename}`, filePath, esmImport(cfg, id('contracts', modelName)))
     }
@@ -352,7 +368,8 @@ async function writeGeneratedFiles(
   // Write validators
   for (const [modelName, fileMap] of files.validators) {
     for (const [filename, content] of fileMap) {
-      const filePath = path.join(cfg.rootDir, 'validators', modelName.toLowerCase(), filename)
+      const modelKebab = toKebabCase(modelName)
+      const filePath = path.join(cfg.rootDir, 'validators', modelKebab, filename)
       writes.push(write(filePath, content))
       track(`validators:${modelName}:${filename}`, filePath, esmImport(cfg, id('validators', modelName)))
     }
@@ -360,16 +377,33 @@ async function writeGeneratedFiles(
   
   // Write services
   for (const [filename, content] of files.services) {
-    const modelName = filename.replace('.service.ts', '').replace('.service.scaffold', '')
-    const filePath = path.join(cfg.rootDir, 'services', modelName, filename)
-    writes.push(write(filePath, content))
-    track(`services:${modelName}:${filename}`, filePath, esmImport(cfg, id('services', modelName)))
+    // Extract model/service name properly (remove .service.ts, .service.scaffold.ts suffixes)
+    let modelName = filename
+      .replace('.service.scaffold.ts', '')
+      .replace('.service.ts', '')
+    
+    const modelKebab = toKebabCase(modelName)
+    const kebabFilename = filename.replace(modelName, modelKebab)
+    
+    // For service scaffolds (e.g., 'ai-agent.service.scaffold.ts'), write to services/ai-agent/ directory
+    if (filename.includes('.service.scaffold.ts')) {
+      const filePath = path.join(cfg.rootDir, 'services', modelKebab, kebabFilename)
+      writes.push(write(filePath, content))
+      track(`services:${modelName}:${filename}`, filePath, `${cfg.alias}/services/${modelKebab}/${kebabFilename.replace('.ts', '')}`)
+    } else {
+      // Standard services (e.g., 'user.service.ts')
+      const filePath = path.join(cfg.rootDir, 'services', modelKebab, kebabFilename)
+      writes.push(write(filePath, content))
+      track(`services:${modelName}:${filename}`, filePath, esmImport(cfg, id('services', modelName)))
+    }
   }
   
   // Write controllers
   for (const [filename, content] of files.controllers) {
     const modelName = filename.replace('.controller.ts', '')
-    const filePath = path.join(cfg.rootDir, 'controllers', modelName, filename)
+    const modelKebab = toKebabCase(modelName)
+    const kebabFilename = `${modelKebab}.controller.ts`
+    const filePath = path.join(cfg.rootDir, 'controllers', modelKebab, kebabFilename)
     writes.push(write(filePath, content))
     track(`controllers:${modelName}:${filename}`, filePath, esmImport(cfg, id('controllers', modelName)))
   }
@@ -377,7 +411,9 @@ async function writeGeneratedFiles(
   // Write routes
   for (const [filename, content] of files.routes) {
     const modelName = filename.replace('.routes.ts', '')
-    const filePath = path.join(cfg.rootDir, 'routes', modelName, filename)
+    const modelKebab = toKebabCase(modelName)
+    const kebabFilename = `${modelKebab}.routes.ts`
+    const filePath = path.join(cfg.rootDir, 'routes', modelKebab, kebabFilename)
     writes.push(write(filePath, content))
     track(`routes:${modelName}:${filename}`, filePath, esmImport(cfg, id('routes', modelName)))
   }
@@ -463,12 +499,12 @@ async function generateBarrels(cfg: PathsConfig, models: string[], generatedFile
   
   // SINGLE PASS through models (check all layers simultaneously)
   for (const modelName of models) {
-    const modelLower = modelName.toLowerCase()
+    const modelKebab = toKebabCase(modelName)
     
     // Check contracts
     if (generatedFiles.contracts.has(modelName)) {
       layerModels.contracts.push(modelName)
-      const barrelPath = path.join(cfg.rootDir, 'contracts', modelLower, 'index.ts')
+      const barrelPath = path.join(cfg.rootDir, 'contracts', modelKebab, 'index.ts')
       const barrelContent = generateContractsBarrel(modelName)
       writes.push(write(barrelPath, barrelContent))
       track(`contracts:${modelName}:index`, barrelPath, esmImport(cfg, id('contracts', modelName)))
@@ -477,16 +513,17 @@ async function generateBarrels(cfg: PathsConfig, models: string[], generatedFile
     // Check validators
     if (generatedFiles.validators.has(modelName)) {
       layerModels.validators.push(modelName)
-      const barrelPath = path.join(cfg.rootDir, 'validators', modelLower, 'index.ts')
+      const barrelPath = path.join(cfg.rootDir, 'validators', modelKebab, 'index.ts')
       const barrelContent = generateValidatorsBarrel(modelName)
       writes.push(write(barrelPath, barrelContent))
       track(`validators:${modelName}:index`, barrelPath, esmImport(cfg, id('validators', modelName)))
     }
     
-    // Check services
+    // Check services (use lowercase for map key lookups since that's how they're stored)
+    const modelLower = modelName.toLowerCase()
     if (generatedFiles.services.has(`${modelLower}.service.ts`) || generatedFiles.services.has(`${modelLower}.service.scaffold.ts`)) {
       layerModels.services.push(modelName)
-      const barrelPath = path.join(cfg.rootDir, 'services', modelLower, 'index.ts')
+      const barrelPath = path.join(cfg.rootDir, 'services', modelKebab, 'index.ts')
       const barrelContent = generateServiceBarrel(modelName)
       writes.push(write(barrelPath, barrelContent))
       track(`services:${modelName}:index`, barrelPath, esmImport(cfg, id('services', modelName)))
@@ -495,7 +532,7 @@ async function generateBarrels(cfg: PathsConfig, models: string[], generatedFile
     // Check controllers
     if (generatedFiles.controllers.has(`${modelLower}.controller.ts`)) {
       layerModels.controllers.push(modelName)
-      const barrelPath = path.join(cfg.rootDir, 'controllers', modelLower, 'index.ts')
+      const barrelPath = path.join(cfg.rootDir, 'controllers', modelKebab, 'index.ts')
       const barrelContent = generateControllerBarrel(modelName)
       writes.push(write(barrelPath, barrelContent))
       track(`controllers:${modelName}:index`, barrelPath, esmImport(cfg, id('controllers', modelName)))
@@ -504,7 +541,7 @@ async function generateBarrels(cfg: PathsConfig, models: string[], generatedFile
     // Check routes
     if (generatedFiles.routes.has(`${modelLower}.routes.ts`)) {
       layerModels.routes.push(modelName)
-      const barrelPath = path.join(cfg.rootDir, 'routes', modelLower, 'index.ts')
+      const barrelPath = path.join(cfg.rootDir, 'routes', modelKebab, 'index.ts')
       const barrelContent = generateRoutesBarrel(modelName)
       writes.push(write(barrelPath, barrelContent))
       track(`routes:${modelName}:index`, barrelPath, esmImport(cfg, id('routes', modelName)))
@@ -635,7 +672,7 @@ export const runGenerator = generateFromSchema
  * Write standalone project files (package.json, tsconfig, src/, etc.)
  */
 async function writeStandaloneProjectFiles(options: StandaloneProjectOptions): Promise<void> {
-  const { outputDir, projectName, framework, models, schemaContent, schemaPath, generatedFiles } = options
+  const { outputDir, projectName, framework, models, schemaContent, schemaPath, generatedFiles, serviceNames, hasPlugins } = options
   
   // Detect database provider from schema
   const databaseProvider = schemaContent.includes('provider = "postgresql"') 
@@ -648,14 +685,37 @@ async function writeStandaloneProjectFiles(options: StandaloneProjectOptions): P
     projectName,
     framework,
     databaseProvider,
-    models
+    models,
+    serviceNames: serviceNames || [],
+    hasPlugins: hasPlugins || false
   }
   
   const writes: Promise<void>[] = []
   
-  // Write package.json
+  // Collect plugin dependencies if plugins were generated
+  let pluginDependencies: Record<string, string> = {}
+  let pluginDevDependencies: Record<string, string> = {}
+  
+  if (generatedFiles?.plugins && generatedFiles.plugins.size > 0 && (generatedFiles as any).pluginOutputs) {
+    const pluginOutputs = (generatedFiles as any).pluginOutputs as Map<string, any>
+    
+    for (const [, output] of pluginOutputs) {
+      if (output.packageJson?.dependencies) {
+        Object.assign(pluginDependencies, output.packageJson.dependencies)
+      }
+      if (output.packageJson?.devDependencies) {
+        Object.assign(pluginDevDependencies, output.packageJson.devDependencies)
+      }
+    }
+  }
+  
+  // Write package.json with merged plugin dependencies
   const packageJsonPath = path.join(outputDir, 'package.json')
-  writes.push(write(packageJsonPath, standaloneTemplates.packageJsonTemplate(standaloneOptions)))
+  writes.push(write(packageJsonPath, standaloneTemplates.packageJsonTemplate({
+    ...standaloneOptions,
+    pluginDependencies,
+    pluginDevDependencies
+  })))
   
   // Write tsconfig.json
   const tsconfigPath = path.join(outputDir, 'tsconfig.json')
@@ -695,7 +755,11 @@ async function writeStandaloneProjectFiles(options: StandaloneProjectOptions): P
   writes.push(write(path.join(srcDir, 'db.ts'), standaloneTemplates.dbTemplate()))
   writes.push(write(path.join(srcDir, 'logger.ts'), standaloneTemplates.loggerTemplate()))
   writes.push(write(path.join(srcDir, 'middleware.ts'), standaloneTemplates.middlewareTemplate()))
-  writes.push(write(path.join(srcDir, 'app.ts'), standaloneTemplates.appTemplate(models)))
+  writes.push(write(path.join(srcDir, 'app.ts'), standaloneTemplates.appTemplate(
+    standaloneOptions.models,
+    standaloneOptions.serviceNames,
+    standaloneOptions.hasPlugins
+  )))
   writes.push(write(path.join(srcDir, 'server.ts'), standaloneTemplates.serverTemplate()))
   
   // Copy prisma schema to new project

@@ -112,7 +112,7 @@ export class WriteStandalonePhase extends GenerationPhase {
     
     return {
       success: true,
-      filesGenerated: 8
+      filesGenerated: writes.length
     }
   }
 }

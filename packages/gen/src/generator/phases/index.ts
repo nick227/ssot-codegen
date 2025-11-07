@@ -15,6 +15,7 @@ export { WriteManifestPhase } from './09-write-manifest.phase.js'
 export { GenerateTsConfigPhase } from './10-generate-tsconfig.phase.js'
 export { WriteStandalonePhase } from './11-write-standalone.phase.js'
 export { WriteTestsPhase } from './12-write-tests.phase.js'
+export { FormatCodePhase } from './13-format-code.phase.js'
 
 import { SetupOutputDirPhase } from './00-setup-output-dir.phase.js'
 import { ParseSchemaPhase } from './01-parse-schema.phase.js'
@@ -29,6 +30,7 @@ import { WriteManifestPhase } from './09-write-manifest.phase.js'
 import { GenerateTsConfigPhase } from './10-generate-tsconfig.phase.js'
 import { WriteStandalonePhase } from './11-write-standalone.phase.js'
 import { WriteTestsPhase } from './12-write-tests.phase.js'
+import { FormatCodePhase } from './13-format-code.phase.js'
 import type { GenerationPhase } from '../phase-runner.js'
 
 /**
@@ -48,7 +50,8 @@ export function createAllPhases(): GenerationPhase[] {
     new WriteManifestPhase(),
     new GenerateTsConfigPhase(),
     new WriteStandalonePhase(),
-    new WriteTestsPhase()
+    new WriteTestsPhase(),
+    new FormatCodePhase()
   ]
 }
 
