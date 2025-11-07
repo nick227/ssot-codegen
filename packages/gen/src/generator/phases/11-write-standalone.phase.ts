@@ -5,17 +5,11 @@
  * Only runs in standalone mode
  */
 
-import fs from 'node:fs'
 import path from 'node:path'
 import { analyzeModel } from '../../utils/relationship-analyzer.js'
 import { GenerationPhase, type PhaseContext, type PhaseResult } from '../phase-runner.js'
 import * as standaloneTemplates from '../../templates/standalone-project.template.js'
-
-const ensureDir = async (p: string) => fs.promises.mkdir(p, { recursive: true })
-const write = async (file: string, content: string) => { 
-  await ensureDir(path.dirname(file))
-  await fs.promises.writeFile(file, content, 'utf8')
-}
+import { writeFile } from '../phase-utilities.js'
 
 export class WriteStandalonePhase extends GenerationPhase {
   readonly name = 'writeStandalone'
@@ -30,7 +24,7 @@ export class WriteStandalonePhase extends GenerationPhase {
   }
   
   async execute(context: PhaseContext): Promise<PhaseResult> {
-    const { schema, schemaContent, outputDir, generatedFiles, config } = context as any
+    const { schema, schemaContent, outputDir, generatedFiles, config } = context
     
     if (!schema || !schemaContent || !outputDir || !generatedFiles) {
       throw new Error('Required context data not found')
@@ -64,11 +58,11 @@ export class WriteStandalonePhase extends GenerationPhase {
     
     // Write package.json
     const packageJsonPath = path.join(outputDir, 'package.json')
-    writes.push(write(packageJsonPath, standaloneTemplates.packageJsonTemplate(standaloneOptions)))
+    writes.push(writeFile(packageJsonPath, standaloneTemplates.packageJsonTemplate(standaloneOptions)))
     
     // Write tsconfig.json
     const tsconfigPath = path.join(outputDir, 'tsconfig.json')
-    writes.push(write(tsconfigPath, standaloneTemplates.tsconfigTemplate(standaloneOptions.projectName)))
+    writes.push(writeFile(tsconfigPath, standaloneTemplates.tsconfigTemplate(standaloneOptions.projectName)))
     
     // Write .env.example with plugin variables
     const envPath = path.join(outputDir, '.env.example')
@@ -88,30 +82,30 @@ export class WriteStandalonePhase extends GenerationPhase {
       }
     }
     
-    writes.push(write(envPath, envContent))
+    writes.push(writeFile(envPath, envContent))
     
     // Write .gitignore
     const gitignorePath = path.join(outputDir, '.gitignore')
-    writes.push(write(gitignorePath, standaloneTemplates.gitignoreTemplate()))
+    writes.push(writeFile(gitignorePath, standaloneTemplates.gitignoreTemplate()))
     
     // Write README.md
     const readmePath = path.join(outputDir, 'README.md')
-    writes.push(write(readmePath, standaloneTemplates.readmeTemplate(standaloneOptions)))
+    writes.push(writeFile(readmePath, standaloneTemplates.readmeTemplate(standaloneOptions)))
     
     // Write src/ files
     const srcDir = path.join(outputDir, 'src')
-    writes.push(write(path.join(srcDir, 'config.ts'), standaloneTemplates.configTemplate()))
-    writes.push(write(path.join(srcDir, 'db.ts'), standaloneTemplates.dbTemplate()))
-    writes.push(write(path.join(srcDir, 'logger.ts'), standaloneTemplates.loggerTemplate()))
-    writes.push(write(path.join(srcDir, 'middleware.ts'), standaloneTemplates.middlewareTemplate()))
-    writes.push(write(path.join(srcDir, 'app.ts'), standaloneTemplates.appTemplate(modelNames)))
-    writes.push(write(path.join(srcDir, 'server.ts'), standaloneTemplates.serverTemplate()))
+    writes.push(writeFile(path.join(srcDir, 'config.ts'), standaloneTemplates.configTemplate()))
+    writes.push(writeFile(path.join(srcDir, 'db.ts'), standaloneTemplates.dbTemplate()))
+    writes.push(writeFile(path.join(srcDir, 'logger.ts'), standaloneTemplates.loggerTemplate()))
+    writes.push(writeFile(path.join(srcDir, 'middleware.ts'), standaloneTemplates.middlewareTemplate()))
+    writes.push(writeFile(path.join(srcDir, 'app.ts'), standaloneTemplates.appTemplate(modelNames)))
+    writes.push(writeFile(path.join(srcDir, 'server.ts'), standaloneTemplates.serverTemplate()))
     
     // Copy prisma schema to new project
     if (config.schemaPath) {
       const prismaDir = path.join(outputDir, 'prisma')
       const newSchemaPath = path.join(prismaDir, 'schema.prisma')
-      writes.push(write(newSchemaPath, schemaContent))
+      writes.push(writeFile(newSchemaPath, schemaContent))
     }
     
     await Promise.all(writes)

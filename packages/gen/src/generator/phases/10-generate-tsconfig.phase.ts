@@ -4,15 +4,9 @@
  * Generates TypeScript path mappings
  */
 
-import fs from 'node:fs'
 import path from 'node:path'
 import { GenerationPhase, type PhaseContext, type PhaseResult } from '../phase-runner.js'
-
-const ensureDir = async (p: string) => fs.promises.mkdir(p, { recursive: true })
-const write = async (file: string, content: string) => { 
-  await ensureDir(path.dirname(file))
-  await fs.promises.writeFile(file, content, 'utf8')
-}
+import { writeFile } from '../phase-utilities.js'
 
 export class GenerateTsConfigPhase extends GenerationPhase {
   readonly name = 'generateTsConfig'
@@ -23,7 +17,7 @@ export class GenerateTsConfigPhase extends GenerationPhase {
   }
   
   async execute(context: PhaseContext): Promise<PhaseResult> {
-    const { pathsConfig: cfg } = context as any
+    const { pathsConfig: cfg } = context
     
     if (!cfg) {
       throw new Error('Paths config not found in context')
@@ -39,7 +33,7 @@ export class GenerateTsConfigPhase extends GenerationPhase {
     }
     
     const tsconfigPath = path.join(path.resolve('.'), 'tsconfig.paths.json')
-    await write(tsconfigPath, JSON.stringify(tsconfigPathsContent, null, 2))
+    await writeFile(tsconfigPath, JSON.stringify(tsconfigPathsContent, null, 2))
     
     return {
       success: true,

@@ -4,15 +4,9 @@
  * Generates OpenAPI specification for the API
  */
 
-import fs from 'node:fs'
 import path from 'node:path'
 import { GenerationPhase, type PhaseContext, type PhaseResult } from '../phase-runner.js'
-
-const ensureDir = async (p: string) => fs.promises.mkdir(p, { recursive: true })
-const write = async (file: string, content: string) => { 
-  await ensureDir(path.dirname(file))
-  await fs.promises.writeFile(file, content, 'utf8')
-}
+import { writeFile } from '../phase-utilities.js'
 
 export class GenerateOpenAPIPhase extends GenerationPhase {
   readonly name = 'generateOpenAPI'
@@ -23,7 +17,7 @@ export class GenerateOpenAPIPhase extends GenerationPhase {
   }
   
   async execute(context: PhaseContext): Promise<PhaseResult> {
-    const { schema, pathsConfig: cfg } = context as any
+    const { schema, pathsConfig: cfg } = context
     
     if (!schema || !cfg) {
       throw new Error('Schema or paths config not found in context')
@@ -59,7 +53,7 @@ export class GenerateOpenAPIPhase extends GenerationPhase {
     }
     
     const specPath = path.join(cfg.rootDir, 'openapi.json')
-    await write(specPath, JSON.stringify(spec, null, 2))
+    await writeFile(specPath, JSON.stringify(spec, null, 2))
     
     return {
       success: true,

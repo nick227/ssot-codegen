@@ -2,7 +2,6 @@ import type { PathsConfig } from '../path-resolver.js'
 import type { GeneratedFiles } from '../code-generator.js'
 import type { ParsedModel } from '../dmmf-parser.js'
 import type { LogLevel } from '../utils/cli-logger.js'
-import type { PluginFeatureConfig } from '../plugins/plugin-manager.js'
 
 export interface GeneratorConfig {
   output?: string
@@ -15,7 +14,7 @@ export interface GeneratorConfig {
   verbosity?: LogLevel
   colors?: boolean
   timestamps?: boolean
-  features?: PluginFeatureConfig
+  features?: any  // Plugin features configuration
 }
 
 export interface GeneratorResult {

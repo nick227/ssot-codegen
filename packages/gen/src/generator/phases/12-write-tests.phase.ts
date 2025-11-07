@@ -5,7 +5,6 @@
  * Only runs in standalone mode
  */
 
-import fs from 'node:fs'
 import path from 'node:path'
 import { GenerationPhase, type PhaseContext, type PhaseResult } from '../phase-runner.js'
 import { 
@@ -13,12 +12,7 @@ import {
   generateVitestConfig, 
   generateTestSetup 
 } from '../../generators/test-generator.js'
-
-const ensureDir = async (p: string) => fs.promises.mkdir(p, { recursive: true })
-const write = async (file: string, content: string) => { 
-  await ensureDir(path.dirname(file))
-  await fs.promises.writeFile(file, content, 'utf8')
-}
+import { writeFile } from '../phase-utilities.js'
 
 export class WriteTestsPhase extends GenerationPhase {
   readonly name = 'writeTests'
@@ -33,7 +27,7 @@ export class WriteTestsPhase extends GenerationPhase {
   }
   
   async execute(context: PhaseContext): Promise<PhaseResult> {
-    const { schema, outputDir, config } = context as any
+    const { schema, outputDir, config } = context
     
     if (!schema || !outputDir) {
       throw new Error('Required context data not found')
@@ -45,17 +39,17 @@ export class WriteTestsPhase extends GenerationPhase {
     // Generate self-validation test
     const testContent = generateSelfValidationTests({ models: schema.models, framework })
     const testPath = path.join(outputDir, 'tests', 'self-validation.test.ts')
-    writes.push(write(testPath, testContent))
+    writes.push(writeFile(testPath, testContent))
     
     // Generate vitest config
     const vitestConfigContent = generateVitestConfig()
     const vitestConfigPath = path.join(outputDir, 'vitest.config.ts')
-    writes.push(write(vitestConfigPath, vitestConfigContent))
+    writes.push(writeFile(vitestConfigPath, vitestConfigContent))
     
     // Generate test setup
     const setupContent = generateTestSetup()
     const setupPath = path.join(outputDir, 'tests', 'setup.ts')
-    writes.push(write(setupPath, setupContent))
+    writes.push(writeFile(setupPath, setupContent))
     
     await Promise.all(writes)
     

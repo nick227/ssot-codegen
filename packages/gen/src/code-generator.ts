@@ -69,6 +69,7 @@ export interface GeneratedFiles {
   registry?: Map<string, string>  // Registry-based architecture files
   checklist?: Map<string, string>  // System health check dashboard
   plugins?: Map<string, Map<string, string>>  // NEW: Plugin-generated files (plugin -> files)
+  pluginOutputs?: Map<string, any>  // Plugin outputs with envVars and deps
   hooks: {
     core: Map<string, string>        // Framework-agnostic queries
     react?: Map<string, string>      // React hooks

@@ -4,16 +4,10 @@
  * Writes generation manifest with metadata
  */
 
-import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
 import { GenerationPhase, type PhaseContext, type PhaseResult } from '../phase-runner.js'
-
-const ensureDir = async (p: string) => fs.promises.mkdir(p, { recursive: true })
-const write = async (file: string, content: string) => { 
-  await ensureDir(path.dirname(file))
-  await fs.promises.writeFile(file, content, 'utf8')
-}
+import { writeFile } from '../phase-utilities.js'
 
 const hash = (text: string) => crypto.createHash('sha256').update(text).digest('hex')
 
@@ -26,7 +20,7 @@ export class WriteManifestPhase extends GenerationPhase {
   }
   
   async execute(context: PhaseContext): Promise<PhaseResult> {
-    const { schemaContent, pathsConfig: cfg, modelNames, config } = context as any
+    const { schemaContent, pathsConfig: cfg, modelNames, config } = context
     
     if (!schemaContent || !cfg || !modelNames) {
       throw new Error('Required context data not found')
@@ -42,7 +36,7 @@ export class WriteManifestPhase extends GenerationPhase {
     }
     
     const manifestPath = path.join(cfg.rootDir, 'manifests', 'generation.json')
-    await write(manifestPath, JSON.stringify(manifest, null, 2))
+    await writeFile(manifestPath, JSON.stringify(manifest, null, 2))
     
     return {
       success: true,

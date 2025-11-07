@@ -4,23 +4,9 @@
  * Writes base infrastructure files (BaseCRUDController, etc.)
  */
 
-import fs from 'node:fs'
 import path from 'node:path'
 import { GenerationPhase, type PhaseContext, type PhaseResult } from '../phase-runner.js'
-import { esmImport } from '../../path-resolver.js'
-
-const ensureDir = async (p: string) => fs.promises.mkdir(p, { recursive: true })
-const write = async (file: string, content: string) => { 
-  await ensureDir(path.dirname(file))
-  await fs.promises.writeFile(file, content, 'utf8')
-}
-
-const pathMap: Record<string, { fs: string; esm: string }> = {}
-const track = (idStr: string, fsPath: string, esmPath: string) => {
-  pathMap[idStr] = { fs: fsPath, esm: esmPath }
-}
-
-const id = (layer: string, model?: string, file?: string) => ({ layer, model, file })
+import { writeFile, trackPath, generateEsmPath } from '../phase-utilities.js'
 
 export class WriteInfrastructurePhase extends GenerationPhase {
   readonly name = 'writeInfrastructure'
@@ -31,7 +17,7 @@ export class WriteInfrastructurePhase extends GenerationPhase {
   }
   
   async execute(context: PhaseContext): Promise<PhaseResult> {
-    const cfg = (context as any).pathsConfig
+    const { pathsConfig: cfg } = context
     
     if (!cfg) {
       throw new Error('Paths config not found in context')
@@ -48,12 +34,12 @@ export class WriteInfrastructurePhase extends GenerationPhase {
     const writes: Promise<void>[] = []
     
     // Write base CRUD controller
-    writes.push(write(baseCRUDPath, baseCRUDControllerTemplate))
-    track('base:base-crud-controller.ts', baseCRUDPath, esmImport(cfg, id('base', undefined, 'base-crud-controller.ts')))
+    writes.push(writeFile(baseCRUDPath, baseCRUDControllerTemplate))
+    trackPath('base:base-crud-controller.ts', baseCRUDPath, generateEsmPath(cfg, 'base', undefined, 'base-crud-controller.ts'))
     
     // Write base service controller
-    writes.push(write(baseServicePath, baseServiceControllerTemplate))
-    track('base:base-service-controller.ts', baseServicePath, esmImport(cfg, id('base', undefined, 'base-service-controller.ts')))
+    writes.push(writeFile(baseServicePath, baseServiceControllerTemplate))
+    trackPath('base:base-service-controller.ts', baseServicePath, generateEsmPath(cfg, 'base', undefined, 'base-service-controller.ts'))
     
     // Write barrel export
     const indexContent = `// @generated
@@ -62,8 +48,8 @@ export class WriteInfrastructurePhase extends GenerationPhase {
 export * from './base-crud-controller.js'
 export * from './base-service-controller.js'
 `
-    writes.push(write(indexPath, indexContent))
-    track('base:index.ts', indexPath, esmImport(cfg, id('base')))
+    writes.push(writeFile(indexPath, indexContent))
+    trackPath('base:index.ts', indexPath, generateEsmPath(cfg, 'base'))
     
     await Promise.all(writes)
     

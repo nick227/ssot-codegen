@@ -10,10 +10,9 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
-import type { PluginFeatureConfig } from '../plugins/plugin-manager.js'
 
 export interface PluginConfigFile {
-  features?: PluginFeatureConfig
+  features?: any
 }
 
 /**
@@ -25,7 +24,7 @@ export interface PluginConfigFile {
  * 3. ssot.config.json
  * 4. package.json "ssot" field
  */
-export async function loadPluginConfig(projectRoot: string = process.cwd()): Promise<PluginFeatureConfig | undefined> {
+export async function loadPluginConfig(projectRoot: string = process.cwd()): Promise<any | undefined> {
   // Try TypeScript config
   const tsConfig = path.join(projectRoot, 'ssot.config.ts')
   if (fs.existsSync(tsConfig)) {
@@ -56,7 +55,7 @@ export async function loadPluginConfig(projectRoot: string = process.cwd()): Pro
 /**
  * Load TypeScript config (requires ts-node or tsx)
  */
-async function loadTsConfig(filePath: string): Promise<PluginFeatureConfig | undefined> {
+async function loadTsConfig(filePath: string): Promise<any | undefined> {
   try {
     // Dynamic import for ESM compatibility
     const fileUrl = pathToFileURL(filePath).href
@@ -72,7 +71,7 @@ async function loadTsConfig(filePath: string): Promise<PluginFeatureConfig | und
 /**
  * Load JavaScript config
  */
-async function loadJsConfig(filePath: string): Promise<PluginFeatureConfig | undefined> {
+async function loadJsConfig(filePath: string): Promise<any | undefined> {
   try {
     const fileUrl = pathToFileURL(filePath).href
     const module = await import(fileUrl)
@@ -87,7 +86,7 @@ async function loadJsConfig(filePath: string): Promise<PluginFeatureConfig | und
 /**
  * Load JSON config
  */
-function loadJsonConfig(filePath: string): PluginFeatureConfig | undefined {
+function loadJsonConfig(filePath: string): any | undefined {
   try {
     const content = fs.readFileSync(filePath, 'utf8')
     const config = JSON.parse(content) as PluginConfigFile
@@ -101,7 +100,7 @@ function loadJsonConfig(filePath: string): PluginFeatureConfig | undefined {
 /**
  * Load from package.json "ssot" field
  */
-function loadPackageJsonConfig(filePath: string): PluginFeatureConfig | undefined {
+function loadPackageJsonConfig(filePath: string): any | undefined {
   try {
     const content = fs.readFileSync(filePath, 'utf8')
     const pkg = JSON.parse(content)
@@ -121,8 +120,8 @@ function loadPackageJsonConfig(filePath: string): PluginFeatureConfig | undefine
  * - SSOT_PLUGIN_OPENAI_DEFAULT_MODEL=gpt-4
  * - SSOT_PLUGIN_STRIPE_ENABLED=true
  */
-export function loadPluginConfigFromEnv(): PluginFeatureConfig {
-  const features: PluginFeatureConfig = {}
+export function loadPluginConfigFromEnv(): any {
+  const features: any = {}
   
   // Google Auth (legacy format for backward compatibility)
   if (process.env.ENABLE_GOOGLE_AUTH === 'true') {
@@ -188,9 +187,9 @@ export function loadPluginConfigFromEnv(): PluginFeatureConfig {
  * 3. Environment variables
  */
 export async function mergePluginConfig(
-  explicitConfig?: PluginFeatureConfig,
+  explicitConfig?: any,
   projectRoot?: string
-): Promise<PluginFeatureConfig> {
+): Promise<any> {
   const envConfig = loadPluginConfigFromEnv()
   const fileConfig = await loadPluginConfig(projectRoot)
   

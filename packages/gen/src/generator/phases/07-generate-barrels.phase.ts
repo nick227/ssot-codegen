@@ -4,10 +4,9 @@
  * Generates barrel export files for all layers
  */
 
-import fs from 'node:fs'
 import path from 'node:path'
 import { GenerationPhase, type PhaseContext, type PhaseResult } from '../phase-runner.js'
-import { esmImport } from '../../path-resolver.js'
+import { writeFile, trackPath, generateEsmPath } from '../phase-utilities.js'
 import {
   generateContractsBarrel,
   generateValidatorsBarrel,
@@ -16,19 +15,6 @@ import {
   generateRoutesBarrel,
   generateLayerIndexBarrel
 } from '../../generators/barrel-generator.js'
-
-const ensureDir = async (p: string) => fs.promises.mkdir(p, { recursive: true })
-const write = async (file: string, content: string) => { 
-  await ensureDir(path.dirname(file))
-  await fs.promises.writeFile(file, content, 'utf8')
-}
-
-const pathMap: Record<string, { fs: string; esm: string }> = {}
-const track = (idStr: string, fsPath: string, esmPath: string) => {
-  pathMap[idStr] = { fs: fsPath, esm: esmPath }
-}
-
-const id = (layer: string, model?: string, file?: string) => ({ layer, model, file })
 
 export class GenerateBarrelsPhase extends GenerationPhase {
   readonly name = 'generateBarrels'
@@ -39,7 +25,7 @@ export class GenerateBarrelsPhase extends GenerationPhase {
   }
   
   async execute(context: PhaseContext): Promise<PhaseResult> {
-    const { generatedFiles, pathsConfig: cfg, modelNames } = context as any
+    const { generatedFiles, pathsConfig: cfg, modelNames } = context
     
     if (!generatedFiles || !cfg || !modelNames) {
       throw new Error('Required context data not found')
@@ -65,8 +51,8 @@ export class GenerateBarrelsPhase extends GenerationPhase {
         layerModels.contracts.push(modelName)
         const barrelPath = path.join(cfg.rootDir, 'contracts', modelLower, 'index.ts')
         const barrelContent = generateContractsBarrel(modelName)
-        writes.push(write(barrelPath, barrelContent))
-        track(`contracts:${modelName}:index`, barrelPath, esmImport(cfg, id('contracts', modelName)))
+        writes.push(writeFile(barrelPath, barrelContent))
+        trackPath(`contracts:${modelName}:index`, barrelPath, generateEsmPath(cfg, 'contracts', modelName))
       }
       
       // Validators
@@ -74,8 +60,8 @@ export class GenerateBarrelsPhase extends GenerationPhase {
         layerModels.validators.push(modelName)
         const barrelPath = path.join(cfg.rootDir, 'validators', modelLower, 'index.ts')
         const barrelContent = generateValidatorsBarrel(modelName)
-        writes.push(write(barrelPath, barrelContent))
-        track(`validators:${modelName}:index`, barrelPath, esmImport(cfg, id('validators', modelName)))
+        writes.push(writeFile(barrelPath, barrelContent))
+        trackPath(`validators:${modelName}:index`, barrelPath, generateEsmPath(cfg, 'validators', modelName))
       }
       
       // Services
@@ -83,8 +69,8 @@ export class GenerateBarrelsPhase extends GenerationPhase {
         layerModels.services.push(modelName)
         const barrelPath = path.join(cfg.rootDir, 'services', modelLower, 'index.ts')
         const barrelContent = generateServiceBarrel(modelName)
-        writes.push(write(barrelPath, barrelContent))
-        track(`services:${modelName}:index`, barrelPath, esmImport(cfg, id('services', modelName)))
+        writes.push(writeFile(barrelPath, barrelContent))
+        trackPath(`services:${modelName}:index`, barrelPath, generateEsmPath(cfg, 'services', modelName))
       }
       
       // Controllers
@@ -92,8 +78,8 @@ export class GenerateBarrelsPhase extends GenerationPhase {
         layerModels.controllers.push(modelName)
         const barrelPath = path.join(cfg.rootDir, 'controllers', modelLower, 'index.ts')
         const barrelContent = generateControllerBarrel(modelName)
-        writes.push(write(barrelPath, barrelContent))
-        track(`controllers:${modelName}:index`, barrelPath, esmImport(cfg, id('controllers', modelName)))
+        writes.push(writeFile(barrelPath, barrelContent))
+        trackPath(`controllers:${modelName}:index`, barrelPath, generateEsmPath(cfg, 'controllers', modelName))
       }
       
       // Routes
@@ -101,8 +87,8 @@ export class GenerateBarrelsPhase extends GenerationPhase {
         layerModels.routes.push(modelName)
         const barrelPath = path.join(cfg.rootDir, 'routes', modelLower, 'index.ts')
         const barrelContent = generateRoutesBarrel(modelName)
-        writes.push(write(barrelPath, barrelContent))
-        track(`routes:${modelName}:index`, barrelPath, esmImport(cfg, id('routes', modelName)))
+        writes.push(writeFile(barrelPath, barrelContent))
+        trackPath(`routes:${modelName}:index`, barrelPath, generateEsmPath(cfg, 'routes', modelName))
       }
     }
     
@@ -111,8 +97,8 @@ export class GenerateBarrelsPhase extends GenerationPhase {
       if (layerModelsArray.length > 0) {
         const layerBarrelPath = path.join(cfg.rootDir, layer, 'index.ts')
         const layerBarrelContent = generateLayerIndexBarrel(layerModelsArray)
-        writes.push(write(layerBarrelPath, layerBarrelContent))
-        track(`${layer}:index`, layerBarrelPath, esmImport(cfg, id(layer)))
+        writes.push(writeFile(layerBarrelPath, layerBarrelContent))
+        trackPath(`${layer}:index`, layerBarrelPath, generateEsmPath(cfg, layer))
       }
     }
     
