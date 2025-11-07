@@ -1,26 +1,26 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
   "entry": [
-    "packages/gen/src/index.ts",
-    "packages/core/src/index.ts",
-    "packages/sdk-runtime/src/index.ts",
-    "packages/schema-lint/src/index.ts",
-    "packages/templates-default/src/index.ts"
+    "packages/gen/src/index-new.ts",
+    "packages/cli/src/index.ts"
   ],
   "project": [
-    "packages/*/src/**/*.ts"
+    "packages/gen/src/**/*.ts",
+    "packages/cli/src/**/*.ts"
   ],
   "ignore": [
     "**/__tests__/**",
     "**/*.test.ts",
     "**/dist/**",
-    "**/gen/**",
-    "**/node_modules/**",
+    "generated/**",
     "examples/**",
-    "scripts/**"
+    "scripts/**",
+    "**/node_modules/**"
   ],
   "ignoreDependencies": [
-    "@types/*"
+    "@ssot-codegen/sdk-runtime",
+    "@ssot-codegen/templates-default",
+    "@ssot-codegen/core"
   ],
   "ignoreExportsUsedInFile": true
 }
