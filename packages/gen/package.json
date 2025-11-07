@@ -39,7 +39,7 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && tsc-alias -p tsconfig.json",
     "prepublishOnly": "pnpm run build",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -61,6 +61,8 @@
     "@ssot-codegen/core": "workspace:*",
     "@types/prettier": "^2.7.3",
     "@vitest/coverage-v8": "^2.1.0",
+    "tsc-alias": "^1.8.10",
+    "typescript": "^5.9.0",
     "vitest": "^2.1.0"
   }
 }

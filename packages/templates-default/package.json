@@ -30,7 +30,7 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@ssot-codegen/core": "^0.4.0"
+    "@ssot-codegen/core": "workspace:*"
   },
   "sideEffects": false
 }
