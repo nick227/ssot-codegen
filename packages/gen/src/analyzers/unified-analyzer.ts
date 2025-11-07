@@ -173,7 +173,7 @@ export interface ModelCapabilities {
  * // Lenient mode - collects all errors
  * const analysis = analyzeModelUnified(model, schema, { collectErrors: true })
  * if (analysis.errors) {
- *   analysis.errors.forEach(err => console.error(`${err.field}: ${err.message}`))
+ *   analysis.errors.forEach(err => console.error(`${err.model}.${err.field}: ${err.message}`))
  * }
  * ```
  */
@@ -216,7 +216,7 @@ const FIELD_KIND_OBJECT = 'object' as const
 const DEFAULT_CONFIG: UnifiedAnalyzerConfig = {
   junctionTableMaxDataFields: 2,
   autoIncludeManyToOne: true,
-  autoIncludeRequiredOnly: false,
+  autoIncludeRequiredOnly: true, // Conservative default: only include if all FK fields are required
   excludeSensitiveSearchFields: true,
   sensitiveFieldPatterns: [SENSITIVE_FIELD_PATTERN],
   parentFieldPatterns: DEFAULT_PARENT_PATTERN,
@@ -366,7 +366,7 @@ function analyzeRelationships(
      * - Has FK + unique FK = 1:1
      * - Has FK + non-unique = M:1
      * - List + target is not junction = 1:M
-     * - List + target is junction = ambiguous M:N (leave flags false)
+     * - List + target is junction = unidirectional M:N (set isManyToMany)
      * - Scalar without FK = implicit 1:1 (rare)
      */
     let isOneToOne = false
@@ -481,6 +481,11 @@ function findBackReference(
       if (sourceField.relationName === candidate.relationName) {
         return candidate
       }
+      continue
+    }
+    
+    // If only one side has relationName, they can't be a valid pair - skip FK matching
+    if (sourceField.relationName || candidate.relationName) {
       continue
     }
     
@@ -599,8 +604,6 @@ function isFieldUnique(model: ParsedModel, fieldName: string, requireExactMatch 
  * Used for composite foreign key validation
  */
 function areFieldsUnique(model: ParsedModel, fieldNames: string[]): boolean {
-  const fieldSet = new Set(fieldNames)
-  
   // Single field case
   if (fieldNames.length === 1) {
     return isFieldUnique(model, fieldNames[0], true)
@@ -699,9 +702,10 @@ function analyzeFieldsOnce(model: ParsedModel, config: UnifiedAnalyzerConfig): F
         
         if (!matcher.pattern.test(normalized)) continue
         
-        // Special case for slug: must be unique (check before validator to avoid redundant work)
+        // Special case for slug: must be unique ALONE (not part of composite unique)
+        // CRITICAL: Composite unique like @@unique([slug, tenantId]) would break findBySlug()
         if (key === 'slug') {
-          if (field.type === 'String' && isFieldUnique(model, field.name)) {
+          if (field.type === 'String' && isFieldUnique(model, field.name, true)) {
             if (isSpecialFieldKey(key)) {
               specialFields[key] = field
             }

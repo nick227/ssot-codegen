@@ -1,0 +1,29 @@
+# Test Environment
+NODE_ENV=test
+PORT=3001
+HOST=localhost
+
+# API Configuration
+API_VERSION=v1
+API_PREFIX=/api
+
+# Database (In-memory SQLite or test database)
+DATABASE_URL="file:./test.db"
+
+# Security (Disabled for tests)
+CORS_ORIGIN=*
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=10000
+
+# Logging (Silent in tests)
+LOG_LEVEL=error
+LOG_PRETTY=false
+
+# Features (Disabled for faster tests)
+SWAGGER_ENABLED=false
+METRICS_ENABLED=false
+
+# Pagination
+DEFAULT_PAGE_SIZE=10
+MAX_PAGE_SIZE=50
+
