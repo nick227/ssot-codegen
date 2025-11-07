@@ -100,7 +100,7 @@ export * from './health.js'
     // ENVIRONMENT TEMPLATES
     // ========================================================================
     const projectRoot = cfg.rootDir.replace(/[\/\\]src$/, '')
-    const dbName = schema?.name || 'app'
+    const dbName = context.config.projectName || 'app'
     
     // .env.example
     const envExamplePath = path.join(projectRoot, '.env.example')
@@ -151,7 +151,7 @@ export * from './health.js'
   }
   
   private generateServerFile(context: PhaseContext): string {
-    const models = context.analyzedModels || []
+    const models = Array.isArray(context.analyzedModels) ? context.analyzedModels : []
     
     return `/**
  * Express Server Setup

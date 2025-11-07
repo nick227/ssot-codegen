@@ -66,9 +66,12 @@ export interface GeneratorConfig {
   framework?: 'express' | 'fastify'
   standalone?: boolean
   projectName?: string
+  description?: string
   verbosity?: LogLevel
   colors?: boolean
   timestamps?: boolean
+  skipTests?: boolean
+  skipCICD?: boolean
   
   /**
    * Plugin features configuration
@@ -79,6 +82,7 @@ export interface GeneratorConfig {
    * features: {
    *   generateOpenAPI: true,
    *   generateTests: false,
+   *   authentication: { enabled: true, type: 'bearer' },
    *   customPlugin: { enabled: true, option: 'value' }
    * }
    * ```

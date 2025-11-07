@@ -31,8 +31,12 @@ export class GenerateCICDPhase extends GenerationPhase {
       throw new Error('Paths config not found in context')
     }
     
-    // Skip CI/CD generation if explicitly disabled
-    if (generatorConfig?.skipCICD === true) {
+    // Skip CI/CD generation if explicitly disabled (check if property exists)
+    const skipCICD = generatorConfig && 'skipCICD' in generatorConfig 
+      ? (generatorConfig as any).skipCICD 
+      : false
+    
+    if (skipCICD === true) {
       return {
         success: true,
         filesGenerated: 0

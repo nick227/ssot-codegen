@@ -92,6 +92,23 @@ export class WriteStandalonePhase extends GenerationPhase {
     const readmePath = path.join(outputDir, 'README.md')
     writes.push(writeFile(readmePath, standaloneTemplates.readmeTemplate(standaloneOptions)))
     
+    // Write ESLint config
+    const eslintPath = path.join(outputDir, 'eslint.config.js')
+    writes.push(writeFile(eslintPath, standaloneTemplates.eslintConfigTemplate()))
+    
+    // Write Prettier config
+    const prettierPath = path.join(outputDir, '.prettierrc')
+    writes.push(writeFile(prettierPath, standaloneTemplates.prettierConfigTemplate()))
+    
+    // Write Vitest config
+    const vitestPath = path.join(outputDir, 'vitest.config.ts')
+    writes.push(writeFile(vitestPath, standaloneTemplates.vitestConfigTemplate()))
+    
+    // Write Husky pre-commit hook
+    const huskyDir = path.join(outputDir, '.husky')
+    const preCommitPath = path.join(huskyDir, 'pre-commit')
+    writes.push(writeFile(preCommitPath, standaloneTemplates.huskyPreCommitTemplate()))
+    
     // Write src/ files
     const srcDir = path.join(outputDir, 'src')
     writes.push(writeFile(path.join(srcDir, 'config.ts'), standaloneTemplates.configTemplate()))

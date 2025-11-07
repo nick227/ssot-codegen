@@ -10,7 +10,7 @@
  */
 
 import { performance } from 'node:perf_hooks'
-import type { ParsedSchema } from '../dmmf-parser.js'
+import type { ParsedSchema, ParsedModel } from '../dmmf-parser.js'
 import type { GeneratorConfig, GeneratorResult } from './types.js'
 import type { CLILogger } from '@/utils/cli-logger.js'
 import type { PathsConfig } from '../path-resolver.js'

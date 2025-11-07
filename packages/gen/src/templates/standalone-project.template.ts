@@ -27,11 +27,25 @@ export const packageJsonTemplate = (options: StandaloneProjectOptions) => `{
     "build": "rimraf dist && tsc && tsc-alias",
     "start": "node dist/src/server.js",
     "test": "vitest",
-    "test:validate": "vitest run tests/self-validation.test.ts",
+    "test:watch": "vitest --watch",
     "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "test:validate": "vitest run tests/self-validation.test.ts",
     "typecheck": "tsc --noEmit",
-    "clean": "rimraf dist/ node_modules/",
-    "validate": "pnpm typecheck && pnpm test:validate"
+    "lint": "eslint . --ext .ts,.tsx --report-unused-disable-directives --max-warnings 0",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write \\"src/**/*.{ts,tsx,json}\\"",
+    "format:check": "prettier --check \\"src/**/*.{ts,tsx,json}\\"",
+    "clean": "rimraf dist/ node_modules/ coverage/",
+    "validate": "pnpm typecheck && pnpm lint && pnpm test:validate",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:studio": "prisma studio",
+    "prepare": "husky install || true",
+    "precommit": "lint-staged"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -42,22 +56,45 @@ export const packageJsonTemplate = (options: StandaloneProjectOptions) => `{
     "express-async-errors": "^3.1.1",
     "express-rate-limit": "^7.4.0",
     "helmet": "^8.1.0",
+    "hpp": "^0.2.3",
     "http-errors": "^2.0.0",
     "pino": "^9.5.0",
     "pino-http": "^10.3.0",
     "zod": "^3.25.0"${options.pluginDependencies && Object.keys(options.pluginDependencies).length > 0 ? ',\n    ' + Object.entries(options.pluginDependencies).map(([pkg, ver]) => `"${pkg}": "${ver}"`).join(',\n    ') : ''}
   },
   "devDependencies": {
+    "@types/compression": "^1.7.5",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
+    "@types/hpp": "^0.2.6",
     "@types/node": "^22.10.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "@vitest/coverage-v8": "^2.1.0",
     "@vitest/ui": "^2.1.0",
+    "eslint": "^9.15.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.31.0",
+    "husky": "^9.1.0",
+    "lint-staged": "^15.2.0",
     "pino-pretty": "^13.1.0",
+    "prettier": "^3.4.0",
+    "prisma": "^5.22.0",
     "rimraf": "^6.0.0",
+    "supertest": "^7.0.0",
     "tsc-alias": "^1.8.16",
     "tsx": "^4.20.0",
     "typescript": "^5.9.0",
     "vitest": "^2.1.0"${options.pluginDevDependencies && Object.keys(options.pluginDevDependencies).length > 0 ? ',\n    ' + Object.entries(options.pluginDevDependencies).map(([pkg, ver]) => `"${pkg}": "${ver}"`).join(',\n    ') : ''}
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
   },
   "_generatedBy": "ssot-codegen standalone generator"
 }
@@ -604,5 +641,117 @@ Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
+`
+
+export const eslintConfigTemplate = () => `import eslint from '@eslint/js';
+import tseslint from '@typescript-eslint/eslint-plugin';
+import tsparser from '@typescript-eslint/parser';
+import importPlugin from 'eslint-plugin-import';
+import prettierConfig from 'eslint-config-prettier';
+
+export default [
+  eslint.configs.recommended,
+  {
+    files: ['**/*.ts', '**/*.tsx'],
+    languageOptions: {
+      parser: tsparser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        project: './tsconfig.json',
+      },
+      globals: {
+        node: true,
+        es2022: true,
+      },
+    },
+    plugins: {
+      '@typescript-eslint': tseslint,
+      import: importPlugin,
+    },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+        },
+      ],
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/explicit-module-boundary-types': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'warn',
+      'import/order': [
+        'error',
+        {
+          groups: [
+            'builtin',
+            'external',
+            'internal',
+            'parent',
+            'sibling',
+            'index',
+          ],
+          'newlines-between': 'always',
+          alphabetize: {
+            order: 'asc',
+            caseInsensitive: true,
+          },
+        },
+      ],
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'prefer-const': 'error',
+      'no-var': 'error',
+    },
+  },
+  prettierConfig,
+];
+`
+
+export const prettierConfigTemplate = () => `{
+  "semi": true,
+  "trailingComma": "es5",
+  "singleQuote": true,
+  "printWidth": 100,
+  "tabWidth": 2,
+  "useTabs": false,
+  "arrowParens": "always",
+  "endOfLine": "lf"
+}
+`
+
+export const huskyPreCommitTemplate = () => `#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+pnpm run precommit
+`
+
+export const vitestConfigTemplate = () => `import { defineConfig } from 'vitest/config';
+import path from 'path';
+
+export default defineConfig({
+  test: {
+    globals: true,
+    environment: 'node',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      exclude: [
+        'node_modules/',
+        'dist/',
+        '**/*.test.ts',
+        '**/*.spec.ts',
+        '**/types.ts',
+      ],
+    },
+    include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
+    exclude: ['node_modules', 'dist'],
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
+});
 `
 

@@ -30,13 +30,16 @@ export class GenerateOpenAPIPhase extends GenerationPhase {
       throw new Error('Schema, parsed models, or paths config not found in context')
     }
     
-    // Extract project metadata from schema or config
-    const projectName = generatorConfig?.projectName || schema.datasources?.[0]?.name || 'Generated API'
+    // Extract project metadata from config (schema doesn't have datasources in ParsedSchema)
+    const projectName = generatorConfig?.projectName || 'Generated API'
     const projectDesc = generatorConfig?.description || 'Auto-generated RESTful API from Prisma schema'
     
-    // Determine if authentication should be included
-    const includeAuth = generatorConfig?.features?.authentication?.enabled ?? true
-    const authType = generatorConfig?.features?.authentication?.type || 'bearer'
+    // Determine if authentication should be included (check if features exist and are object type)
+    const authFeature = generatorConfig?.features && typeof generatorConfig.features === 'object' 
+      ? (generatorConfig.features as any).authentication 
+      : undefined
+    const includeAuth = authFeature?.enabled ?? true
+    const authType = authFeature?.type || 'bearer'
     
     // Configure OpenAPI generation
     const config: OpenAPIConfig = {

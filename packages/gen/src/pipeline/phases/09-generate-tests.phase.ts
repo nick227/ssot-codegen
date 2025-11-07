@@ -29,8 +29,12 @@ export class GenerateTestsPhase extends GenerationPhase {
       throw new Error('Parsed models or paths config not found in context')
     }
     
-    // Skip test generation if explicitly disabled
-    if (generatorConfig?.skipTests === true) {
+    // Skip test generation if explicitly disabled (check if property exists)
+    const skipTests = generatorConfig && 'skipTests' in generatorConfig 
+      ? (generatorConfig as any).skipTests 
+      : false
+    
+    if (skipTests === true) {
       return {
         success: true,
         filesGenerated: 0
