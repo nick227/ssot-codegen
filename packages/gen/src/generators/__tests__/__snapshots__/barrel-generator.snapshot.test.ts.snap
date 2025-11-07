@@ -1,0 +1,31 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Barrel Generation Snapshots > Model Barrel Exports > should match contracts barrel snapshot 1`] = `
+"// @generated barrel
+// Auto-generated dto exports
+
+export * from './user.create.dto.js'
+export * from './user.update.dto.js'
+export * from './user.read.dto.js'
+export * from './user.query.dto.js'
+"
+`;
+
+exports[`Barrel Generation Snapshots > Model Barrel Exports > should match controllers barrel snapshot 1`] = `
+"// @generated barrel
+// Auto-generated controller exports
+
+export * from './user.controller.js'
+export * from './post.controller.js'
+"
+`;
+
+exports[`Barrel Generation Snapshots > Model Barrel Exports > should match services barrel snapshot 1`] = `
+"// @generated barrel
+// Auto-generated service exports
+
+export * from './user.service.js'
+export * from './post.service.js'
+export * from './comment.service.js'
+"
+`;
