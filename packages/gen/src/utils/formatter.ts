@@ -32,6 +32,8 @@ const DEFAULT_PRETTIER_CONFIG: prettier.Options = {
 /**
  * Format TypeScript/JavaScript code with Prettier
  * 
+ * Uses Prettier's getFileInfo to auto-detect parser for better compatibility
+ * 
  * @param code - Raw code string to format
  * @param filepath - Optional filepath for parser detection
  * @returns Formatted code or original if formatting is disabled/fails
@@ -43,12 +45,23 @@ export async function formatCode(code: string, filepath?: string): Promise<strin
   }
   
   try {
-    // Detect parser from filepath if provided
-    const parser = filepath?.endsWith('.json') 
-      ? 'json' 
-      : filepath?.endsWith('.md')
-      ? 'markdown'
-      : 'typescript'
+    let parser = 'typescript'  // Default
+    
+    // Use Prettier's file info API for better parser detection
+    if (filepath) {
+      try {
+        const fileInfo = await prettier.getFileInfo(filepath)
+        parser = fileInfo.inferredParser || parser
+      } catch {
+        // Fall back to extension-based detection
+        if (filepath.endsWith('.json')) parser = 'json'
+        else if (filepath.endsWith('.md')) parser = 'markdown'
+        else if (filepath.endsWith('.yaml') || filepath.endsWith('.yml')) parser = 'yaml'
+        else if (filepath.endsWith('.html')) parser = 'html'
+        else if (filepath.endsWith('.css')) parser = 'css'
+        else if (filepath.endsWith('.scss')) parser = 'scss'
+      }
+    }
     
     const formatted = await prettier.format(code, {
       ...DEFAULT_PRETTIER_CONFIG,
@@ -64,18 +77,9 @@ export async function formatCode(code: string, filepath?: string): Promise<strin
   }
 }
 
-/**
- * Format code synchronously (for backwards compatibility)
- * Note: Prettier v3+ is async-only, so this wraps formatCode
- * 
- * @deprecated Use formatCode (async) instead
- */
-export function formatCodeSync(code: string, filepath?: string): string {
-  // Prettier v3+ is async-only, cannot be called synchronously
-  // Return original code - caller should use async formatCode instead
-  console.warn('[formatter] formatCodeSync is deprecated - use formatCode (async) instead')
-  return code
-}
+// REMOVED: formatCodeSync is deprecated and has been removed
+// Prettier v3+ is async-only
+// Use formatCode (async) instead
 
 /**
  * Check if formatting is enabled

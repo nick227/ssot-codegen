@@ -61,11 +61,20 @@ export function generateRoutesBarrel(modelName: ModelName): string {
 
 /**
  * Generate layer-level barrel that re-exports each model's barrel
+ * 
+ * @param modelNames - Array of model names
+ * @param barrelExtension - Extension to use ('js', 'none', 'ts')
  */
-export function generateLayerIndexBarrel(modelNames: ModelName[]): string {
+export function generateLayerIndexBarrel(modelNames: ModelName[], barrelExtension: 'js' | 'none' | 'ts' = 'js'): string {
+  const getImportPath = (modelName: string) => {
+    const base = `./${toKebabCase(modelName)}/index`
+    if (barrelExtension === 'none') return base
+    return `${base}.${barrelExtension}`
+  }
+  
   return BarrelBuilder.layerBarrel(
     modelNames.map(name => ({ name, lower: name.charAt(0).toLowerCase() + name.slice(1) })),
-    modelName => `./${toKebabCase(modelName)}/index.js`
+    getImportPath
   )
 }
 

@@ -19,6 +19,8 @@ export { WriteFilesPhase } from './05-write-files.phase.js'
 export { WriteInfrastructurePhase } from './06-write-infrastructure.phase.js'
 export { GenerateBarrelsPhase } from './07-generate-barrels.phase.js'
 export { GenerateOpenAPIPhase } from './08-generate-openapi.phase.js'
+export { GenerateTestsPhase } from './09-generate-tests.phase.js'
+export { GenerateCICDPhase } from './10-generate-ci-cd.phase.js'
 export { WriteManifestPhase } from './09-write-manifest.phase.js'
 export { GenerateTsConfigPhase } from './10-generate-tsconfig.phase.js'
 export { WriteStandalonePhase } from './11-write-standalone.phase.js'
@@ -45,6 +47,8 @@ import { WriteFilesPhase } from './05-write-files.phase.js'
 import { WriteInfrastructurePhase } from './06-write-infrastructure.phase.js'
 import { GenerateBarrelsPhase } from './07-generate-barrels.phase.js'
 import { GenerateOpenAPIPhase } from './08-generate-openapi.phase.js'
+import { GenerateTestsPhase } from './09-generate-tests.phase.js'
+import { GenerateCICDPhase } from './10-generate-ci-cd.phase.js'
 import { WriteManifestPhase } from './09-write-manifest.phase.js'
 import { GenerateTsConfigPhase } from './10-generate-tsconfig.phase.js'
 import { WriteStandalonePhase } from './11-write-standalone.phase.js'
@@ -68,6 +72,8 @@ export function createAllPhases(): GenerationPhase[] {
     new WriteInfrastructurePhase(),
     new GenerateBarrelsPhase(),
     new GenerateOpenAPIPhase(),
+    new GenerateTestsPhase(),    // NEW: Generate test scaffolding
+    new GenerateCICDPhase(),      // NEW: Generate CI/CD configs
     new WriteManifestPhase(),
     new GenerateTsConfigPhase(),
     new WriteStandalonePhase(),

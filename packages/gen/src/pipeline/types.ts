@@ -43,6 +43,21 @@ export interface GeneratedFiles {
   }
 }
 
+/**
+ * Plugin Features Configuration
+ * 
+ * Strongly-typed plugin feature flags and configuration
+ */
+export interface PluginFeaturesConfig {
+  // Core generator features
+  generateValidators?: boolean
+  generateOpenAPI?: boolean
+  generateTests?: boolean
+  
+  // Plugin-specific feature flags
+  [pluginName: string]: boolean | Record<string, unknown> | undefined
+}
+
 export interface GeneratorConfig {
   output?: string
   schemaPath?: string
@@ -54,7 +69,21 @@ export interface GeneratorConfig {
   verbosity?: LogLevel
   colors?: boolean
   timestamps?: boolean
-  features?: any  // Plugin features configuration
+  
+  /**
+   * Plugin features configuration
+   * Use this to enable/configure specific features and plugins
+   * 
+   * @example
+   * ```ts
+   * features: {
+   *   generateOpenAPI: true,
+   *   generateTests: false,
+   *   customPlugin: { enabled: true, option: 'value' }
+   * }
+   * ```
+   */
+  features?: PluginFeaturesConfig
 }
 
 export interface GeneratorResult {

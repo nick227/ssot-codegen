@@ -1,13 +1,19 @@
 /**
  * Phase 8: Generate OpenAPI
  * 
- * Generates OpenAPI specification for the API
+ * Generates comprehensive OpenAPI 3.1 specification with:
+ * - Complete request/response schemas from DTOs
+ * - Security schemes
+ * - Error responses
+ * - Examples
+ * - CRUD operations for all models
  */
 
 import path from 'node:path'
 import { GenerationPhase, type PhaseContext, type PhaseResult } from '../phase-runner.js'
 import { writeFile } from '../phase-utilities.js'
 import { stringifyWithCache } from '../json-cache.js'
+import { generateOpenAPISpec, type OpenAPIConfig } from '@/api/openapi-generator.js'
 
 export class GenerateOpenAPIPhase extends GenerationPhase {
   readonly name = 'generateOpenAPI'
@@ -18,53 +24,95 @@ export class GenerateOpenAPIPhase extends GenerationPhase {
   }
   
   async execute(context: PhaseContext): Promise<PhaseResult> {
-    const { schema, pathsConfig: cfg } = context
+    const { schema, parsedModels, pathsConfig: cfg, generatorConfig } = context
     
-    if (!schema || !cfg) {
-      throw new Error('Schema or paths config not found in context')
+    if (!schema || !cfg || !parsedModels) {
+      throw new Error('Schema, parsed models, or paths config not found in context')
     }
     
-    const spec = {
-      openapi: '3.1.0',
-      info: {
-        title: 'Generated API',
-        version: '1.0.0',
-        description: 'Auto-generated from Prisma schema'
-      },
+    // Extract project metadata from schema or config
+    const projectName = generatorConfig?.projectName || schema.datasources?.[0]?.name || 'Generated API'
+    const projectDesc = generatorConfig?.description || 'Auto-generated RESTful API from Prisma schema'
+    
+    // Determine if authentication should be included
+    const includeAuth = generatorConfig?.features?.authentication?.enabled ?? true
+    const authType = generatorConfig?.features?.authentication?.type || 'bearer'
+    
+    // Configure OpenAPI generation
+    const config: OpenAPIConfig = {
+      title: projectName,
+      version: '1.0.0',
+      description: projectDesc,
       servers: [
-        { url: 'http://localhost:3000/api', description: 'Development' }
+        { url: 'http://localhost:3000/api', description: 'Development' },
+        { url: 'https://api.example.com/api', description: 'Production (update with your domain)' }
       ],
-      paths: Object.fromEntries(
-        schema.models.map((m: any) => [
-          `/${m.name.toLowerCase()}s`,
-          {
-            get: {
-              operationId: `list${m.name}s`,
-              summary: `List all ${m.name} records`,
-              responses: { '200': { description: 'Success' } }
-            },
-            post: {
-              operationId: `create${m.name}`,
-              summary: `Create a ${m.name}`,
-              responses: { '201': { description: 'Created' } }
-            }
-          }
-        ])
-      )
+      includeAuth,
+      authType: authType as 'bearer' | 'apiKey' | 'oauth2'
     }
     
-    // Store spec in context for reuse (e.g., manifest)
+    // Generate complete OpenAPI spec using parsed models
+    const spec = generateOpenAPISpec(parsedModels, config)
+    
+    // Store spec in context for reuse (e.g., manifest, SDK generation)
     context.openApiSpec = spec
     
-    // OPTIMIZATION: Use cached stringification
-    // If this spec is referenced elsewhere, subsequent stringify is instant
+    // Write OpenAPI spec to file
     const specPath = path.join(cfg.rootDir, 'openapi.json')
     await writeFile(specPath, stringifyWithCache(spec, { indent: 2 }))
     
+    // Also generate Swagger UI HTML for easy API exploration
+    const swaggerUIPath = path.join(cfg.rootDir, 'api-docs.html')
+    await writeFile(swaggerUIPath, generateSwaggerUIHtml())
+    
     return {
       success: true,
-      filesGenerated: 1 // Single file always
+      filesGenerated: 2 // openapi.json + api-docs.html
     }
   }
+}
+
+/**
+ * Generate standalone Swagger UI HTML file
+ * This allows developers to open api-docs.html directly in a browser
+ */
+function generateSwaggerUIHtml(): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Documentation</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-standalone-preset.js"></script>
+  <script>
+    window.onload = function() {
+      window.ui = SwaggerUIBundle({
+        url: './openapi.json',
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        plugins: [
+          SwaggerUIBundle.plugins.DownloadUrl
+        ],
+        layout: "StandaloneLayout"
+      });
+    };
+  </script>
+</body>
+</html>`
 }
 

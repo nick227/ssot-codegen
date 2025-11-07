@@ -5,6 +5,7 @@
  */
 
 import path from 'node:path'
+import fs from 'node:fs/promises'
 import { findWorkspaceRoot, getNextProjectFolder, deriveProjectName } from '@/utils/gen-folder.js'
 import { GenerationPhase, type PhaseContext, type PhaseResult } from '../phase-runner.js'
 
@@ -41,6 +42,9 @@ export class SetupOutputDirPhase extends GenerationPhase {
       outputDir = config.output ? path.resolve(config.output) : path.join(process.cwd(), 'gen')
       logger.logProgress(`📁 Generating to: ${outputDir}`)
     }
+    
+    // Create output directory to prevent race conditions in later phases
+    await fs.mkdir(outputDir, { recursive: true })
     
     context.outputDir = outputDir
     

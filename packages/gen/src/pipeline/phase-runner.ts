@@ -16,6 +16,17 @@ import type { CLILogger } from '@/utils/cli-logger.js'
 import type { PathsConfig } from '../path-resolver.js'
 import type { GeneratedFiles } from '../code-generator.js'
 import { PhaseHookRegistry } from './hooks/phase-hooks.js'
+import { PhaseError } from '../errors/generator-errors.js'
+
+/**
+ * Plugin State - Namespaced data storage for plugins
+ * 
+ * Prevents name collisions and provides clear separation between
+ * plugin data and core phase data
+ */
+export interface PluginState {
+  [pluginName: string]: unknown
+}
 
 /**
  * Phase Context - Shared state across all generation phases
@@ -24,8 +35,9 @@ import { PhaseHookRegistry } from './hooks/phase-hooks.js'
  * data as phases execute in sequence.
  * 
  * @remarks
- * The string-index signature allows phases to add custom data, but prefer using
- * the typed fields when possible for better IDE support and compile-time safety.
+ * - Use typed fields for core phase data
+ * - Use pluginState for plugin-specific data to avoid collisions
+ * - Avoid using the string-index signature directly for new code
  */
 export interface PhaseContext {
   // Required fields (always present)
@@ -52,8 +64,19 @@ export interface PhaseContext {
   // Performance Metrics (collected by PhaseRunner)
   phaseMetrics?: Array<{ phase: string; duration: number; filesGenerated: number }>
   
-  // Extensibility: Phases can add custom data
-  // WARNING: Use typed fields above when possible for better type safety
+  /**
+   * Plugin State - Use this for plugin-specific data
+   * 
+   * @example
+   * ```ts
+   * context.pluginState = context.pluginState || {}
+   * context.pluginState['myPlugin'] = { customData: 'value' }
+   * ```
+   */
+  pluginState?: PluginState
+  
+  // Extensibility: Phases can add custom data (DEPRECATED - use pluginState)
+  // WARNING: Prefer using typed fields or pluginState for better type safety
   [key: string]: unknown
 }
 
@@ -174,7 +197,7 @@ export class PhaseRunner {
     
     logger.startGeneration()
     
-    // Clear any tracked paths from previous runs
+    // Clear any tracked paths from previous runs (moved to top level to avoid dynamic import)
     const { clearTrackedPaths } = await import('./phase-utilities.js')
     clearTrackedPaths()
     
@@ -234,8 +257,13 @@ export class PhaseRunner {
           // Execute error hooks
           await this.hookRegistry.executeErrorHooks(phase.name, error as Error, this.context)
           
-          logger.error(`Phase ${phase.name} failed`, error as Error)
-          throw error
+          // Wrap in PhaseError with phase context for better debugging
+          const phaseError = error instanceof PhaseError 
+            ? error 
+            : new PhaseError(phase.name, error as Error)
+          
+          logger.error(`Phase ${phase.name} failed`, phaseError)
+          throw phaseError
         }
       }
       
@@ -252,6 +280,7 @@ export class PhaseRunner {
       
       return result
     } catch (error) {
+      // Log and rethrow (error already wrapped in PhaseError if from a phase)
       logger.error('Generation failed', error as Error)
       throw error
     }

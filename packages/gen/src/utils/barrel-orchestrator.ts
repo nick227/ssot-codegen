@@ -46,6 +46,7 @@ export function determineBarrelWrites(
   generatedFiles: GeneratedFilesMap,
   esmPathFn: (layer: string, model?: string) => string
 ): BarrelWrite[] {
+  const barrelExt = cfg.barrelExtension || 'js'
   const writes: BarrelWrite[] = []
   
   // Track which models have files in which layers
@@ -126,7 +127,7 @@ export function determineBarrelWrites(
     if (layerModelsArray.length > 0) {
       writes.push({
         path: path.join(cfg.rootDir, layer, 'index.ts'),
-        content: generateLayerIndexBarrel(layerModelsArray),
+        content: generateLayerIndexBarrel(layerModelsArray, barrelExt),
         trackId: `${layer}:index`,
         esmPath: esmPathFn(layer)
       })

@@ -2,11 +2,12 @@
 
 import { Command } from 'commander'
 import { generateFromSchema } from '@ssot-codegen/gen'
-import { resolve, isAbsolute, extname, normalize } from 'path'
-import { existsSync, readdirSync, statSync, writeFileSync, readFileSync } from 'fs'
-import { execSync } from 'child_process'
+import type { LogLevel } from '@ssot-codegen/gen'
+import { resolve } from 'path'
+import { existsSync, readdirSync, statSync } from 'fs'
 import { createRequire } from 'module'
 import chalk from 'chalk'
+import { resolveSchemaArg, runPostGenSetup } from './cli-helpers.js'
 
 const require = createRequire(import.meta.url)
 const packageJson = require('../package.json')
@@ -32,82 +33,23 @@ program
   .option('--setup', 'Auto-setup project (install deps, generate prisma, create .env)', true)
   .option('--no-setup', 'Skip automatic project setup')
   .option('--test', 'Run validation tests after setup', false)
+  .option('--verbose', 'Enable verbose logging')
+  .option('--debug', 'Enable debug logging (most detailed)')
+  .option('--minimal', 'Minimal output (errors only)')
+  .option('--silent', 'Suppress all output except errors')
+  .option('--no-color', 'Disable colored output')
+  .option('--timestamps', 'Show timestamps in log output')
   .action(async (schemaArg: string | undefined, options) => {
     try {
-      // Resolve schema path
-      let schemaPath: string
+      // Resolve schema path using extracted helper
+      const { schemaPath, isExample, exampleName } = resolveSchemaArg(schemaArg)
       
-      if (!schemaArg) {
-        console.error(chalk.red('❌ Error: Schema path or example name required'))
-        console.log(chalk.gray('\nExamples:'))
-        console.log(chalk.gray('  ssot generate minimal'))
-        console.log(chalk.gray('  ssot generate examples/blog/schema.prisma'))
-        console.log(chalk.gray('  ssot generate ./my-schema.prisma'))
-        process.exit(1)
+      if (isExample) {
+        console.log(chalk.blue(`📁 Using example: ${exampleName}`))
       }
-      
-      // Normalize and resolve the input
-      const normalizedArg = normalize(schemaArg)
-      
-      // Check if it's a file path (absolute, relative, or has .prisma extension)
-      const looksLikeFilePath = isAbsolute(normalizedArg) || 
-                                 normalizedArg.startsWith('.') ||
-                                 extname(normalizedArg) === '.prisma'
-      
-      if (looksLikeFilePath) {
-        // It's a file path - resolve and validate
-        schemaPath = resolve(process.cwd(), normalizedArg)
-        
-        if (!existsSync(schemaPath)) {
-          console.error(chalk.red(`❌ Schema file not found: ${schemaPath}`))
-          process.exit(1)
-        }
-        
-        if (extname(schemaPath) !== '.prisma') {
-          console.error(chalk.red(`❌ Schema file must have .prisma extension: ${schemaPath}`))
-          process.exit(1)
-        }
-      } else {
-        // Assume it's an example name (no path separators, no extension)
-        const examplePath = resolve(process.cwd(), 'examples', normalizedArg, 'schema.prisma')
-        if (existsSync(examplePath)) {
-          schemaPath = examplePath
-          console.log(chalk.blue(`📁 Using example: ${normalizedArg}`))
-        } else {
-          // Try with prisma/ subdirectory
-          const prismaPath = resolve(process.cwd(), 'examples', normalizedArg, 'prisma', 'schema.prisma')
-          if (existsSync(prismaPath)) {
-            schemaPath = prismaPath
-            console.log(chalk.blue(`📁 Using example: ${normalizedArg}`))
-          } else {
-            console.error(chalk.red(`❌ Example not found: ${normalizedArg}`))
-            console.log(chalk.gray(`   Tried: ${examplePath}`))
-            console.log(chalk.gray(`   Tried: ${prismaPath}`))
-            console.log(chalk.gray('\nAvailable examples:'))
-            
-            // List available examples
-            const examplesDir = resolve(process.cwd(), 'examples')
-            if (existsSync(examplesDir)) {
-              const examples = readdirSync(examplesDir)
-                .filter(f => statSync(resolve(examplesDir, f)).isDirectory())
-                .filter(f => 
-                  existsSync(resolve(examplesDir, f, 'schema.prisma')) ||
-                  existsSync(resolve(examplesDir, f, 'prisma', 'schema.prisma'))
-                )
-              
-              if (examples.length > 0) {
-                examples.forEach(ex => console.log(chalk.gray(`  • ${ex}`)))
-              }
-            }
-            
-            process.exit(1)
-          }
-        }
-      }
-      
       console.log(chalk.green(`✓ Schema: ${schemaPath}\n`))
       
-      // Set environment variables from CLI options
+      // Set environment variables from CLI options (for backwards compatibility)
       if (options.concurrency) {
         process.env.SSOT_WRITE_CONCURRENCY = options.concurrency
       }
@@ -118,13 +60,23 @@ program
         process.env.SSOT_FORMAT_CONCURRENCY = options.formatConcurrency
       }
       
-      // Generate project
+      // Determine log level from flags
+      let verbosity: LogLevel = 'normal'
+      if (options.silent) verbosity = 'silent'
+      else if (options.minimal) verbosity = 'minimal'
+      else if (options.debug) verbosity = 'debug'
+      else if (options.verbose) verbosity = 'verbose'
+      
+      // Generate project with logging configuration
       const result = await generateFromSchema({
         schemaPath,
         output: options.output,
         framework: options.framework as 'express' | 'fastify',
         standalone: options.standalone,
-        projectName: options.name
+        projectName: options.name,
+        verbosity,
+        colors: options.color,
+        timestamps: options.timestamps
       })
       
       console.log(chalk.green('\n✅ Generation complete!'))
@@ -133,94 +85,18 @@ program
         const relPath = result.outputDir.replace(process.cwd(), '.').replace(/\\/g, '/')
         console.log(chalk.cyan(`\n📦 Project created: ${relPath}`))
         
-        // Post-generation automation
+        // Post-generation automation using extracted helper
         if (options.setup) {
-          console.log(chalk.blue('\n🔧 Setting up project...\n'))
-          
           try {
-            // 1. Create .env file with test-ready values
-            const envPath = resolve(result.outputDir, '.env')
-            if (!existsSync(envPath)) {
-              console.log(chalk.gray('  📝 Creating .env file...'))
-              
-              // Read schema to detect database provider
-              const schemaContent = readFileSync(schemaPath, 'utf-8')
-              const providerMatch = schemaContent.match(/provider\s*=\s*"(\w+)"/)
-              const provider = providerMatch ? providerMatch[1] : 'postgresql'
-              
-              // Generate appropriate DATABASE_URL
-              let databaseUrl = ''
-              switch (provider) {
-                case 'mysql':
-                  databaseUrl = 'mysql://root@localhost:3306/test_db'
-                  break
-                case 'postgresql':
-                  databaseUrl = 'postgresql://postgres@localhost:5432/test_db'
-                  break
-                case 'sqlite':
-                  databaseUrl = 'file:./dev.db'
-                  break
-                default:
-                  databaseUrl = 'postgresql://postgres@localhost:5432/test_db'
-              }
-              
-              const envContent = `# Auto-generated environment file
-# Generated by SSOT Codegen
-
-# Database Configuration
-DATABASE_URL="${databaseUrl}"
-
-# Server Configuration
-PORT=3000
-NODE_ENV=development
-
-# Logging
-LOG_LEVEL=info
-`
-              writeFileSync(envPath, envContent, 'utf-8')
-              console.log(chalk.green('  ✓ Created .env with test configuration'))
-            }
-            
-            // 2. Install dependencies
-            console.log(chalk.gray('\n  📦 Installing dependencies...'))
-            execSync('pnpm install --ignore-workspace', { 
-              cwd: result.outputDir, 
-              stdio: 'inherit'
+            await runPostGenSetup({
+              outputDir: result.outputDir,
+              schemaPath,
+              runTests: options.test
             })
-            console.log(chalk.green('  ✓ Dependencies installed'))
             
-            // 3. Generate Prisma client (use local version)
-            console.log(chalk.gray('\n  🔨 Generating Prisma client...'))
-            try {
-              // Try using workspace prisma first
-              execSync('pnpm exec prisma generate --schema=prisma/schema.prisma', { 
-                cwd: result.outputDir, 
-                stdio: 'inherit'
-              })
-              console.log(chalk.green('  ✓ Prisma client generated'))
-            } catch {
-              console.log(chalk.yellow('  ⚠️  Prisma generation failed (install prisma and run: pnpm exec prisma generate)'))
-            }
-            
-            // 4. Run validation tests if requested
-            if (options.test) {
-              console.log(chalk.gray('\n  🧪 Running validation tests...'))
-              try {
-                execSync('pnpm test:validate', { 
-                  cwd: result.outputDir, 
-                  stdio: 'inherit'
-                })
-                console.log(chalk.green('  ✓ All tests passed!'))
-              } catch {
-                console.log(chalk.yellow('  ⚠️  Some tests failed (this is OK if database is not set up)'))
-              }
-            }
-            
-            console.log(chalk.green('\n✅ Project setup complete!\n'))
             console.log(chalk.cyan('🚀 Ready to use:'))
             console.log(chalk.gray(`  cd ${relPath}`))
             console.log(chalk.gray('  pnpm dev'))
-            
           } catch (setupError) {
             const err = setupError as Error
             console.log(chalk.yellow('\n⚠️  Setup failed:'), err.message)
