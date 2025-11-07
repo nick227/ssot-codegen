@@ -56,7 +56,14 @@ export function analyzeModel(model: ParsedModel, schema: ParsedSchema): ModelAna
  */
 function analyzeRelationships(model: ParsedModel, schema: ParsedSchema): RelationshipInfo[] {
   return model.relationFields.map(field => {
-    const targetModel = schema.modelMap.get(field.type)!
+    // NULL SAFETY: Check if target model exists
+    const targetModel = schema.modelMap.get(field.type)
+    if (!targetModel) {
+      throw new Error(
+        `Model '${model.name}' has relation field '${field.name}' ` +
+        `pointing to undefined model '${field.type}'. Check your schema for typos or missing models.`
+      )
+    }
     
     // OPTIMIZED: Single back-reference check instead of 2
     const backRef = findBackReference(targetModel, model)
@@ -205,5 +212,40 @@ export function generateSummaryInclude(analysis: ModelAnalysis): string {
       include: {
 ${includes.join(',\n')}
       }`
+}
+
+// ============================================================================
+// PUBLIC API: For api/implementation.ts
+// ============================================================================
+
+/**
+ * Analyze all relationships in schema (for public API use)
+ * Returns simplified relationship list for API consumers
+ */
+export function analyzeRelationshipsForSchema(schema: ParsedSchema): Array<{
+  fromModel: string
+  toModel: string
+  type: 'one-to-one' | 'one-to-many' | 'many-to-many'
+}> {
+  const relationships: Array<{
+    fromModel: string
+    toModel: string
+    type: 'one-to-one' | 'one-to-many' | 'many-to-many'
+  }> = []
+  
+  for (const model of schema.models) {
+    const analysis = analyzeModel(model, schema)
+    for (const rel of analysis.relationships) {
+      relationships.push({
+        fromModel: model.name,
+        toModel: rel.targetModel.name,
+        type: rel.isManyToMany ? 'many-to-many' 
+            : rel.isOneToMany ? 'one-to-many'
+            : 'one-to-one'
+      })
+    }
+  }
+  
+  return relationships
 }
 

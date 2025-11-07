@@ -58,36 +58,28 @@ export const clearTrackedPaths = (): void => {
 }
 
 /**
- * Path ID builder for tracking
+ * Path ID builder for tracking (internal use only)
  */
-export const createPathId = (layer: string, model?: string, file?: string) => ({ 
+const createPathId = (layer: string, model?: string, file?: string) => ({ 
   layer, 
   model, 
   file 
 })
 
 /**
- * Batch write files with tracking
- */
-export async function batchWriteFiles(
-  files: Array<{ path: string; content: string; trackAs?: string; esmPath?: string }>,
-  cfg?: PathsConfig
-): Promise<void> {
-  const writes = files.map(async ({ path: filePath, content, trackAs, esmPath }) => {
-    await writeFile(filePath, content)
-    
-    if (trackAs && esmPath && cfg) {
-      trackPath(trackAs, filePath, esmPath)
-    }
-  })
-  
-  await Promise.all(writes)
-}
-
-/**
  * Generate ESM import path helper
+ * 
+ * Builds the ESM import path for a given layer/model/file combination
  */
 export function generateEsmPath(cfg: PathsConfig, layer: string, model?: string, file?: string): string {
-  return esmImport(cfg, createPathId(layer, model, file))
+  try {
+    return esmImport(cfg, createPathId(layer, model, file))
+  } catch (error) {
+    // Add context to error for easier debugging
+    throw new Error(
+      `Failed to generate ESM path for ${layer}${model ? `/${model}` : ''}${file ? `/${file}` : ''}: ` +
+      `${error instanceof Error ? error.message : String(error)}`
+    )
+  }
 }
 

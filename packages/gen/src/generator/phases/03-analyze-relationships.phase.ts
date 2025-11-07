@@ -4,7 +4,7 @@
  * Analyzes model relationships (one-to-one, one-to-many, many-to-many)
  */
 
-import { analyzeRelationships } from '../../relationship-analyzer.js'
+import { analyzeRelationshipsForSchema } from '../../utils/relationship-analyzer.js'
 import { GenerationPhase, type PhaseContext, type PhaseResult } from '../phase-runner.js'
 
 export class AnalyzeRelationshipsPhase extends GenerationPhase {
@@ -22,7 +22,7 @@ export class AnalyzeRelationshipsPhase extends GenerationPhase {
       throw new Error('Schema not found in context')
     }
     
-    const relationships = analyzeRelationships(schema)
+    const relationships = analyzeRelationshipsForSchema(schema)
     
     logger.logSchemaParsed(
       schema.models.length,

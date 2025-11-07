@@ -6,7 +6,7 @@
  * MIGRATION STATUS: ✅ Migrated to typed context
  */
 
-import { analyzeRelationships } from '../../relationship-analyzer.js'
+import { analyzeRelationshipsForSchema } from '../../utils/relationship-analyzer.js'
 import { TypedPhaseAdapter } from '../typed-phase-adapter.js'
 import type { 
   ContextAfterPhase2, 
@@ -37,7 +37,7 @@ export class AnalyzeRelationshipsPhaseTyped extends TypedPhaseAdapter<
     const { schema, logger } = context
     
     // TypeScript guarantees schema exists - no runtime check needed!
-    const relationships = analyzeRelationships(schema)
+    const relationships = analyzeRelationshipsForSchema(schema)
     
     logger.logSchemaParsed(
       schema.models.length,

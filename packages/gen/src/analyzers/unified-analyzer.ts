@@ -30,17 +30,54 @@ export interface SpecialFieldMatcher {
   validator: (field: ParsedField) => boolean
 }
 
+/**
+ * Configuration for unified model analyzer
+ * 
+ * @example
+ * ```ts
+ * // Custom auto-include: only required unique M:1
+ * analyzeModelUnified(model, schema, {
+ *   shouldAutoInclude: (rel, model) => {
+ *     if (!rel.isManyToOne) return false
+ *     const fkFields = rel.field.relationFromFields || []
+ *     return fkFields.every(fk => {
+ *       const field = model.scalarFields.find(f => f.name === fk)
+ *       return field?.isRequired && isFieldUnique(model, fk)
+ *     })
+ *   }
+ * })
+ * ```
+ */
 export interface UnifiedAnalyzerConfig {
+  /** Custom special field matchers (keys must match SpecialFields properties) */
   specialFieldMatchers?: Record<string, SpecialFieldMatcher>
+  
+  /** Maximum non-system fields allowed in junction tables (default: 2) */
   junctionTableMaxDataFields?: number
-  systemFieldNames?: string[]  // System fields to exclude from junction table detection
-  autoIncludeManyToOne?: boolean  // Whether to auto-include many-to-one relations
-  autoIncludeRequiredOnly?: boolean  // Only auto-include if all FK fields are required
-  shouldAutoInclude?: (relation: RelationshipInfo, model: ParsedModel) => boolean  // Custom auto-include logic
-  excludeSensitiveSearchFields?: boolean  // Exclude password, token, secret from search
-  sensitiveFieldPatterns?: RegExp[]  // Custom patterns for sensitive fields
-  parentFieldPatterns?: RegExp  // Pattern for parent field detection (default: /^parent/)
-  collectErrors?: boolean  // Collect errors instead of throwing (default: false)
+  
+  /** System field names to exclude from junction detection (default: createdAt, updatedAt, deletedAt, etc.) */
+  systemFieldNames?: string[]
+  
+  /** Whether to auto-include many-to-one relations (default: true) */
+  autoIncludeManyToOne?: boolean
+  
+  /** Only auto-include if ALL FK fields are required (default: false) */
+  autoIncludeRequiredOnly?: boolean
+  
+  /** Custom auto-include logic - overrides autoIncludeManyToOne and autoIncludeRequiredOnly */
+  shouldAutoInclude?: (relation: RelationshipInfo, model: ParsedModel) => boolean
+  
+  /** Exclude sensitive fields from search (password, token, etc.) (default: true) */
+  excludeSensitiveSearchFields?: boolean
+  
+  /** Custom patterns for sensitive fields (default: password|token|secret|...) */
+  sensitiveFieldPatterns?: RegExp[]
+  
+  /** Pattern for parent field detection (default: /^(parent|ancestor|root)/i) */
+  parentFieldPatterns?: RegExp
+  
+  /** Collect errors instead of throwing (default: false) */
+  collectErrors?: boolean
 }
 
 // ============================================================================
@@ -57,11 +94,36 @@ export interface RelationshipInfo {
   shouldAutoInclude: boolean
 }
 
+/**
+ * Foreign key metadata
+ * 
+ * MIGRATION NOTE (v2.0):
+ * - `fieldName` (singular) → `fieldNames` (array) to support composite FKs
+ * - `relationName` → split into `relationAlias` + `relationName`:
+ *   - `relationAlias`: The field name (e.g., 'category')
+ *   - `relationName`: Prisma's @relation(name: "...") or null
+ * 
+ * @example
+ * ```prisma
+ * model Post {
+ *   categoryId Int
+ *   category   Category @relation("PostCategory", fields: [categoryId], references: [id])
+ * }
+ * 
+ * // Produces:
+ * {
+ *   fieldNames: ['categoryId'],
+ *   relationAlias: 'category',
+ *   relationName: 'PostCategory',
+ *   relatedModel: 'Category'
+ * }
+ * ```
+ */
 export interface ForeignKeyInfo {
-  fieldNames: string[]      // e.g., ['categoryId'] or ['userId', 'tenantId'] for composite
-  relationAlias: string     // The field name, e.g., 'category'
-  relationName: string | null  // Prisma @relation(name: "..."), e.g., 'UserToPost'
-  relatedModel: string      // e.g., 'Category'
+  fieldNames: string[]         // e.g., ['categoryId'] or ['userId', 'tenantId'] for composite
+  relationAlias: string        // The field name, e.g., 'category'
+  relationName: string | null  // Prisma @relation(name: "..."), e.g., 'PostCategory'
+  relatedModel: string         // e.g., 'Category'
 }
 
 export interface SpecialFields {
@@ -97,6 +159,23 @@ export interface ModelCapabilities {
 
 /**
  * Unified analysis result - combines relationship and capability analysis
+ * 
+ * ERROR HANDLING:
+ * - When `config.collectErrors === false` (default): Throws on first error
+ * - When `config.collectErrors === true`: Collects all errors in `errors` array,
+ *   broken relationships are skipped (not included in `relationships` array)
+ * 
+ * @example
+ * ```ts
+ * // Strict mode (default) - throws immediately
+ * const analysis = analyzeModelUnified(model, schema)
+ * 
+ * // Lenient mode - collects all errors
+ * const analysis = analyzeModelUnified(model, schema, { collectErrors: true })
+ * if (analysis.errors) {
+ *   analysis.errors.forEach(err => console.error(`${err.field}: ${err.message}`))
+ * }
+ * ```
  */
 export interface UnifiedModelAnalysis {
   model: ParsedModel
@@ -114,7 +193,7 @@ export interface UnifiedModelAnalysis {
   // Capabilities (from model-capabilities)
   capabilities: ModelCapabilities
   
-  // Errors encountered during analysis (when collectErrors is true)
+  // Errors encountered during analysis (only when collectErrors: true)
   errors?: Array<{ field: string; message: string }>
 }
 
@@ -156,11 +235,30 @@ const DEFAULT_CONFIG: UnifiedAnalyzerConfig = {
  * - analyzeModel() from relationship-analyzer.ts
  * - analyzeModelCapabilities() from model-capabilities.ts
  */
+/**
+ * Validate config.specialFieldMatchers keys match SpecialFields type
+ */
+function validateConfig(config: UnifiedAnalyzerConfig): void {
+  if (config.specialFieldMatchers) {
+    for (const key of Object.keys(config.specialFieldMatchers)) {
+      if (!isSpecialFieldKey(key)) {
+        throw new Error(
+          `Invalid special field matcher key '${key}'. ` +
+          `Valid keys: published, slug, views, likes, approved, deletedAt, parentId`
+        )
+      }
+    }
+  }
+}
+
 export function analyzeModelUnified(
   model: ParsedModel,
   schema: ParsedSchema,
   config: UnifiedAnalyzerConfig = {}
 ): UnifiedModelAnalysis {
+  // Validate configuration
+  validateConfig(config)
+  
   const cfg = { ...DEFAULT_CONFIG, ...config }
   const allErrors: Array<{ field: string; message: string }> = []
   
@@ -227,7 +325,7 @@ function analyzeRelationships(
   
   const errors: Array<{ field: string; message: string }> = []
   
-  const relationships = model.relationFields.map(field => {
+  const relationships = model.relationFields.flatMap(field => {
     // Validate target model exists
     const targetModel = schema.modelMap.get(field.type)
     if (!targetModel) {
@@ -238,16 +336,8 @@ function analyzeRelationships(
       
       if (config.collectErrors) {
         errors.push(error)
-        // Return stub relationship to continue analysis
-        return {
-          field,
-          targetModel: null as any, // Will be filtered later
-          isOneToOne: false,
-          isManyToMany: false,
-          isOneToMany: false,
-          isManyToOne: false,
-          shouldAutoInclude: false
-        }
+        // Return empty array to skip this relationship cleanly (flatMap will flatten it)
+        return []
       } else {
         throw new Error(
           `Model '${model.name}' has relation field '${field.name}' pointing to undefined model '${field.type}'. ` +
@@ -259,8 +349,22 @@ function analyzeRelationships(
     // Find back-reference field using relationName for proper pairing
     const backRef = findBackReference(field, targetModel, model)
     
-    // Determine relationship type
-    // IMPROVED: Handle unidirectional relations with better heuristics
+    /**
+     * Determine relationship type using both bidirectional and unidirectional heuristics
+     * 
+     * BIDIRECTIONAL (has back-reference):
+     * - 1:1 = scalar on both sides
+     * - M:N = list on both sides
+     * - 1:M = list on this side, scalar on other
+     * - M:1 = scalar on this side, list on other
+     * 
+     * UNIDIRECTIONAL (no back-reference):
+     * - Has FK + unique FK = 1:1
+     * - Has FK + non-unique = M:1
+     * - List + target is not junction = 1:M
+     * - List + target is junction = ambiguous M:N (leave flags false)
+     * - Scalar without FK = implicit 1:1 (rare)
+     */
     let isOneToOne = false
     let isManyToMany = false
     let isOneToMany = false
@@ -279,15 +383,31 @@ function analyzeRelationships(
       if (hasFKFields) {
         // Has FK fields = this side owns the relation
         // Check if FK is unique to distinguish 1:1 from M:1
-        // Uses isFieldUnique() to catch both @unique and @@unique([...])
-        const fkFieldsAreUnique = field.relationFromFields!.every(fkName => 
-          isFieldUnique(model, fkName)
-        )
         
-        if (fkFieldsAreUnique) {
-          isOneToOne = true  // Unique FK = 1:1
+        // For single FK: check if it's unique
+        if (field.relationFromFields!.length === 1) {
+          const fkIsUnique = isFieldUnique(model, field.relationFromFields![0])
+          if (fkIsUnique) {
+            isOneToOne = true  // Unique single FK = 1:1
+          } else {
+            isManyToOne = true  // Non-unique single FK = M:1
+          }
         } else {
-          isManyToOne = true  // Non-unique FK = M:1
+          // For composite FK: check if there's a unique index covering ALL FK fields
+          const hasCompositeUnique = Array.isArray(model.uniqueFields) && 
+            model.uniqueFields.some(uniqueIndex => {
+              const fkSet = new Set(field.relationFromFields!)
+              const indexSet = new Set(uniqueIndex)
+              // Check if FK fields are a subset of (or equal to) the unique index
+              return field.relationFromFields!.every(fk => indexSet.has(fk)) &&
+                     uniqueIndex.length === field.relationFromFields!.length
+            })
+          
+          if (hasCompositeUnique) {
+            isOneToOne = true  // Composite unique FK = 1:1
+          } else {
+            isManyToOne = true  // Non-unique composite FK = M:1
+          }
         }
       } else if (field.isList) {
         // List field without back-ref could be 1:M or unidirectional M:N
@@ -337,7 +457,7 @@ function analyzeRelationships(
     }
     
     return relationship
-  }).filter(r => r.targetModel !== null)  // Remove broken relationships when collecting errors
+  })
   
   return {
     relationships,
@@ -447,6 +567,13 @@ const DEFAULT_SPECIAL_FIELD_MATCHERS: Record<string, SpecialFieldMatcher> = {
 }
 
 /**
+ * Type guard: check if key is valid SpecialFields property
+ */
+function isSpecialFieldKey(key: string): key is keyof SpecialFields {
+  return ['published', 'slug', 'views', 'likes', 'approved', 'deletedAt', 'parentId'].includes(key)
+}
+
+/**
  * Check if a field is part of a unique index (including composite)
  */
 function isFieldUnique(model: ParsedModel, fieldName: string): boolean {
@@ -455,7 +582,7 @@ function isFieldUnique(model: ParsedModel, fieldName: string): boolean {
   if (field?.isUnique) return true
   
   // Check composite unique indexes (@@unique([field, ...]))
-  if (model.uniqueFields && model.uniqueFields.length > 0) {
+  if (Array.isArray(model.uniqueFields) && model.uniqueFields.length > 0) {
     return model.uniqueFields.some(uniqueIndex => uniqueIndex.includes(fieldName))
   }
   
@@ -522,62 +649,54 @@ function analyzeFieldsOnce(model: ParsedModel, config: UnifiedAnalyzerConfig): F
     // Skip relation fields
     if (field.kind === FIELD_KIND_OBJECT) continue
     
+    // Cache normalized name (used in multiple checks) - performance optimization
     const normalized = normalizeFieldName(field.name)
+    const isScalar = field.kind === FIELD_KIND_SCALAR
+    const isEnum = field.kind === FIELD_KIND_ENUM
     
     // 1. Check for special fields (only on scalar fields, not enums)
-    if (field.kind === FIELD_KIND_SCALAR && foundKeys.size < matcherEntries.length) {
+    if (isScalar && foundKeys.size < matcherEntries.length) {
       for (const [key, matcher] of matcherEntries) {
         if (foundKeys.has(key)) continue
         
-        if (matcher.pattern.test(normalized)) {
-          // Special case for slug: must be unique
-          if (key === 'slug' && field.type === 'String' && !isFieldUnique(model, field.name)) {
-            continue
-          }
-          
-          if (matcher.validator(field)) {
-            // Type-safe assignment using explicit key checking
-            switch (key) {
-              case 'published':
-                specialFields.published = field
-                break
-              case 'slug':
-                specialFields.slug = field
-                break
-              case 'views':
-                specialFields.views = field
-                break
-              case 'likes':
-                specialFields.likes = field
-                break
-              case 'approved':
-                specialFields.approved = field
-                break
-              case 'deletedAt':
-                specialFields.deletedAt = field
-                break
-              case 'parentId':
-                specialFields.parentId = field
-                break
+        if (!matcher.pattern.test(normalized)) continue
+        
+        // Special case for slug: must be unique (check before validator to avoid redundant work)
+        if (key === 'slug') {
+          if (field.type === 'String' && isFieldUnique(model, field.name)) {
+            if (isSpecialFieldKey(key)) {
+              specialFields[key] = field
             }
             foundKeys.add(key)
           }
+          continue
+        }
+        
+        // Standard validation
+        if (matcher.validator(field)) {
+          // Type-safe assignment - only set if key is valid SpecialFields property
+          if (isSpecialFieldKey(key)) {
+            specialFields[key] = field
+          }
+          foundKeys.add(key)
+          break  // Move to next field after first match
         }
       }
     }
     
     // 2. Check for searchable fields (String scalars only, not enums)
-    if (field.kind === FIELD_KIND_SCALAR && field.type === 'String' && !field.isId && !field.isReadOnly) {
-      if (!excludeSensitive || !isSensitiveField(field.name, sensitivePatterns)) {
+    if (isScalar && field.type === 'String' && !field.isId && !field.isReadOnly) {
+      // Reuse already-normalized name for performance
+      if (!excludeSensitive || !sensitivePatterns.some(p => p.test(normalized))) {
         searchFields.push(field.name)
       }
     }
     
     // 3. Check for filterable fields (scalars, enums, and their lists)
     const isFilterable = 
-      (field.kind === FIELD_KIND_ENUM && !field.isReadOnly) ||  // Enum (includes lists)
-      (field.kind === FIELD_KIND_SCALAR && field.isList && FILTERABLE_SCALAR_TYPES.has(field.type) && !field.isReadOnly) ||  // Scalar lists
-      (field.kind === FIELD_KIND_SCALAR && FILTERABLE_SCALAR_TYPES.has(field.type) && !field.isId && !field.isReadOnly)  // Scalars
+      (isEnum && !field.isReadOnly) ||  // Enum (includes lists)
+      (isScalar && field.isList && FILTERABLE_SCALAR_TYPES.has(field.type) && !field.isReadOnly) ||  // Scalar lists
+      (isScalar && FILTERABLE_SCALAR_TYPES.has(field.type) && !field.isId && !field.isReadOnly)  // Scalars
     
     if (isFilterable) {
       filterFields.push({
@@ -651,12 +770,12 @@ function hasParentChildRelation(
   }
   
   // Fallback: detect using configurable pattern (parent|ancestor|root)
-  let pattern = config.parentFieldPatterns ?? DEFAULT_PARENT_PATTERN
+  const providedPattern = config.parentFieldPatterns ?? DEFAULT_PARENT_PATTERN
   
-  // Ensure pattern is case-insensitive (add 'i' flag if missing)
-  if (!pattern.flags.includes('i')) {
-    pattern = new RegExp(pattern.source, pattern.flags + 'i')
-  }
+  // Ensure pattern is case-insensitive (reconstruct if needed)
+  const pattern = providedPattern.flags.includes('i')
+    ? providedPattern
+    : new RegExp(providedPattern.source, 'i')
   
   return model.fields.some(field => {
     if (field.kind !== FIELD_KIND_OBJECT || field.type !== model.name) return false
@@ -675,18 +794,23 @@ function hasParentChildRelation(
  * IMPROVED: Returns all fields in composite FKs, includes self-references, proper relationName
  */
 function getForeignKeys(model: ParsedModel): ForeignKeyInfo[] {
-  return model.fields
-    .filter(field => 
-      field.kind === FIELD_KIND_OBJECT && 
-      Array.isArray(field.relationFromFields) &&
-      field.relationFromFields.length > 0
-    )
-    .map(field => ({
-      fieldNames: field.relationFromFields as string[],  // Validated by filter above
+  const result: ForeignKeyInfo[] = []
+  
+  for (const field of model.fields) {
+    if (field.kind !== FIELD_KIND_OBJECT) continue
+    if (!Array.isArray(field.relationFromFields) || field.relationFromFields.length === 0) {
+      continue
+    }
+    
+    result.push({
+      fieldNames: field.relationFromFields,  // Type-safe: validated above
       relationAlias: field.name,
       relationName: field.relationName ?? null,
       relatedModel: field.type
-    }))
+    })
+  }
+  
+  return result
 }
 
 // ============================================================================

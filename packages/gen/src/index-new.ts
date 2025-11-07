@@ -18,7 +18,7 @@ import { parseDMMF, validateSchema } from './dmmf-parser.js'
 import { generateCode, countGeneratedFiles } from './code-generator.js'
 import { PathsConfig, filePath, esmImport } from './path-resolver.js'
 import { createLogger, type LogLevel } from './utils/cli-logger.js'
-import { analyzeRelationships } from './relationship-analyzer.js'
+import { analyzeRelationshipsForSchema } from './utils/relationship-analyzer.js'
 import { analyzeModel } from './utils/relationship-analyzer.js'
 import { getNextProjectFolder, findWorkspaceRoot, deriveProjectName } from './utils/gen-folder.js'
 import * as standaloneTemplates from './templates/standalone-project.template.js'
@@ -135,7 +135,7 @@ export async function generateFromSchema(config: GeneratorConfig) {
     
     // Analyze relationships
     logger.startPhase('Analyzing relationships')
-    const relationships = analyzeRelationships(parsedSchema)
+    const relationships = analyzeRelationshipsForSchema(parsedSchema)
     logger.endPhase('Analyzing relationships')
     
     logger.logSchemaParsed(

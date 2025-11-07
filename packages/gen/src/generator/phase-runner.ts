@@ -1,11 +1,12 @@
 /**
  * Phase Runner - Orchestrates generation phases
  * 
- * Manages the 12 discrete phases of code generation with:
+ * Manages the 13 discrete phases of code generation with:
  * - Progress tracking
  * - Error handling
  * - Performance metrics
  * - Dependency injection
+ * - Plugin hook system (beforePhase, afterPhase, replacePhase)
  */
 
 import { performance } from 'node:perf_hooks'
@@ -14,6 +15,7 @@ import type { GeneratorConfig, GeneratorResult } from './types.js'
 import type { CLILogger } from '../utils/cli-logger.js'
 import type { PathsConfig } from '../path-resolver.js'
 import type { GeneratedFiles } from '../code-generator.js'
+import { PhaseHookRegistry } from './hooks/phase-hooks.js'
 
 /**
  * Phase Context - Shared state across all generation phases
@@ -154,9 +156,11 @@ export abstract class GenerationPhase<TData = unknown> {
 export class PhaseRunner {
   private phases: GenerationPhase[] = []
   private context: PhaseContext
+  private hookRegistry: PhaseHookRegistry
   
-  constructor(config: GeneratorConfig, logger: CLILogger) {
+  constructor(config: GeneratorConfig, logger: CLILogger, hookRegistry?: PhaseHookRegistry) {
     this.context = { config, logger }
+    this.hookRegistry = hookRegistry || new PhaseHookRegistry()
   }
   
   /**
@@ -192,7 +196,7 @@ export class PhaseRunner {
       // Initialize phase metrics array in context
       this.context.phaseMetrics = []
       
-      // Execute each phase
+      // Execute each phase (with hook support)
       for (const phase of sortedPhases) {
         if (!phase.shouldRun(this.context)) {
           logger.debug(`Skipping phase: ${phase.name}`)
@@ -204,7 +208,19 @@ export class PhaseRunner {
         const phaseStartTime = performance.now()
         
         try {
-          const result = await phase.execute(this.context)
+          // Execute before hooks
+          await this.hookRegistry.executeBeforeHooks(phase.name, this.context)
+          
+          // Check if phase is replaced
+          let result: PhaseResult
+          if (this.hookRegistry.hasReplacement(phase.name)) {
+            logger.debug(`Using replacement for phase: ${phase.name}`)
+            const replacement = this.hookRegistry.getReplacement(phase.name)!
+            result = await replacement(this.context)
+          } else {
+            // Execute original phase
+            result = await phase.execute(this.context)
+          }
           
           if (!result.success) {
             throw result.error || new Error(`Phase ${phase.name} failed`)
@@ -212,6 +228,9 @@ export class PhaseRunner {
           
           // Store result in context for subsequent phases
           this.context[phase.name] = result.data
+          
+          // Execute after hooks
+          await this.hookRegistry.executeAfterHooks(phase.name, this.context, result)
           
           // Store phase metrics immediately (so manifest phase can access them)
           const phaseDuration = performance.now() - phaseStartTime
@@ -223,6 +242,9 @@ export class PhaseRunner {
           
           logger.endPhase(phase.getDescription(), result.filesGenerated)
         } catch (error) {
+          // Execute error hooks
+          await this.hookRegistry.executeErrorHooks(phase.name, error as Error, this.context)
+          
           logger.error(`Phase ${phase.name} failed`, error as Error)
           throw error
         }
@@ -251,6 +273,13 @@ export class PhaseRunner {
    */
   getContext(): PhaseContext {
     return this.context
+  }
+  
+  /**
+   * Get hook registry (for plugin registration)
+   */
+  getHookRegistry(): PhaseHookRegistry {
+    return this.hookRegistry
   }
 }
 
