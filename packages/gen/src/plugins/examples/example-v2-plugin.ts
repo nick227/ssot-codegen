@@ -20,7 +20,7 @@ import type {
   PluginLifecycleHooks
 } from '../plugin-v2.interface.js'
 import type { ParsedSchema, ParsedModel } from '../../dmmf-parser.js'
-import { GenerationPhase, type PhaseContext, type PhaseResult } from '../../generator/phase-runner.js'
+import { GenerationPhase, type PhaseContext, type PhaseResult } from '@/pipeline/phase-runner.js'
 
 /**
  * Example custom phase

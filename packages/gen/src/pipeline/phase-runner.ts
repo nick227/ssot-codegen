@@ -175,7 +175,7 @@ export class PhaseRunner {
     logger.startGeneration()
     
     // Clear any tracked paths from previous runs
-    const { clearTrackedPaths } = await import('../generator/phase-utilities.js')
+    const { clearTrackedPaths } = await import('./phase-utilities.js')
     clearTrackedPaths()
     
     try {

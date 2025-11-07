@@ -5,13 +5,13 @@
  */
 
 import { createLogger } from './utils/cli-logger.js'
-import { PhaseRunner } from './generator/phase-runner.js'
-import { createAllPhases } from './generator/phases/index.js'
-import type { GeneratorConfig, GeneratorResult } from './generator/types.js'
+import { PhaseRunner } from '@/pipeline/phase-runner.js'
+import { createAllPhases } from '@/pipeline/phases/index.js'
+import type { GeneratorConfig, GeneratorResult } from '@/pipeline/types.js'
 
 export * from './project-scaffold.js'
 export * from './dependencies/index.js'
-export * from './generator/types.js'
+export * from '@/pipeline/types.js'
 
 /**
  * Main generator function using PhaseRunner

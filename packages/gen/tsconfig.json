@@ -2,7 +2,18 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "src",
+    "baseUrl": "src",
+    "paths": {
+      "@/pipeline/*": ["pipeline/*"],
+      "@/generators/*": ["generators/*"],
+      "@/analyzers/*": ["analyzers/*"],
+      "@/utils/*": ["utils/*"],
+      "@/plugins/*": ["plugins/*"],
+      "@/templates/*": ["templates/*"],
+      "@/database/*": ["database/*"],
+      "@/api/*": ["api/*"]
+    }
   },
   "include": [
     "src"

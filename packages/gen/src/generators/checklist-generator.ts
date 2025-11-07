@@ -4,7 +4,7 @@
  */
 
 import type { ParsedSchema, ParsedModel } from '../dmmf-parser.js'
-import type { GeneratedFiles } from '../generator/types.js'
+import type { GeneratedFiles } from '@/pipeline/types.js'
 
 export interface ChecklistConfig {
   projectName: string

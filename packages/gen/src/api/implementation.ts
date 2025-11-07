@@ -10,12 +10,12 @@ import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
 import type { DMMF } from '@prisma/generator-helper'
 import { parseDMMF, validateSchema as validateSchemaDMMF } from '../dmmf-parser.js'
-import { createLogger } from '../utils/cli-logger.js'
-import { PhaseRunner } from '../generator/phase-runner.js'
-import { createAllTypedPhases } from '../generator/phases/index.typed.js'
-import { analyzeRelationshipsForSchema as analyzeRelationships } from '../utils/relationship-analyzer.js'
-import { analyzeModelUnified } from '../analyzers/unified-analyzer.js'
-import type { GeneratorConfig } from '../generator/types.js'
+import { createLogger } from '@/utils/cli-logger.js'
+import { PhaseRunner } from '@/pipeline/phase-runner.js'
+import { createAllTypedPhases } from '@/pipeline/phases/index.typed.js'
+import { analyzeRelationshipsForSchema as analyzeRelationships } from '@/utils/relationship-analyzer.js'
+import { analyzeModelUnified } from '@/analyzers/unified-analyzer.js'
+import type { GeneratorConfig } from '@/pipeline/types.js'
 import type { 
   GenerateOptions, 
   GenerateResult, 

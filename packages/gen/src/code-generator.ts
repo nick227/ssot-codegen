@@ -10,36 +10,36 @@
  */
 
 import type { ParsedSchema, ParsedModel } from './dmmf-parser.js'
-import { toKebabCase } from './utils/naming.js'
-import { generateAllDTOs } from './generators/dto-generator.js'
-import { generateAllValidators } from './generators/validator-generator.js'
-import { generateService } from './generators/service-generator.js'
-import { generateController } from './generators/controller-generator.js'
-import { generateRoutes } from './generators/route-generator.js'
+import { toKebabCase } from '@/utils/naming.js'
+import { generateAllDTOs } from '@/generators/dto-generator.js'
+import { generateAllValidators } from '@/generators/validator-generator.js'
+import { generateService } from '@/generators/service-generator.js'
+import { generateController } from '@/generators/controller-generator.js'
+import { generateRoutes } from '@/generators/route-generator.js'
 // Enhanced generators with relationships, domain logic, and better logging
-import { generateEnhancedService } from './generators/service-generator-enhanced.js'
-import { generateEnhancedController } from './generators/controller-generator-enhanced.js'
-import { generateBaseClassController } from './generators/controller-generator-base-class.js'
-import { generateEnhancedRoutes, shouldGenerateRoutes } from './generators/route-generator-enhanced.js'
+import { generateEnhancedService } from '@/generators/service-generator-enhanced.js'
+import { generateEnhancedController } from '@/generators/controller-generator-enhanced.js'
+import { generateBaseClassController } from '@/generators/controller-generator-base-class.js'
+import { generateEnhancedRoutes, shouldGenerateRoutes } from '@/generators/route-generator-enhanced.js'
 // Service integration for complex workflows (AI agents, file uploads, etc.)
 import { parseServiceAnnotation, getServiceExportName, type ServiceAnnotation } from './service-linker.js'
-import { generateServiceController, generateServiceRoutes, generateServiceScaffold } from './generators/service-integration.generator.js'
+import { generateServiceController, generateServiceRoutes, generateServiceScaffold } from '@/generators/service-integration.generator.js'
 // SDK generation for frontend clients
-import { generateModelSDK, generateMainSDK, generateSDKVersion } from './generators/sdk-generator.js'
-import { generateServiceSDK, generateMainSDKWithServices } from './generators/sdk-service-generator.js'
-import { generateSDKReadme, generateAPIReference, generateSDKArchitecture, generateQuickStart, generateSDKTypes } from './generators/sdk-docs-generator.js'
+import { generateModelSDK, generateMainSDK, generateSDKVersion } from '@/generators/sdk-generator.js'
+import { generateServiceSDK, generateMainSDKWithServices } from '@/generators/sdk-service-generator.js'
+import { generateSDKReadme, generateAPIReference, generateSDKArchitecture, generateQuickStart, generateSDKTypes } from '@/generators/sdk-docs-generator.js'
 // Framework hooks generation (React, Vue, etc.)
-import { generateAllHooks } from './generators/hooks/index.js'
+import { generateAllHooks } from '@/generators/hooks/index.js'
 // OPTIMIZATION: Pre-analysis utilities (UNIFIED - combines relationship + capability analysis)
-import { analyzeModelUnified, type UnifiedModelAnalysis } from './analyzers/unified-analyzer.js'
+import { analyzeModelUnified, type UnifiedModelAnalysis } from '@/analyzers/unified-analyzer.js'
 // Legacy import for backwards compatibility (will be removed)
-import { type ModelAnalysis } from './utils/relationship-analyzer.js'
+import { type ModelAnalysis } from '@/utils/relationship-analyzer.js'
 // Registry-based architecture (78% less code)
-import { generateRegistrySystem } from './generators/registry-generator.js'
+import { generateRegistrySystem } from '@/generators/registry-generator.js'
 // System health check dashboard
-import { generateChecklistSystem } from './generators/checklist-generator.js'
+import { generateChecklistSystem } from '@/generators/checklist-generator.js'
 // Feature plugins system
-import { PluginManager } from './plugins/plugin-manager.js'
+import { PluginManager } from '@/plugins/plugin-manager.js'
 
 export interface CodeGeneratorConfig {
   framework: 'express' | 'fastify'
@@ -64,9 +64,9 @@ export interface CodeGeneratorConfig {
   }
 }
 
-// GeneratedFiles type moved to generator/types.ts to break circular dependency
-import type { GeneratedFiles } from './generator/types.js'
-export type { GeneratedFiles } from './generator/types.js'
+// GeneratedFiles type moved to pipeline/types.ts to break circular dependency
+import type { GeneratedFiles } from '@/pipeline/types.js'
+export type { GeneratedFiles } from '@/pipeline/types.js'
 
 /**
  * Analysis cache for optimization

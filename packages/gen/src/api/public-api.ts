@@ -39,8 +39,8 @@ export type {
 export { GeneratorError } from './types.js'
 
 import type { PathsConfig } from '../path-resolver.js'
-import type { GeneratorResult } from '../generator/types.js'
-import type { GenerateOptions, GenerateResult, ProgressEvent } from './types.js'
+import type { GeneratorResult } from '@/pipeline/types.js'
+import type { GenerateOptions, GenerateResult, ProgressEvent } from '@/api/types.js'
 
 // ============================================================================
 // PUBLIC API FUNCTIONS
@@ -166,5 +166,5 @@ export async function getVersion(): Promise<string> {
 // ============================================================================
 
 export type { PathsConfig } from '../path-resolver.js'
-export type { GeneratorConfig } from '../generator/types.js'
+export type { GeneratorConfig } from '@/pipeline/types.js'
 

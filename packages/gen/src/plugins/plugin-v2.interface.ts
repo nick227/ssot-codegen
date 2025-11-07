@@ -12,7 +12,7 @@
  */
 
 import type { ParsedSchema, ParsedModel } from '../dmmf-parser.js'
-import type { GenerationPhase, PhaseContext } from '../generator/phase-runner.js'
+import type { GenerationPhase, PhaseContext } from '@/pipeline/phase-runner.js'
 
 /**
  * Plugin context v2 - Enhanced with template system access

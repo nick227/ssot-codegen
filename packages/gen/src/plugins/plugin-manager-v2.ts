@@ -18,7 +18,7 @@ import type {
   TemplateRegistry,
   TemplateExtension
 } from './plugin-v2.interface.js'
-import type { GenerationPhase } from '../generator/phase-runner.js'
+import type { GenerationPhase } from '@/pipeline/phase-runner.js'
 
 export interface PluginManagerV2Config {
   schema: ParsedSchema
