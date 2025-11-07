@@ -15,7 +15,7 @@
  */
 
 import path from 'node:path'
-import { writeFile, generateEsmPath } from './phase-utilities.js'
+import { writeFile, generateEsmPath, trackPath as trackPathUtil } from './phase-utilities.js'
 import type { PathsConfig } from '../path-resolver.js'
 import { toKebabCase } from '../utils/naming.js'
 
@@ -36,14 +36,6 @@ export interface FileEntry {
 }
 
 /**
- * Path tracking entry - simplified, no string IDs
- */
-export interface TrackedPath {
-  absolutePath: string
-  esmImport: string
-}
-
-/**
  * Writer statistics
  */
 export interface WriterStats {
@@ -54,31 +46,21 @@ export interface WriterStats {
 }
 
 // ============================================================================
-// PATH MAP (Unified Tracking)
+// PATH TRACKING - Uses existing system in phase-utilities.ts
 // ============================================================================
 
-const pathMap = new Map<string, TrackedPath>()
-
 /**
- * Track a file path - single source of truth
- * Uses absolute path as key (no string interpolation)
+ * Track a file path using the existing tracking system
+ * 
+ * IMPORTANT: This uses the trackPath function from phase-utilities.ts
+ * to maintain a single source of truth for path tracking.
+ * 
+ * We generate a simple ID from the absolute path for tracking.
  */
-function trackPath(absolutePath: string, esmImport: string): void {
-  pathMap.set(absolutePath, { absolutePath, esmImport })
-}
-
-/**
- * Get all tracked paths
- */
-export function getTrackedPaths(): Map<string, TrackedPath> {
-  return new Map(pathMap)
-}
-
-/**
- * Clear tracked paths (for testing)
- */
-export function clearTrackedPaths(): void {
-  pathMap.clear()
+function trackPath(absolutePath: string, esmPath: string): void {
+  // Use absolute path as ID (simpler than composite keys)
+  const trackId = absolutePath.replace(/\\/g, '/') // Normalize path separators
+  trackPathUtil(trackId, absolutePath, esmPath)
 }
 
 // ============================================================================
@@ -187,11 +169,15 @@ export async function writeFilesOptimized(
   
   const duration = Date.now() - startTime
   
+  // Import getTrackedPaths to get actual count
+  const { getTrackedPaths } = await import('./phase-utilities.js')
+  const pathMap = getTrackedPaths()
+  
   return {
     filesWritten,
     bytesWritten,
     duration,
-    pathsTracked: pathMap.size
+    pathsTracked: Object.keys(pathMap).length
   }
 }
 
