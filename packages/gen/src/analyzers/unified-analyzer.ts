@@ -1,14 +1,18 @@
 /**
  * Unified Model Analyzer
  * 
- * Combines relationship-analyzer.ts and model-capabilities.ts into a single
- * efficient analyzer that makes ONE pass through model fields.
+ * Combines relationship-analyzer.ts and model-capabilities.ts into an optimized
+ * analyzer that minimizes field traversals.
  * 
- * OPTIMIZATION: Previously two separate analyzers would scan the same model:
- * - relationship-analyzer.ts: relationships + special fields
- * - model-capabilities.ts: capabilities + foreign keys
+ * PERFORMANCE: Previously multiple analyzers would scan the same model repeatedly.
+ * This unified analyzer performs:
+ * - Single pass for all field analysis (special fields + searchable + filterable)
+ * - Separate pass for relationships (requires schema context)
+ * - Minimal overhead for capability detection
  * 
- * This unified analyzer does everything in a single pass → 2x faster
+ * CORRECTNESS: Properly handles enums, arrays, unidirectional relations, and composite keys.
+ * 
+ * FLEXIBILITY: Configurable patterns, error collection, and auto-include behavior.
  */
 
 import type { ParsedModel, ParsedField, ParsedSchema } from '../dmmf-parser.js'
@@ -397,44 +401,6 @@ function isFieldUnique(model: ParsedModel, fieldName: string): boolean {
   return false
 }
 
-/**
- * Detect special fields in a single pass with robust name normalization
- * OPTIMIZED: True O(N) - single pass through fields, test all matchers per field
- * IMPROVED: Handles snake_case, kebab-case, composite unique indexes
- */
-function detectSpecialFields(model: ParsedModel, config: UnifiedAnalyzerConfig): SpecialFields {
-  const fields: SpecialFields = {}
-  const matchers = config.specialFieldMatchers ?? DEFAULT_SPECIAL_FIELD_MATCHERS
-  const matcherEntries = Object.entries(matchers)
-  const foundKeys = new Set<string>()
-  
-  // Single pass: for each field, try all matchers
-  for (const field of model.scalarFields) {
-    if (foundKeys.size === matcherEntries.length) break // All found
-    
-    const normalized = normalizeFieldName(field.name)
-    
-    for (const [key, matcher] of matcherEntries) {
-      if (foundKeys.has(key)) continue // Already found
-      
-      if (matcher.pattern.test(normalized)) {
-        // For slug, check unique constraint (including composite)
-        if (key === 'slug' && field.type === 'String') {
-          if (isFieldUnique(model, field.name)) {
-            (fields as Record<string, ParsedField>)[key] = field
-            foundKeys.add(key)
-          }
-        } else if (matcher.validator(field)) {
-          (fields as Record<string, ParsedField>)[key] = field
-          foundKeys.add(key)
-        }
-      }
-    }
-  }
-  
-  return fields
-}
-
 // ============================================================================
 // CAPABILITIES ANALYSIS
 // ============================================================================
@@ -657,8 +623,25 @@ export function generateIncludeObject(
 
 /**
  * Legacy: Generate Prisma include statement as string
- * @deprecated Use generateIncludeObject() for type safety
- * IMPROVED: Clean formatting, no dangling commas when empty
+ * 
+ * @deprecated Use `generateIncludeObject()` instead for type safety.
+ * String-based includes are error-prone and difficult to compose correctly.
+ * 
+ * @param analysis - Model analysis result
+ * @param options - Formatting options
+ * @returns Formatted include string (empty if no relations)
+ * 
+ * @example
+ * ```ts
+ * // Deprecated:
+ * const str = generateSummaryInclude(analysis)
+ * 
+ * // Preferred:
+ * const obj = generateIncludeObject(analysis)
+ * if (obj) {
+ *   await prisma.model.findMany({ include: obj })
+ * }
+ * ```
  */
 export function generateSummaryInclude(
   analysis: UnifiedModelAnalysis,
