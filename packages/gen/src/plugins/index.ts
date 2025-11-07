@@ -26,6 +26,19 @@ export * from './ai/ollama.plugin.js'
 export * from './voice/deepgram.plugin.js'
 export * from './voice/elevenlabs.plugin.js'
 
+// Storage providers
+export * from './storage/s3.plugin.js'
+export * from './storage/r2.plugin.js'
+export * from './storage/cloudinary.plugin.js'
+
+// Payment providers
+export * from './payments/stripe.plugin.js'
+export * from './payments/paypal.plugin.js'
+
+// Email providers
+export * from './email/sendgrid.plugin.js'
+export * from './email/mailgun.plugin.js'
+
 // AI provider interface
 export * from './ai/ai-provider.interface.js'
 
