@@ -182,8 +182,9 @@ export function generateCode(
   files.hooks = hooks
   
   // PHASE 5: Generate Feature Plugins (NEW!)
+  let pluginManager: PluginManager | undefined
   if (config.features) {
-    const pluginManager = new PluginManager({
+    pluginManager = new PluginManager({
       schema,
       projectName: config.projectName || 'Generated Project',
       framework: config.framework || 'express',
@@ -213,6 +214,24 @@ export function generateCode(
   
   // PHASE 6: Generate System Checklist
   if (config.generateChecklist !== false) {  // Default: true
+    // Collect plugin health checks from the same plugin manager instance
+    const pluginHealthChecks = new Map<string, any>()
+    if (pluginManager) {
+      // Get health checks from all enabled plugins
+      for (const [pluginName, plugin] of pluginManager.getPlugins()) {
+        if (plugin.healthCheck) {
+          const healthCheck = plugin.healthCheck({
+            schema,
+            projectName: config.projectName || 'Generated Project',
+            framework: config.framework || 'express',
+            outputDir: '',
+            config: config.features || {}
+          })
+          pluginHealthChecks.set(pluginName, healthCheck)
+        }
+      }
+    }
+    
     const checklist = generateChecklistSystem(schema, files, {
       projectName: config.projectName || 'Generated Project',
       useRegistry: config.useRegistry || false,
@@ -221,7 +240,8 @@ export function generateCode(
       includeEnvironmentChecks: true,
       includeCodeValidation: true,
       includeAPITesting: true,
-      includePerformanceMetrics: true
+      includePerformanceMetrics: true,
+      pluginHealthChecks
     })
     files.checklist = checklist
   }

@@ -15,6 +15,7 @@ export interface ChecklistConfig {
   includeCodeValidation?: boolean
   includeAPITesting?: boolean
   includePerformanceMetrics?: boolean
+  pluginHealthChecks?: Map<string, any>  // Plugin health check sections
 }
 
 /**
@@ -599,6 +600,7 @@ function generateStaticHTML(
     
     ${generateEnvironmentSection(config)}
     ${generateCodeValidationSection(schema, files, config)}
+    ${generatePluginHealthCheckSections(config)}
     ${generateModelsSection(schema)}
     ${generateAdvancedFeaturesSection(config)}
   </div>
@@ -992,6 +994,51 @@ function generateModelsSection(schema: ParsedSchema): string {
       </div>
     </div>
   `
+}
+
+/**
+ * Generate plugin health check sections
+ */
+function generatePluginHealthCheckSections(config: ChecklistConfig): string {
+  if (!config.pluginHealthChecks || config.pluginHealthChecks.size === 0) {
+    return ''
+  }
+  
+  let sectionsHTML = ''
+  
+  for (const [pluginName, healthCheck] of config.pluginHealthChecks) {
+    sectionsHTML += `
+    <!-- ${healthCheck.title} Plugin -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">
+          <span>${healthCheck.icon || '🔌'}</span>
+          ${healthCheck.title}
+        </div>
+        <div class="section-badge">Plugin</div>
+      </div>
+      
+      <div class="checks">
+        ${healthCheck.checks.map((check: any) => `
+        <div class="check-item" id="${check.id}">
+          <div class="check-left">
+            <div class="check-icon">⏳</div>
+            <div class="check-info">
+              <div class="check-name">${check.name}</div>
+              <div class="check-detail">${check.description}</div>
+            </div>
+          </div>
+          <div class="check-status">Pending</div>
+        </div>
+        `).join('\n')}
+      </div>
+      
+      ${healthCheck.interactiveDemo || ''}
+    </div>
+    `
+  }
+  
+  return sectionsHTML
 }
 
 /**

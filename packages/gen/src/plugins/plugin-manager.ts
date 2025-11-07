@@ -105,6 +105,13 @@ export class PluginManager {
   }
   
   /**
+   * Get all registered plugins (for health checks, etc.)
+   */
+  getPlugins(): Map<string, FeaturePlugin> {
+    return this.plugins
+  }
+  
+  /**
    * Register enabled plugins
    */
   private registerPlugins(config: PluginManagerConfig): void {
