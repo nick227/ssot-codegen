@@ -194,7 +194,7 @@ export interface UnifiedModelAnalysis {
   capabilities: ModelCapabilities
   
   // Errors encountered during analysis (only when collectErrors: true)
-  errors?: Array<{ field: string; message: string }>
+  errors?: Array<{ model: string; field: string; message: string }>
 }
 
 // ============================================================================
@@ -260,7 +260,7 @@ export function analyzeModelUnified(
   validateConfig(config)
   
   const cfg = { ...DEFAULT_CONFIG, ...config }
-  const allErrors: Array<{ field: string; message: string }> = []
+  const allErrors: Array<{ model: string; field: string; message: string }> = []
   
   // 1. Analyze relationships (requires schema for target models)
   const relationshipAnalysis = analyzeRelationships(model, schema, cfg)
@@ -309,7 +309,8 @@ interface RelationshipAnalysisResult {
   relationships: RelationshipInfo[]
   autoInclude: RelationshipInfo[]
   isJunctionTable: boolean
-  errors?: Array<{ field: string; message: string }>
+  skippedRelations?: string[]  // Track which relations were skipped due to errors
+  errors?: Array<{ model: string; field: string; message: string }>
 }
 
 function analyzeRelationships(
@@ -323,19 +324,22 @@ function analyzeRelationships(
     systemFieldNames: config.systemFieldNames
   })
   
-  const errors: Array<{ field: string; message: string }> = []
+  const errors: Array<{ model: string; field: string; message: string }> = []
+  const skippedRelations: string[] = []
   
   const relationships = model.relationFields.flatMap(field => {
     // Validate target model exists
     const targetModel = schema.modelMap.get(field.type)
     if (!targetModel) {
       const error = {
+        model: model.name,
         field: field.name,
         message: `Relation '${field.name}' points to undefined model '${field.type}'`
       }
       
       if (config.collectErrors) {
         errors.push(error)
+        skippedRelations.push(field.name)
         // Return empty array to skip this relationship cleanly (flatMap will flatten it)
         return []
       } else {
@@ -387,43 +391,28 @@ function analyzeRelationships(
         
         // Check if FK is unique to distinguish 1:1 from M:1
         
-        // For single FK: check if it's unique
-        if (fkFields.length === 1) {
-          const fkIsUnique = isFieldUnique(model, fkFields[0])
-          if (fkIsUnique) {
-            isOneToOne = true  // Unique single FK = 1:1
-          } else {
-            isManyToOne = true  // Non-unique single FK = M:1
-          }
+        // Use improved validation that ensures ALL FK fields form a unique constraint
+        const fkAreUnique = areFieldsUnique(model, fkFields)
+        
+        if (fkAreUnique) {
+          isOneToOne = true  // Unique FK (single or composite) = 1:1
         } else {
-          // For composite FK: check if there's a unique index covering ALL FK fields
-          const hasCompositeUnique = Array.isArray(model.uniqueFields) && 
-            model.uniqueFields.some(uniqueIndex => {
-              const fkSet = new Set(fkFields)
-              const indexSet = new Set(uniqueIndex)
-              // Check if FK fields match the unique index exactly
-              return fkFields.every(fk => indexSet.has(fk)) &&
-                     uniqueIndex.length === fkFields.length
-            })
-          
-          if (hasCompositeUnique) {
-            isOneToOne = true  // Composite unique FK = 1:1
-          } else {
-            isManyToOne = true  // Non-unique composite FK = M:1
-          }
+          isManyToOne = true  // Non-unique FK = M:1
         }
       } else if (field.isList) {
         // List field without back-ref could be 1:M or unidirectional M:N
-        // Only classify as 1:M if target model doesn't look like a junction
         const targetIsJunction = isJunctionTable(targetModel, {
           junctionTableMaxDataFields: config.junctionTableMaxDataFields,
           systemFieldNames: config.systemFieldNames
         })
         
-        if (!targetIsJunction) {
-          isOneToMany = true  // Likely 1:M
+        if (targetIsJunction) {
+          // Target is junction table = unidirectional M:N
+          isManyToMany = true
+        } else {
+          // Target is regular model = 1:M
+          isOneToMany = true
         }
-        // else: leave all flags false for ambiguous M:N case
       } else {
         // Scalar without FK = implicit 1:1 (rare case)
         isOneToOne = true
@@ -466,6 +455,7 @@ function analyzeRelationships(
     relationships,
     autoInclude: relationships.filter(r => r.shouldAutoInclude),
     isJunctionTable: isJunction,
+    skippedRelations: skippedRelations.length > 0 ? skippedRelations : undefined,
     errors: errors.length > 0 ? errors : undefined
   }
 }
@@ -578,15 +568,51 @@ function isSpecialFieldKey(key: string): key is keyof SpecialFields {
 
 /**
  * Check if a field is part of a unique index (including composite)
+ * 
+ * @param model - The model to check
+ * @param fieldName - Single field name to check
+ * @param requireExactMatch - For composite FK validation: require the unique index to ONLY contain the specified field
+ * @returns true if field is unique (alone or as part of composite unique)
  */
-function isFieldUnique(model: ParsedModel, fieldName: string): boolean {
+function isFieldUnique(model: ParsedModel, fieldName: string, requireExactMatch = false): boolean {
   // Check direct @unique attribute
   const field = model.fields.find(f => f.name === fieldName)
   if (field?.isUnique) return true
   
   // Check composite unique indexes (@@unique([field, ...]))
   if (Array.isArray(model.uniqueFields) && model.uniqueFields.length > 0) {
+    if (requireExactMatch) {
+      // For single-field queries: unique index must contain ONLY this field
+      return model.uniqueFields.some(uniqueIndex => 
+        uniqueIndex.length === 1 && uniqueIndex[0] === fieldName
+      )
+    }
+    // Default: field is unique if it's part of ANY unique index
     return model.uniqueFields.some(uniqueIndex => uniqueIndex.includes(fieldName))
+  }
+  
+  return false
+}
+
+/**
+ * Check if a set of fields together form a unique constraint
+ * Used for composite foreign key validation
+ */
+function areFieldsUnique(model: ParsedModel, fieldNames: string[]): boolean {
+  const fieldSet = new Set(fieldNames)
+  
+  // Single field case
+  if (fieldNames.length === 1) {
+    return isFieldUnique(model, fieldNames[0], true)
+  }
+  
+  // Check if there's a unique index that exactly matches ALL these fields
+  if (Array.isArray(model.uniqueFields) && model.uniqueFields.length > 0) {
+    return model.uniqueFields.some(uniqueIndex => {
+      if (uniqueIndex.length !== fieldNames.length) return false
+      const indexSet = new Set(uniqueIndex)
+      return fieldNames.every(fk => indexSet.has(fk))
+    })
   }
   
   return false
@@ -609,6 +635,7 @@ function isSensitiveField(fieldName: string, patterns: RegExp[]): boolean {
  * TRUE SINGLE-PASS field analysis
  * Processes all fields once to detect special fields, searchable fields, and filterable fields
  * CRITICAL FIX: Iterates model.fields (not scalarFields) to catch enums and arrays
+ * PERFORMANCE: Caches normalized field names to avoid repeated normalization
  */
 interface FieldAnalysisResult {
   specialFields: SpecialFields
@@ -647,13 +674,21 @@ function analyzeFieldsOnce(model: ParsedModel, config: UnifiedAnalyzerConfig): F
     return 'exact'
   }
   
+  // PERFORMANCE OPTIMIZATION: Pre-compute normalized names once
+  const normalizedNames = new Map<string, string>()
+  for (const field of model.fields) {
+    if (field.kind !== FIELD_KIND_OBJECT) {
+      normalizedNames.set(field.name, normalizeFieldName(field.name))
+    }
+  }
+  
   // SINGLE PASS through ALL fields (not just scalarFields)
   for (const field of model.fields) {
     // Skip relation fields
     if (field.kind === FIELD_KIND_OBJECT) continue
     
-    // Cache normalized name (used in multiple checks) - performance optimization
-    const normalized = normalizeFieldName(field.name)
+    // Use cached normalized name (performance optimization - avoids repeated normalization)
+    const normalized = normalizedNames.get(field.name)!
     const isScalar = field.kind === FIELD_KIND_SCALAR
     const isEnum = field.kind === FIELD_KIND_ENUM
     
@@ -861,6 +896,7 @@ export function generateIncludeObject(
  * 
  * @deprecated Use `generateIncludeObject()` instead for type safety.
  * String-based includes are error-prone and difficult to compose correctly.
+ * This function will be removed in v3.0.
  * 
  * @param analysis - Model analysis result
  * @param options - Formatting options
@@ -882,6 +918,14 @@ export function generateSummaryInclude(
   analysis: UnifiedModelAnalysis,
   options: { standalone?: boolean } = {}
 ): string {
+  // Emit deprecation warning in development
+  if (process.env.NODE_ENV !== 'production') {
+    console.warn(
+      '[DEPRECATED] generateSummaryInclude() is deprecated and will be removed in v3.0. ' +
+      'Use generateIncludeObject() instead for type safety.'
+    )
+  }
+  
   const includeObj = generateIncludeObject(analysis)
   if (!includeObj) return ''
   
