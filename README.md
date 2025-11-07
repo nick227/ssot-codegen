@@ -18,7 +18,7 @@ Generates a complete, production-ready REST API from your Prisma schema:
 - ✅ **React Hooks** - Pre-built hooks for data fetching
 - ✅ **OpenAPI Spec** - Auto-generated API documentation
 
-[https://medium.com/@nick.rios/ssot-codegen-pipeline-with-prisma-backed-dmmf-templates-e0fc152d469f](https://medium.com/@nick.rios/ssot-codegen-pipeline-with-prisma-backed-dmmf-templates-e0fc152d469f)
+[medium.com/@nick.rios/ssot-codegen-pipeline-with-prisma-backed-dmmf-templates](https://medium.com/@nick.rios/ssot-codegen-pipeline-with-prisma-backed-dmmf-templates-e0fc152d469f)
 
 
 ## Quick Start
