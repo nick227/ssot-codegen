@@ -9,7 +9,7 @@ import type { FeaturePlugin, PluginContext, PluginOutput, ValidationResult, Heal
 // Auth plugins
 import { GoogleAuthPlugin } from './auth/google-auth.plugin.js'
 import { JWTServicePlugin } from './auth/jwt-service.plugin.js'
-import { APIKeyManagerPlugin } from './auth/api-key-manager.plugin.js'
+import { ApiKeyManagerPlugin } from './auth/api-key-manager.plugin.js'
 
 // Monitoring plugins
 import { UsageTrackerPlugin } from './monitoring/usage-tracker.plugin.js'
@@ -126,7 +126,7 @@ export class PluginManager {
     }
     
     if (features.apiKeyManager?.enabled) {
-      this.plugins.set('api-key-manager', new APIKeyManagerPlugin())
+      this.plugins.set('api-key-manager', new ApiKeyManagerPlugin())
     }
     
     // Monitoring
@@ -136,21 +136,19 @@ export class PluginManager {
     
     // AI providers
     if (features.openai?.enabled) {
-      this.plugins.set('openai', new OpenAIPlugin({
-        defaultModel: features.openai.defaultModel
-      }))
+      this.plugins.set('openai', new OpenAIPlugin(
+        features.openai.defaultModel ? { defaultModel: features.openai.defaultModel } : undefined
+      ))
     }
     
     if (features.claude?.enabled) {
-      this.plugins.set('claude', new ClaudePlugin({
-        defaultModel: features.claude.defaultModel
-      }))
+      this.plugins.set('claude', new ClaudePlugin(
+        features.claude.defaultModel ? { defaultModel: features.claude.defaultModel } : undefined
+      ))
     }
     
     if (features.gemini?.enabled) {
-      this.plugins.set('gemini', new GeminiPlugin({
-        defaultModel: features.gemini.defaultModel
-      }))
+      this.plugins.set('gemini', new GeminiPlugin())
     }
     
     if (features.grok?.enabled) {
@@ -158,35 +156,28 @@ export class PluginManager {
     }
     
     if (features.openrouter?.enabled) {
-      this.plugins.set('openrouter', new OpenRouterPlugin({
-        defaultModel: features.openrouter.defaultModel
-      }))
+      this.plugins.set('openrouter', new OpenRouterPlugin())
     }
     
     if (features.lmstudio?.enabled) {
-      this.plugins.set('lmstudio', new LMStudioPlugin({
-        endpoint: features.lmstudio.endpoint
-      }))
+      this.plugins.set('lmstudio', new LMStudioPlugin())
     }
     
     if (features.ollama?.enabled) {
-      this.plugins.set('ollama', new OllamaPlugin({
-        endpoint: features.ollama.endpoint,
-        models: features.ollama.models
-      }))
+      this.plugins.set('ollama', new OllamaPlugin())
     }
     
     // Voice AI
     if (features.deepgram?.enabled) {
-      this.plugins.set('deepgram', new DeepgramPlugin({
-        defaultModel: features.deepgram.defaultModel
-      }))
+      this.plugins.set('deepgram', new DeepgramPlugin(
+        features.deepgram.defaultModel ? { defaultModel: features.deepgram.defaultModel } : undefined
+      ))
     }
     
     if (features.elevenlabs?.enabled) {
-      this.plugins.set('elevenlabs', new ElevenLabsPlugin({
-        defaultVoice: features.elevenlabs.defaultVoice
-      }))
+      this.plugins.set('elevenlabs', new ElevenLabsPlugin(
+        features.elevenlabs.defaultVoice ? { defaultVoice: features.elevenlabs.defaultVoice } : undefined
+      ))
     }
     
     // Storage
