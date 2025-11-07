@@ -5,6 +5,8 @@
 import type { ParsedModel, ParsedField } from '../dmmf-parser.js'
 import { mapPrismaToZod } from '../type-mapper.js'
 
+export { generateValidatorsBarrel } from './barrel-generator.js'
+
 /**
  * Generate Create validator
  */
@@ -178,16 +180,4 @@ export function generateAllValidators(model: ParsedModel): {
     query: generateQueryValidator(model)
   }
 }
-
-/**
- * Generate barrel export for validators
- */
-export function generateValidatorsBarrel(model: ParsedModel): string {
-  return `// @generated barrel
-export * from './${model.name.toLowerCase()}.create.zod.js'
-export * from './${model.name.toLowerCase()}.update.zod.js'
-export * from './${model.name.toLowerCase()}.query.zod.js'
-`
-}
-
 

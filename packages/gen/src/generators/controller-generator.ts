@@ -4,6 +4,8 @@
 
 import type { ParsedModel } from '../dmmf-parser.js'
 
+export { generateControllerBarrel } from './barrel-generator.js'
+
 /**
  * Generate controller with CRUD operations
  */
@@ -256,14 +258,4 @@ export const delete${model.name} = async (
 }
 `
 }
-
-/**
- * Generate barrel export for controller
- */
-export function generateControllerBarrel(model: ParsedModel): string {
-  return `// @generated barrel
-export * from './${model.nameLower}.controller.js'
-`
-}
-
 

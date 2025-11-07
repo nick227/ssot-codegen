@@ -6,6 +6,8 @@ import type { ParsedModel, ParsedField } from '../dmmf-parser.js'
 import { mapPrismaToTypeScript, getTypeImports } from '../type-mapper.js'
 import { isOptionalForCreate, isNullable } from '../dmmf-parser.js'
 
+export { generateContractsBarrel } from './barrel-generator.js'
+
 /**
  * Generate Create DTO
  */
@@ -176,17 +178,4 @@ export function generateAllDTOs(model: ParsedModel): {
     query: generateQueryDTO(model)
   }
 }
-
-/**
- * Generate barrel export for contracts
- */
-export function generateContractsBarrel(model: ParsedModel): string {
-  return `// @generated barrel
-export * from './${model.name.toLowerCase()}.create.dto.js'
-export * from './${model.name.toLowerCase()}.update.dto.js'
-export * from './${model.name.toLowerCase()}.read.dto.js'
-export * from './${model.name.toLowerCase()}.query.dto.js'
-`
-}
-
 

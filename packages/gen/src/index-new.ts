@@ -22,11 +22,25 @@ import { analyzeRelationships } from './relationship-analyzer.js'
 import { analyzeModel } from './utils/relationship-analyzer.js'
 import { getNextProjectFolder, findWorkspaceRoot, deriveProjectName } from './utils/gen-folder.js'
 import * as standaloneTemplates from './templates/standalone-project.template.js'
+import {
+  generateContractsBarrel,
+  generateValidatorsBarrel,
+  generateServiceBarrel,
+  generateControllerBarrel,
+  generateRoutesBarrel,
+  generateLayerIndexBarrel
+} from './generators/barrel-generator.js'
 import { 
   generateSelfValidationTests, 
   generateVitestConfig, 
   generateTestSetup 
 } from './generators/test-generator.js'
+import type {
+  GeneratorConfig,
+  GeneratorResult,
+  StandaloneProjectOptions,
+  TestSuiteOptions
+} from './generator/types.js'
 
 // Import CommonJS module
 const require = createRequire(import.meta.url)
@@ -34,23 +48,6 @@ const { getDMMF } = require('@prisma/internals')
 
 export * from './project-scaffold.js'
 export * from './dependencies/index.js'
-
-export interface GeneratorConfig {
-  output?: string
-  schemaPath?: string
-  schemaText?: string
-  paths?: Partial<PathsConfig>
-  framework?: 'express' | 'fastify'
-  
-  // Standalone project options
-  standalone?: boolean // Generate as complete standalone project
-  projectName?: string // Name for standalone project
-  
-  // CLI options
-  verbosity?: LogLevel
-  colors?: boolean
-  timestamps?: boolean
-}
 
 const defaultPaths: PathsConfig = {
   alias: '@gen',
@@ -482,12 +479,7 @@ async function generateBarrels(cfg: PathsConfig, models: string[], generatedFile
     if (generatedFiles.contracts.has(modelName)) {
       layerModels.contracts.push(modelName)
       const barrelPath = path.join(cfg.rootDir, 'contracts', modelLower, 'index.ts')
-      const barrelContent = `// @generated barrel
-export * from './${modelLower}.create.dto.js'
-export * from './${modelLower}.update.dto.js'
-export * from './${modelLower}.read.dto.js'
-export * from './${modelLower}.query.dto.js'
-`
+      const barrelContent = generateContractsBarrel(modelName)
       writes.push(write(barrelPath, barrelContent))
       track(`contracts:${modelName}:index`, barrelPath, esmImport(cfg, id('contracts', modelName)))
     }
@@ -496,11 +488,7 @@ export * from './${modelLower}.query.dto.js'
     if (generatedFiles.validators.has(modelName)) {
       layerModels.validators.push(modelName)
       const barrelPath = path.join(cfg.rootDir, 'validators', modelLower, 'index.ts')
-      const barrelContent = `// @generated barrel
-export * from './${modelLower}.create.zod.js'
-export * from './${modelLower}.update.zod.js'
-export * from './${modelLower}.query.zod.js'
-`
+      const barrelContent = generateValidatorsBarrel(modelName)
       writes.push(write(barrelPath, barrelContent))
       track(`validators:${modelName}:index`, barrelPath, esmImport(cfg, id('validators', modelName)))
     }
@@ -509,9 +497,7 @@ export * from './${modelLower}.query.zod.js'
     if (generatedFiles.services.has(`${modelLower}.service.ts`) || generatedFiles.services.has(`${modelLower}.service.scaffold.ts`)) {
       layerModels.services.push(modelName)
       const barrelPath = path.join(cfg.rootDir, 'services', modelLower, 'index.ts')
-      const barrelContent = `// @generated barrel
-export * from './${modelLower}.service.js'
-`
+      const barrelContent = generateServiceBarrel(modelName)
       writes.push(write(barrelPath, barrelContent))
       track(`services:${modelName}:index`, barrelPath, esmImport(cfg, id('services', modelName)))
     }
@@ -520,9 +506,7 @@ export * from './${modelLower}.service.js'
     if (generatedFiles.controllers.has(`${modelLower}.controller.ts`)) {
       layerModels.controllers.push(modelName)
       const barrelPath = path.join(cfg.rootDir, 'controllers', modelLower, 'index.ts')
-      const barrelContent = `// @generated barrel
-export * from './${modelLower}.controller.js'
-`
+      const barrelContent = generateControllerBarrel(modelName)
       writes.push(write(barrelPath, barrelContent))
       track(`controllers:${modelName}:index`, barrelPath, esmImport(cfg, id('controllers', modelName)))
     }
@@ -531,9 +515,7 @@ export * from './${modelLower}.controller.js'
     if (generatedFiles.routes.has(`${modelLower}.routes.ts`)) {
       layerModels.routes.push(modelName)
       const barrelPath = path.join(cfg.rootDir, 'routes', modelLower, 'index.ts')
-      const barrelContent = `// @generated barrel
-export * from './${modelLower}.routes.js'
-`
+      const barrelContent = generateRoutesBarrel(modelName)
       writes.push(write(barrelPath, barrelContent))
       track(`routes:${modelName}:index`, barrelPath, esmImport(cfg, id('routes', modelName)))
     }
@@ -543,10 +525,8 @@ export * from './${modelLower}.routes.js'
   for (const [layer, layerModelsArray] of Object.entries(layerModels)) {
     if (layerModelsArray.length > 0) {
       const layerBarrelPath = path.join(cfg.rootDir, layer, 'index.ts')
-      const layerExports = layerModelsArray.map(m => 
-        `export * as ${m.toLowerCase()} from './${m.toLowerCase()}/index.js'`
-      ).join('\n')
-      writes.push(write(layerBarrelPath, `// @generated layer barrel\n${layerExports}\n`))
+      const layerBarrelContent = generateLayerIndexBarrel(layerModelsArray)
+      writes.push(write(layerBarrelPath, layerBarrelContent))
       track(`${layer}:index`, layerBarrelPath, esmImport(cfg, id(layer)))
     }
   }
@@ -664,15 +644,7 @@ export const runGenerator = generateFromSchema
 /**
  * Write standalone project files (package.json, tsconfig, src/, etc.)
  */
-async function writeStandaloneProjectFiles(options: {
-  outputDir: string
-  projectName: string
-  framework: 'express' | 'fastify'
-  models: string[]
-  schemaContent: string
-  schemaPath?: string
-  generatedFiles?: ReturnType<typeof generateCode>
-}): Promise<void> {
+async function writeStandaloneProjectFiles(options: StandaloneProjectOptions): Promise<void> {
   const { outputDir, projectName, framework, models, schemaContent, schemaPath, generatedFiles } = options
   
   // Detect database provider from schema
@@ -749,11 +721,7 @@ async function writeStandaloneProjectFiles(options: {
 /**
  * Write test suite (self-validation tests, vitest config, test setup)
  */
-async function writeTestSuite(options: {
-  outputDir: string
-  models: import('./dmmf-parser.js').ParsedModel[]
-  framework: 'express' | 'fastify'
-}): Promise<void> {
+async function writeTestSuite(options: TestSuiteOptions): Promise<void> {
   const { outputDir, models, framework } = options
   
   const writes: Promise<void>[] = []

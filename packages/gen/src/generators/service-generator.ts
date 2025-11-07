@@ -8,6 +8,8 @@ import type { ParsedModel } from '../dmmf-parser.js'
 import { generateEnhancedServiceMethods } from './service-method-generator.js'
 import { generateCRUDService } from '../templates/crud-service.template.js'
 
+export { generateServiceBarrel } from './barrel-generator.js'
+
 /**
  * Generate service with full CRUD operations + auto-detected enhanced methods
  */
@@ -22,14 +24,4 @@ export function generateService(model: ParsedModel): string {
     additionalMethods
   })
 }
-
-/**
- * Generate barrel export for service
- */
-export function generateServiceBarrel(model: ParsedModel): string {
-  return `// @generated barrel
-export * from './${model.nameLower}.service.js'
-`
-}
-
 

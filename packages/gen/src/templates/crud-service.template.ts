@@ -16,6 +16,8 @@
 
 import type { ParsedModel } from '../dmmf-parser.js'
 
+export { generateServiceBarrel } from '../generators/barrel-generator.js'
+
 export interface CRUDServiceConfig {
   /** Model name (e.g., "User") */
   modelName: string
@@ -284,13 +286,3 @@ ${crudMethods}${additionalMethods ? ',\n  \n' + additionalMethods : ''}
 export function getIdType(model: ParsedModel): 'string' | 'number' {
   return model.idField?.type === 'String' ? 'string' : 'number'
 }
-
-/**
- * Generate barrel export for service
- */
-export function generateServiceBarrel(model: ParsedModel): string {
-  return `// @generated barrel
-export * from './${model.nameLower}.service.js'
-`
-}
-

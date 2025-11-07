@@ -5,6 +5,8 @@
 import type { ParsedModel } from '../dmmf-parser.js'
 import { toCamelCase } from '../utils/naming.js'
 
+export { generateRoutesBarrel } from './barrel-generator.js'
+
 /**
  * Generate routes
  */
@@ -86,14 +88,4 @@ export async function ${modelCamel}Routes(fastify: FastifyInstance) {
 }
 `
 }
-
-/**
- * Generate barrel export for routes
- */
-export function generateRoutesBarrel(model: ParsedModel): string {
-  return `// @generated barrel
-export * from './${model.nameLower}.routes.js'
-`
-}
-
 
