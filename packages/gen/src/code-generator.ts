@@ -304,9 +304,10 @@ function generateModelCode(
   files.validators.set(model.name, validatorMap)
   
   // Generate Service (enhanced or basic)
+  // Both now support soft-delete filtering and auto-includes
   const service = useEnhanced 
     ? generateEnhancedService(model, schema)
-    : generateService(model)
+    : generateService(model, schema)
   files.services.set(`${modelKebab}.service.ts`, service)
   
   // If this model has @service annotation, generate service integration
