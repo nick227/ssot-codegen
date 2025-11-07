@@ -20,7 +20,7 @@ Generates a complete, production-ready REST API from your Prisma schema:
 
 [https://medium.com/@nick.rios/ssot-codegen-pipeline-with-prisma-backed-dmmf-templates-e0fc152d469f](https://medium.com/@nick.rios/ssot-codegen-pipeline-with-prisma-backed-dmmf-templates-e0fc152d469f)
 
-- 
+
 ## Quick Start
 
 ### Installation
