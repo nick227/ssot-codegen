@@ -2,7 +2,7 @@
 // Demonstrates FFmpeg/media processing plugins for image manipulation
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -55,7 +55,7 @@ model Image {
   // Metadata
   mimeType          String
   checksum          String  // SHA256 hash
-  tags              String[]
+  tags              String?  // Comma-separated tags
   
   // Conversions performed on this image
   conversions       ConversionJob[]

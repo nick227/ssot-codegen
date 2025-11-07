@@ -36,7 +36,7 @@ export class WriteManifestPhase extends GenerationPhase {
   }
   
   async execute(context: PhaseContext): Promise<PhaseResult> {
-    const { schemaContent, pathsConfig: cfg, modelNames, config, totalFiles, breakdown } = context
+    const { schemaContent, pathsConfig: cfg, modelNames, config, totalFiles, breakdown, phaseMetrics } = context
     
     if (!schemaContent || !cfg || !modelNames) {
       throw new Error('Required context data not found')
@@ -61,7 +61,9 @@ export class WriteManifestPhase extends GenerationPhase {
       totalFiles: totalFiles || 0,
       breakdown: breakdown || [],
       pathMap,
-      outputs
+      outputs,
+      // Performance metrics (timing per phase)
+      performance: phaseMetrics || []
     }
     
     const manifestPath = path.join(cfg.rootDir, 'manifests', 'generation.json')

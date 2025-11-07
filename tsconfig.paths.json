@@ -2,7 +2,7 @@
   "compilerOptions": {
     "paths": {
       "@gen/*": [
-        "C:\\wamp64\\www\\ssot-codegen\\generated\\ai-chat-example-17\\src/*"
+        "C:\\wamp64\\www\\ssot-codegen\\generated\\05-image-optimizer-1\\src/*"
       ]
     }
   }

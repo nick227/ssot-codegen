@@ -38,7 +38,7 @@ pnpm ssot-gen --schema schema.prisma --enable-media
 
 ```bash
 # .env
-DATABASE_URL="postgresql://user:password@localhost:5432/image_optimizer"
+DATABASE_URL="mysql://user:password@localhost:3306/image_optimizer"
 PORT=3000
 
 # FFmpeg configuration

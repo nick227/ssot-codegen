@@ -8,6 +8,7 @@
  * - Dependency injection
  */
 
+import { performance } from 'node:perf_hooks'
 import type { ParsedSchema } from '../dmmf-parser.js'
 import type { GeneratorConfig, GeneratorResult } from './types.js'
 import type { CLILogger } from '../utils/cli-logger.js'
@@ -45,6 +46,9 @@ export interface PhaseContext {
   generatedFiles?: GeneratedFiles
   totalFiles?: number
   breakdown?: Array<{ layer: string; count: number }>
+  
+  // Performance Metrics (collected by PhaseRunner)
+  phaseMetrics?: Array<{ phase: string; duration: number; filesGenerated: number }>
   
   // Extensibility: Phases can add custom data
   // WARNING: Use typed fields above when possible for better type safety
@@ -177,9 +181,16 @@ export class PhaseRunner {
     
     logger.startGeneration()
     
+    // Clear any tracked paths from previous runs
+    const { clearTrackedPaths } = await import('../generator/phase-utilities.js')
+    clearTrackedPaths()
+    
     try {
       // Sort phases by order
       const sortedPhases = [...this.phases].sort((a, b) => a.order - b.order)
+      
+      // Track phase performance metrics
+      const phaseMetrics: Array<{ phase: string; duration: number; filesGenerated: number }> = []
       
       // Execute each phase
       for (const phase of sortedPhases) {
@@ -189,6 +200,8 @@ export class PhaseRunner {
         }
         
         logger.startPhase(phase.getDescription())
+        
+        const phaseStartTime = performance.now()
         
         try {
           const result = await phase.execute(this.context)
@@ -200,12 +213,22 @@ export class PhaseRunner {
           // Store result in context for subsequent phases
           this.context[phase.name] = result.data
           
+          const phaseDuration = performance.now() - phaseStartTime
+          phaseMetrics.push({
+            phase: phase.name,
+            duration: Math.round(phaseDuration),
+            filesGenerated: result.filesGenerated || 0
+          })
+          
           logger.endPhase(phase.getDescription(), result.filesGenerated)
         } catch (error) {
           logger.error(`Phase ${phase.name} failed`, error as Error)
           throw error
         }
       }
+      
+      // Store metrics in context for manifest
+      this.context.phaseMetrics = phaseMetrics
       
       // Build final result from context
       const result: GeneratorResult = {

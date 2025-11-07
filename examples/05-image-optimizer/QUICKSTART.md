@@ -35,15 +35,15 @@ ffmpeg -version
 
 ### 2. Database
 
-You need PostgreSQL running:
+You need MySQL running:
 
 ```bash
 # Using Docker (easiest)
-docker run --name postgres -e POSTGRES_PASSWORD=password -p 5432:5432 -d postgres
+docker run --name mysql -e MYSQL_ROOT_PASSWORD=password -e MYSQL_DATABASE=image_optimizer -p 3306:3306 -d mysql:8
 
 # Or install locally
-# macOS: brew install postgresql
-# Ubuntu: sudo apt install postgresql
+# macOS: brew install mysql
+# Ubuntu: sudo apt install mysql-server
 ```
 
 ---
@@ -62,7 +62,7 @@ Create `.env` file:
 
 ```bash
 # Required
-DATABASE_URL="postgresql://postgres:password@localhost:5432/image_optimizer"
+DATABASE_URL="mysql://root:password@localhost:3306/image_optimizer"
 FFMPEG_PATH="/usr/bin/ffmpeg"
 FFPROBE_PATH="/usr/bin/ffprobe"
 
@@ -179,8 +179,8 @@ FFMPEG_PATH="/usr/local/bin/ffmpeg"
 ### Database connection failed
 
 ```bash
-# Check PostgreSQL is running
-psql -U postgres -c "SELECT version();"
+# Check MySQL is running
+mysql -u root -p -e "SELECT VERSION();"
 
 # Update DATABASE_URL in .env
 ```

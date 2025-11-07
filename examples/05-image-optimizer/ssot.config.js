@@ -26,7 +26,7 @@ module.exports = {
   
   // Database
   database: {
-    provider: 'postgresql',
+    provider: 'mysql',
     url: process.env.DATABASE_URL
   },
   

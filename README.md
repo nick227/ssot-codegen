@@ -172,6 +172,7 @@ See individual example READMEs for patterns.
 ### Advanced
 - [Google OAuth Setup](docs/GOOGLE_AUTH_SETUP.md) - OAuth integration guide
 - [CI/CD Integration](docs/CI_CD.md) - Continuous integration setup
+- [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
 
 ## Development
 
