@@ -11,7 +11,12 @@ export * from './dependencies/index.js'
 // PhaseRunner-based generator (refactored architecture)
 export { generateFromSchema } from './index-new-refactored.js'
 
-export interface GeneratorConfig {
+// Export types for CLI and external usage
+export type { LogLevel } from './api/types.js'
+export type { GeneratorConfig, GeneratorResult } from './pipeline/types.js'
+
+// Legacy interface for runGenerator (deprecated)
+export interface LegacyGeneratorConfig {
   output?: string
   schemaText?: string
   paths?: Partial<PathsConfig>
@@ -142,7 +147,7 @@ const emitTsConfigPaths = (cfg: PathsConfig, rootDir: string) => {
 
 export interface GeneratorInput {
   dmmf: unknown
-  config: GeneratorConfig & {
+  config: LegacyGeneratorConfig & {
     projectName?: string
     description?: string
     framework?: 'express' | 'fastify'

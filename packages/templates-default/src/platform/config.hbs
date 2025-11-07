@@ -29,8 +29,8 @@ const configSchema = z.object({
   API_VERSION: z.string().default('v1'),
   API_PREFIX: z.string().default('/api'),
   
-  // Database
-  DATABASE_URL: z.string().url(),
+  // Database (supports PostgreSQL, MySQL, SQLite file URLs)
+  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
   
   // Security
   CORS_ORIGIN: z.string().default('*'),
