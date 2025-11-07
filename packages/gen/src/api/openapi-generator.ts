@@ -44,7 +44,8 @@ export interface OpenAPISpec {
  */
 export function generateOpenAPISpec(
   models: ParsedModel[],
-  config: OpenAPIConfig
+  config: OpenAPIConfig,
+  schema?: any
 ): OpenAPISpec {
   const spec: OpenAPISpec = {
     openapi: '3.1.0',
@@ -70,9 +71,17 @@ export function generateOpenAPISpec(
     spec.security = getSecurityRequirements(config.authType || 'bearer')
   }
 
+  // Extract enum values from schema if available
+  const enumValues: Record<string, string[]> = {}
+  if (schema?.enums) {
+    for (const enumDef of schema.enums) {
+      enumValues[enumDef.name] = enumDef.values.map((v: any) => v.name)
+    }
+  }
+
   // Generate schemas for each model
   for (const model of models) {
-    generateModelSchemas(model, spec.components.schemas)
+    generateModelSchemas(model, spec.components.schemas, enumValues)
     generateModelPaths(model, spec.paths, config.includeAuth)
   }
 
@@ -82,7 +91,7 @@ export function generateOpenAPISpec(
 /**
  * Generate schemas (DTOs) for a model
  */
-function generateModelSchemas(model: ParsedModel, schemas: Record<string, any>): void {
+function generateModelSchemas(model: ParsedModel, schemas: Record<string, any>, enumValues?: Record<string, string[]>): void {
   const modelName = model.name
 
   // Create DTO
@@ -90,18 +99,18 @@ function generateModelSchemas(model: ParsedModel, schemas: Record<string, any>):
     type: 'object',
     required: model.createFields.filter(f => !f.hasDefaultValue && f.isRequired).map(f => f.name),
     properties: Object.fromEntries(
-      model.createFields.map(f => [f.name, fieldToOpenAPIProperty(f)])
+      model.createFields.map(f => [f.name, fieldToOpenAPIProperty(f, enumValues)])
     ),
-    example: generateExampleData(model.createFields, 'create')
+    example: generateExampleData(model.createFields, 'create', enumValues)
   }
 
   // Update DTO
   schemas[`${modelName}UpdateDTO`] = {
     type: 'object',
     properties: Object.fromEntries(
-      model.updateFields.map(f => [f.name, fieldToOpenAPIProperty(f)])
+      model.updateFields.map(f => [f.name, fieldToOpenAPIProperty(f, enumValues)])
     ),
-    example: generateExampleData(model.updateFields, 'update')
+    example: generateExampleData(model.updateFields, 'update', enumValues)
   }
 
   // Read DTO (response)
@@ -109,9 +118,9 @@ function generateModelSchemas(model: ParsedModel, schemas: Record<string, any>):
     type: 'object',
     required: model.readFields.filter(f => f.isRequired).map(f => f.name),
     properties: Object.fromEntries(
-      model.readFields.map(f => [f.name, fieldToOpenAPIProperty(f)])
+      model.readFields.map(f => [f.name, fieldToOpenAPIProperty(f, enumValues)])
     ),
-    example: generateExampleData(model.readFields, 'read')
+    example: generateExampleData(model.readFields, 'read', enumValues)
   }
 
   // List response
@@ -153,7 +162,7 @@ function generateModelSchemas(model: ParsedModel, schemas: Record<string, any>):
 /**
  * Convert Prisma field to OpenAPI property
  */
-function fieldToOpenAPIProperty(field: ParsedField): any {
+function fieldToOpenAPIProperty(field: ParsedField, enumValues?: Record<string, string[]>): any {
   const property: any = {}
 
   // Base type mapping
@@ -189,8 +198,12 @@ function fieldToOpenAPIProperty(field: ParsedField): any {
     default:
       if (field.kind === 'enum') {
         property.type = 'string'
-        // In real implementation, you'd fetch enum values from DMMF
-        property.enum = [`${field.type}_VALUE_1`, `${field.type}_VALUE_2`]
+        // Use real enum values if available, otherwise use placeholders
+        if (enumValues && enumValues[field.type]) {
+          property.enum = enumValues[field.type]
+        } else {
+          property.enum = [`${field.type}_VALUE_1`, `${field.type}_VALUE_2`]
+        }
       } else {
         property.type = 'string'
       }
@@ -218,7 +231,7 @@ function fieldToOpenAPIProperty(field: ParsedField): any {
 /**
  * Generate example data for a model
  */
-function generateExampleData(fields: ParsedField[], context: 'create' | 'update' | 'read'): any {
+function generateExampleData(fields: ParsedField[], context: 'create' | 'update' | 'read', enumValues?: Record<string, string[]>): any {
   const example: any = {}
 
   for (const field of fields) {
@@ -227,7 +240,7 @@ function generateExampleData(fields: ParsedField[], context: 'create' | 'update'
       continue
     }
 
-    example[field.name] = getExampleValue(field)
+    example[field.name] = getExampleValue(field, enumValues)
   }
 
   // Add ID and timestamps for read context
@@ -243,17 +256,17 @@ function generateExampleData(fields: ParsedField[], context: 'create' | 'update'
 /**
  * Get example value for a field
  */
-function getExampleValue(field: ParsedField): any {
+function getExampleValue(field: ParsedField, enumValues?: Record<string, string[]>): any {
   if (field.isList) {
-    return [getScalarExample(field)]
+    return [getScalarExample(field, enumValues)]
   }
-  return getScalarExample(field)
+  return getScalarExample(field, enumValues)
 }
 
 /**
  * Get example scalar value
  */
-function getScalarExample(field: ParsedField): any {
+function getScalarExample(field: ParsedField, enumValues?: Record<string, string[]>): any {
   const name = field.name.toLowerCase()
 
   // Smart examples based on field name
@@ -279,7 +292,13 @@ function getScalarExample(field: ParsedField): any {
     case 'DateTime': return '2025-01-15T10:30:00Z'
     case 'Json': return { key: 'value' }
     default:
-      if (field.kind === 'enum') return `${field.type}_VALUE`
+      if (field.kind === 'enum') {
+        // Use real enum value if available
+        if (enumValues && enumValues[field.type] && enumValues[field.type].length > 0) {
+          return enumValues[field.type][0]
+        }
+        return `${field.type}_VALUE`
+      }
       return null
   }
 }

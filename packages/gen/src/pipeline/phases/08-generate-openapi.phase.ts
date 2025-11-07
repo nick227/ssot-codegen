@@ -51,8 +51,8 @@ export class GenerateOpenAPIPhase extends GenerationPhase {
       authType: authType as 'bearer' | 'apiKey' | 'oauth2'
     }
     
-    // Generate complete OpenAPI spec using parsed models
-    const spec = generateOpenAPISpec(parsedModels, config)
+    // Generate complete OpenAPI spec using parsed models with real enum values
+    const spec = generateOpenAPISpec(parsedModels, config, schema)
     
     // Store spec in context for reuse (e.g., manifest, SDK generation)
     context.openApiSpec = spec

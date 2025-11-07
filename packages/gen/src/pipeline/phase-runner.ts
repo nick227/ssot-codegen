@@ -52,14 +52,21 @@ export interface PhaseContext {
   schemaContent?: string
   modelNames?: string[]
   
+  // Phase 2: Parsed Models (for OpenAPI, tests, etc.)
+  parsedModels?: ParsedModel[]
+  
   // Phase 3: Analyze Relationships
   relationshipCount?: number
   
   // Phase 4: Generate Code
   pathsConfig?: PathsConfig
   generatedFiles?: GeneratedFiles
+  generatorConfig?: GeneratorConfig
   totalFiles?: number
   breakdown?: Array<{ layer: string; count: number }>
+  
+  // OpenAPI Spec (Phase 8)
+  openApiSpec?: any
   
   // Performance Metrics (collected by PhaseRunner)
   phaseMetrics?: Array<{ phase: string; duration: number; filesGenerated: number }>
