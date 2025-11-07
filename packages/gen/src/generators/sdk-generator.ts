@@ -102,7 +102,7 @@ function generateSDKHelpers(
      * @example api.${modelLower}.helpers.findBySlug('hello-world')
      */
     findBySlug: async (slug: string, options?: QueryOptions): Promise<${model.name}ReadDTO | null> => {
-      return this.findOne({ slug } as any, options)
+      return this.findOne({ slug } as Partial<${model.name}ReadDTO>, options)
     }`)
   }
 
@@ -114,7 +114,7 @@ function generateSDKHelpers(
      * @example api.${modelLower}.helpers.listPublished({ take: 10 })
      */
     listPublished: async (query?: Omit<${model.name}QueryDTO, 'where'>, options?: QueryOptions): Promise<ListResponse<${model.name}ReadDTO>> => {
-      return this.list({ ...query, where: { published: true } as any } as ${model.name}QueryDTO, options)
+      return this.list({ ...query, where: { published: true } } as ${model.name}QueryDTO, options)
     }`)
 
     methods.push(`    /**
@@ -123,7 +123,7 @@ function generateSDKHelpers(
      * @example api.${modelLower}.helpers.publish(123)
      */
     publish: async (id: ${idType}, options?: QueryOptions): Promise<${model.name}ReadDTO | null> => {
-      return this.update(id, { published: true } as any, options)
+      return this.update(id, { published: true } as Partial<${model.name}UpdateDTO>, options)
     }`)
 
     methods.push(`    /**
@@ -132,7 +132,7 @@ function generateSDKHelpers(
      * @example api.${modelLower}.helpers.unpublish(123)
      */
     unpublish: async (id: ${idType}, options?: QueryOptions): Promise<${model.name}ReadDTO | null> => {
-      return this.update(id, { published: false } as any, options)
+      return this.update(id, { published: false } as Partial<${model.name}UpdateDTO>, options)
     }`)
   }
 
@@ -160,7 +160,7 @@ function generateSDKHelpers(
      * @example api.${modelLower}.helpers.approve(456)
      */
     approve: async (id: ${idType}, options?: QueryOptions): Promise<${model.name}ReadDTO | null> => {
-      return this.update(id, { approved: true } as any, options)
+      return this.update(id, { approved: true } as Partial<${model.name}UpdateDTO>, options)
     }`)
 
     methods.push(`    /**
@@ -169,7 +169,7 @@ function generateSDKHelpers(
      * @example api.${modelLower}.helpers.reject(456)
      */
     reject: async (id: ${idType}, options?: QueryOptions): Promise<${model.name}ReadDTO | null> => {
-      return this.update(id, { approved: false } as any, options)
+      return this.update(id, { approved: false } as Partial<${model.name}UpdateDTO>, options)
     }`)
     
     methods.push(`    /**
@@ -178,7 +178,7 @@ function generateSDKHelpers(
      * @example api.${modelLower}.helpers.listPending()
      */
     listPending: async (query?: Omit<${model.name}QueryDTO, 'where'>, options?: QueryOptions): Promise<ListResponse<${model.name}ReadDTO>> => {
-      return this.list({ ...query, where: { approved: false } as any } as ${model.name}QueryDTO, options)
+      return this.list({ ...query, where: { approved: false } } as ${model.name}QueryDTO, options)
     }`)
   }
 
@@ -190,7 +190,7 @@ function generateSDKHelpers(
      * @example api.${modelLower}.helpers.softDelete(123)
      */
     softDelete: async (id: ${idType}, options?: QueryOptions): Promise<${model.name}ReadDTO | null> => {
-      return this.update(id, { deletedAt: new Date() } as any, options)
+      return this.update(id, { deletedAt: new Date() } as Partial<${model.name}UpdateDTO>, options)
     }`)
 
     methods.push(`    /**
@@ -199,7 +199,7 @@ function generateSDKHelpers(
      * @example api.${modelLower}.helpers.restore(123)
      */
     restore: async (id: ${idType}, options?: QueryOptions): Promise<${model.name}ReadDTO | null> => {
-      return this.update(id, { deletedAt: null } as any, options)
+      return this.update(id, { deletedAt: null } as Partial<${model.name}UpdateDTO>, options)
     }`)
   }
 
@@ -218,7 +218,8 @@ function generateSDKHelpers(
         )
         return response.data
       } catch (error) {
-        if (error instanceof Error && 'status' in error && (error as any).status === 404) {
+        // APIException from sdk-runtime has status property
+        if (error && typeof error === 'object' && 'status' in error && (error as { status: number }).status === 404) {
           return null
         }
         throw error
@@ -286,7 +287,7 @@ export interface SDKConfig {
   headers?: Record<string, string>
   onRequest?: (init: RequestInit) => Promise<RequestInit> | RequestInit
   onResponse?: (response: Response) => Promise<Response> | Response
-  onError?: (error: any) => Promise<void> | void
+  onError?: (error: Error | { status: number; message: string }) => Promise<void> | void
 }
 
 /**

@@ -26,6 +26,17 @@ import type { BaseAPIClient, QueryOptions } from '@ssot-codegen/sdk-runtime'
 /**
  * ${className}
  * Type-safe client for ${annotation.name} service operations
+ * 
+ * @example Provide your own types for better type safety
+ * \`\`\`typescript
+ * interface SendMessageRequest { prompt: string }
+ * interface SendMessageResponse { reply: string }
+ * 
+ * const response = await api.${serviceName}.sendMessage<SendMessageRequest, SendMessageResponse>(
+ *   { prompt: 'Hello' }
+ * )
+ * console.log(response.reply)  // Fully typed!
+ * \`\`\`
  */
 export class ${className} {
   constructor(private client: BaseAPIClient) {}
@@ -46,22 +57,36 @@ function generateServiceMethod(annotation: ServiceAnnotation, methodName: string
   // Determine if method needs data parameter
   const needsData = httpMethod === 'post' || httpMethod === 'put'
   
+  // Use generic types for better type safety
   const methodCall = needsData
-    ? `await this.client.${httpMethod}<any>(
+    ? `await this.client.${httpMethod}<TResponse>(
       \`${basePath}${routePath}\`,
       data,
       { signal: options?.signal }
     )`
-    : `await this.client.${httpMethod}<any>(
+    : `await this.client.${httpMethod}<TResponse>(
       \`${basePath}${routePath}\`,
       { signal: options?.signal }
     )`
   
+  const signature = needsData
+    ? `async ${methodName}<TRequest = Record<string, unknown>, TResponse = unknown>(data?: TRequest, options?: QueryOptions): Promise<TResponse>`
+    : `async ${methodName}<TResponse = unknown>(options?: QueryOptions): Promise<TResponse>`
+  
   return `  /**
    * ${methodName}
    * ${httpMethod.toUpperCase()} ${basePath}${routePath}
+   * 
+   * @template ${needsData ? 'TRequest - Request body type\n   * @template ' : ''}TResponse - Response body type
+   * @example
+   * \`\`\`typescript
+   * ${needsData 
+     ? `const result = await client.${methodName}<MyRequest, MyResponse>({ field: 'value' })`
+     : `const result = await client.${methodName}<MyResponse>()`
+   }
+   * \`\`\`
    */
-  async ${methodName}(${needsData ? 'data?: any, ' : ''}options?: QueryOptions): Promise<any> {
+  ${signature} {
     const response = ${methodCall}
     return response.data
   }`
@@ -109,7 +134,7 @@ export interface SDKConfig {
   headers?: Record<string, string>
   onRequest?: (init: RequestInit) => Promise<RequestInit> | RequestInit
   onResponse?: (response: Response) => Promise<Response> | Response
-  onError?: (error: any) => Promise<void> | void
+  onError?: (error: Error | { status: number; message: string }) => Promise<void> | void
 }
 
 /**
