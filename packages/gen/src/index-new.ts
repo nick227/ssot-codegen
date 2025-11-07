@@ -261,7 +261,8 @@ export async function generateFromSchema(config: GeneratorConfig) {
         framework,
         models: nonJunctionModels.map(m => m.name),
         schemaContent,
-        schemaPath: config.schemaPath
+        schemaPath: config.schemaPath,
+        generatedFiles
       })
       logger.endPhase('Writing standalone project files', 8)
       
@@ -670,8 +671,9 @@ async function writeStandaloneProjectFiles(options: {
   models: string[]
   schemaContent: string
   schemaPath?: string
+  generatedFiles?: ReturnType<typeof generateCode>
 }): Promise<void> {
-  const { outputDir, projectName, framework, models, schemaContent, schemaPath } = options
+  const { outputDir, projectName, framework, models, schemaContent, schemaPath, generatedFiles } = options
   
   // Detect database provider from schema
   const databaseProvider = schemaContent.includes('provider = "postgresql"') 
@@ -697,9 +699,25 @@ async function writeStandaloneProjectFiles(options: {
   const tsconfigPath = path.join(outputDir, 'tsconfig.json')
   writes.push(write(tsconfigPath, standaloneTemplates.tsconfigTemplate(projectName)))
   
-  // Write .env.example
+  // Write .env.example with plugin variables
   const envPath = path.join(outputDir, '.env.example')
-  writes.push(write(envPath, standaloneTemplates.envTemplate(databaseProvider)))
+  let envContent = standaloneTemplates.envTemplate(databaseProvider)
+  
+  // Add plugin environment variables if plugins were generated
+  if (generatedFiles?.plugins && generatedFiles.plugins.size > 0 && (generatedFiles as any).pluginOutputs) {
+    const pluginOutputs = (generatedFiles as any).pluginOutputs as Map<string, any>
+    
+    for (const [pluginName, output] of pluginOutputs) {
+      if (output.envVars && Object.keys(output.envVars).length > 0) {
+        envContent += `\n\n# ${pluginName.toUpperCase()} Configuration`
+        for (const [key, value] of Object.entries(output.envVars)) {
+          envContent += `\n${key}="${value}"`
+        }
+      }
+    }
+  }
+  
+  writes.push(write(envPath, envContent))
   
   // Write .gitignore
   const gitignorePath = path.join(outputDir, '.gitignore')

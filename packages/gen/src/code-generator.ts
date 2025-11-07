@@ -206,6 +206,9 @@ export function generateCode(
     for (const [pluginName, output] of pluginOutputs) {
       files.plugins!.set(pluginName, output.files)
     }
+    
+    // Store plugin outputs for env vars and package.json merging
+    ;(files as any).pluginOutputs = pluginOutputs
   }
   
   // PHASE 6: Generate System Checklist

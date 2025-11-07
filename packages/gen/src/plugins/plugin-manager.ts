@@ -5,7 +5,40 @@
 
 import type { ParsedSchema } from '../dmmf-parser.js'
 import type { FeaturePlugin, PluginContext, PluginOutput, ValidationResult, HealthCheckSection } from './plugin.interface.js'
+
+// Auth plugins
 import { GoogleAuthPlugin } from './auth/google-auth.plugin.js'
+import { JWTServicePlugin } from './auth/jwt-service.plugin.js'
+import { APIKeyManagerPlugin } from './auth/api-key-manager.plugin.js'
+
+// Monitoring plugins
+import { UsageTrackerPlugin } from './monitoring/usage-tracker.plugin.js'
+
+// AI providers
+import { OpenAIPlugin } from './ai/openai.plugin.js'
+import { ClaudePlugin } from './ai/claude.plugin.js'
+import { GeminiPlugin } from './ai/gemini.plugin.js'
+import { GrokPlugin } from './ai/grok.plugin.js'
+import { OpenRouterPlugin } from './ai/openrouter.plugin.js'
+import { LMStudioPlugin } from './ai/lmstudio.plugin.js'
+import { OllamaPlugin } from './ai/ollama.plugin.js'
+
+// Voice AI providers
+import { DeepgramPlugin } from './voice/deepgram.plugin.js'
+import { ElevenLabsPlugin } from './voice/elevenlabs.plugin.js'
+
+// Storage providers
+import { S3Plugin } from './storage/s3.plugin.js'
+import { R2Plugin } from './storage/r2.plugin.js'
+import { CloudinaryPlugin } from './storage/cloudinary.plugin.js'
+
+// Payment providers
+import { StripePlugin } from './payments/stripe.plugin.js'
+import { PayPalPlugin } from './payments/paypal.plugin.js'
+
+// Email providers
+import { SendGridPlugin } from './email/sendgrid.plugin.js'
+import { MailgunPlugin } from './email/mailgun.plugin.js'
 
 export interface PluginManagerConfig {
   schema: ParsedSchema
@@ -15,15 +48,39 @@ export interface PluginManagerConfig {
   
   // Feature configurations
   features?: {
-    googleAuth?: {
-      enabled: boolean
-      clientId?: string
-      clientSecret?: string
-      callbackURL?: string
-      strategy?: 'jwt' | 'session'
-      userModel?: string
-    }
-    // Future: GitHub, Facebook, etc.
+    // Auth plugins
+    googleAuth?: { enabled: boolean; clientId?: string; clientSecret?: string; callbackURL?: string; strategy?: 'jwt' | 'session'; userModel?: string }
+    jwtService?: { enabled: boolean }
+    apiKeyManager?: { enabled: boolean }
+    
+    // Monitoring
+    usageTracker?: { enabled: boolean }
+    
+    // AI providers
+    openai?: { enabled: boolean; defaultModel?: string }
+    claude?: { enabled: boolean; defaultModel?: string }
+    gemini?: { enabled: boolean; defaultModel?: string }
+    grok?: { enabled: boolean }
+    openrouter?: { enabled: boolean; defaultModel?: string }
+    lmstudio?: { enabled: boolean; endpoint?: string }
+    ollama?: { enabled: boolean; endpoint?: string; models?: string[] }
+    
+    // Voice AI
+    deepgram?: { enabled: boolean; defaultModel?: string }
+    elevenlabs?: { enabled: boolean; defaultVoice?: string }
+    
+    // Storage
+    s3?: { enabled: boolean; region?: string; bucket?: string }
+    r2?: { enabled: boolean; accountId?: string; bucket?: string }
+    cloudinary?: { enabled: boolean; cloudName?: string }
+    
+    // Payments
+    stripe?: { enabled: boolean }
+    paypal?: { enabled: boolean; mode?: 'sandbox' | 'live' }
+    
+    // Email
+    sendgrid?: { enabled: boolean; fromEmail?: string }
+    mailgun?: { enabled: boolean; domain?: string }
   }
 }
 
@@ -51,22 +108,117 @@ export class PluginManager {
    * Register enabled plugins
    */
   private registerPlugins(config: PluginManagerConfig): void {
-    // Google Auth plugin
-    if (config.features?.googleAuth?.enabled) {
-      const googleAuth = new GoogleAuthPlugin({
-        clientId: config.features.googleAuth.clientId || process.env.GOOGLE_CLIENT_ID || 'YOUR_CLIENT_ID_HERE',
-        clientSecret: config.features.googleAuth.clientSecret || process.env.GOOGLE_CLIENT_SECRET || 'YOUR_CLIENT_SECRET_HERE',
-        callbackURL: config.features.googleAuth.callbackURL,
-        strategy: config.features.googleAuth.strategy || 'jwt',
-        userModel: config.features.googleAuth.userModel || 'User'
-      })
-      
-      this.plugins.set('google-auth', googleAuth)
+    const features = config.features || {}
+    
+    // Auth plugins
+    if (features.googleAuth?.enabled) {
+      this.plugins.set('google-auth', new GoogleAuthPlugin({
+        clientId: features.googleAuth.clientId || process.env.GOOGLE_CLIENT_ID || 'YOUR_CLIENT_ID_HERE',
+        clientSecret: features.googleAuth.clientSecret || process.env.GOOGLE_CLIENT_SECRET || 'YOUR_CLIENT_SECRET_HERE',
+        callbackURL: features.googleAuth.callbackURL,
+        strategy: features.googleAuth.strategy || 'jwt',
+        userModel: features.googleAuth.userModel || 'User'
+      }))
     }
     
-    // Future plugins:
-    // if (config.features?.githubAuth?.enabled) { ... }
-    // if (config.features?.s3Storage?.enabled) { ... }
+    if (features.jwtService?.enabled) {
+      this.plugins.set('jwt-service', new JWTServicePlugin())
+    }
+    
+    if (features.apiKeyManager?.enabled) {
+      this.plugins.set('api-key-manager', new APIKeyManagerPlugin())
+    }
+    
+    // Monitoring
+    if (features.usageTracker?.enabled) {
+      this.plugins.set('usage-tracker', new UsageTrackerPlugin())
+    }
+    
+    // AI providers
+    if (features.openai?.enabled) {
+      this.plugins.set('openai', new OpenAIPlugin({
+        defaultModel: features.openai.defaultModel
+      }))
+    }
+    
+    if (features.claude?.enabled) {
+      this.plugins.set('claude', new ClaudePlugin({
+        defaultModel: features.claude.defaultModel
+      }))
+    }
+    
+    if (features.gemini?.enabled) {
+      this.plugins.set('gemini', new GeminiPlugin({
+        defaultModel: features.gemini.defaultModel
+      }))
+    }
+    
+    if (features.grok?.enabled) {
+      this.plugins.set('grok', new GrokPlugin())
+    }
+    
+    if (features.openrouter?.enabled) {
+      this.plugins.set('openrouter', new OpenRouterPlugin({
+        defaultModel: features.openrouter.defaultModel
+      }))
+    }
+    
+    if (features.lmstudio?.enabled) {
+      this.plugins.set('lmstudio', new LMStudioPlugin({
+        endpoint: features.lmstudio.endpoint
+      }))
+    }
+    
+    if (features.ollama?.enabled) {
+      this.plugins.set('ollama', new OllamaPlugin({
+        endpoint: features.ollama.endpoint,
+        models: features.ollama.models
+      }))
+    }
+    
+    // Voice AI
+    if (features.deepgram?.enabled) {
+      this.plugins.set('deepgram', new DeepgramPlugin({
+        defaultModel: features.deepgram.defaultModel
+      }))
+    }
+    
+    if (features.elevenlabs?.enabled) {
+      this.plugins.set('elevenlabs', new ElevenLabsPlugin({
+        defaultVoice: features.elevenlabs.defaultVoice
+      }))
+    }
+    
+    // Storage
+    if (features.s3?.enabled) {
+      this.plugins.set('s3', new S3Plugin())
+    }
+    
+    if (features.r2?.enabled) {
+      this.plugins.set('r2', new R2Plugin())
+    }
+    
+    if (features.cloudinary?.enabled) {
+      this.plugins.set('cloudinary', new CloudinaryPlugin())
+    }
+    
+    // Payments
+    if (features.stripe?.enabled) {
+      this.plugins.set('stripe', new StripePlugin())
+    }
+    
+    if (features.paypal?.enabled) {
+      this.plugins.set('paypal', new PayPalPlugin())
+    }
+    
+    // Email
+    if (features.sendgrid?.enabled) {
+      this.plugins.set('sendgrid', new SendGridPlugin())
+    }
+    
+    if (features.mailgun?.enabled) {
+      this.plugins.set('mailgun', new MailgunPlugin())
+    }
   }
   
   /**
