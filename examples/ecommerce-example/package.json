@@ -1,0 +1,14 @@
+{
+  "name": "ecommerce-example",
+  "version": "1.0.0",
+  "description": "Comprehensive ecommerce platform to test SSOT Codegen pipeline",
+  "private": true,
+  "scripts": {
+    "generate": "prisma generate"
+  },
+  "devDependencies": {
+    "@prisma/client": "^5.22.0",
+    "prisma": "^5.22.0"
+  }
+}
+

@@ -1,86 +1,118 @@
-# E-Commerce Example
+# 🛒 Ecommerce Platform - SSOT Codegen Test
 
-Complete online store with products, customers, orders, payments, and reviews.
+Comprehensive ecommerce schema to test the full SSOT Codegen pipeline.
 
-## Structure
+## Features Tested
 
-```
-ecommerce-example/
-├── schema.prisma           # Source schema (15+ models)
-├── extensions/             # Advanced e-commerce patterns
-│   ├── README.md
-│   ├── product.service.extensions.ts
-│   ├── product.controller.extensions.ts
-│   └── product.routes.extensions.ts
-└── README.md
-```
-
-## Models
-
-**Products & Catalog:**
-- Product (with variants, SEO, inventory)
-- Category (hierarchical)
+### 📦 Models (13)
+- User (with roles, authentication)
+- Address (billing/shipping)
+- Category (nested hierarchy)
+- Product (complex with variants)
 - Brand
-- ProductImage
 - ProductVariant
-
-**Customers & Orders:**
-- Customer (with addresses, wishlist)
-- Order (with status tracking)
-- OrderItem
+- Cart & CartItem
+- Order & OrderItem
 - Payment
-- Shipment
+- Review
+- WishlistItem
 
-**Reviews & Marketing:**
-- ProductReview
-- ProductTag
-- Coupon
+### 🔗 Relationships
+- One-to-Many (User → Orders, Category → Products)
+- One-to-One (User → Cart)
+- Many-to-Many (via join tables)
+- Self-referencing (Category hierarchy)
+- Cascading deletes
 
-## Generate
+### 📊 Advanced Features
+- ✅ Enums (UserRole, OrderStatus, PaymentStatus, PaymentMethod, AddressType)
+- ✅ Indexes (performance optimization)
+- ✅ Unique constraints
+- ✅ Default values
+- ✅ Timestamps (createdAt, updatedAt)
+- ✅ Optional fields
+- ✅ Arrays (images, tags)
+- ✅ Complex relations
+
+### 🎯 What Gets Generated
+
+**DTOs:**
+- CreateUserDTO, UpdateUserDTO, ReadUserDTO
+- CreateProductDTO, UpdateProductDTO, ReadProductDTO
+- CreateOrderDTO, UpdateOrderDTO, ReadOrderDTO
+- ... (39 DTOs total for 13 models)
+
+**Validators:**
+- Zod schemas for all DTOs
+- Type-safe validation
+
+**Services:**
+- Full CRUD operations for each model
+- Relationship handling
+- Business logic
+
+**Controllers:**
+- REST endpoints
+- Error handling
+- Response formatting
+
+**Routes:**
+- Express/Fastify routes
+- Authentication middleware ready
+
+**SDK:**
+- Type-safe client
+- Auto-generated methods
+
+**Registry:**
+- Service registry
+- Dependency injection ready
+
+**Tests:**
+- Unit tests for services
+- Integration tests ready
+
+**Checklist:**
+- Health check dashboard
+- Generation manifest
+
+## Generate Code
 
 ```bash
-pnpm ssot generate ecommerce-example
-cd gen-1
+cd examples/ecommerce-example
 pnpm install
-pnpm test:validate
-pnpm dev
+pnpm generate
 ```
 
-## Extensions
+Generated code will be in: `generated/ecommerce/`
 
-Advanced e-commerce functionality:
-- **Search** - Multi-field product search
-- **Filtering** - Price, category, stock, ratings
-- **SEO** - Slug-based URLs
-- **Admin** - Low stock alerts
-- **Performance** - Optimized queries with pagination
+## Statistics
 
-See `extensions/README.md` for patterns.
+- **Models:** 13
+- **Enums:** 5
+- **Relations:** ~25
+- **Indexes:** ~30
+- **DTOs Generated:** 39 (13 models × 3 types)
+- **Services:** 13
+- **Controllers:** 13
+- **Routes:** 13
+- **Total Files:** ~150+
 
-## Features Demonstrated
+## Test Coverage
 
-- ✅ Product variants (size, color, etc.)
-- ✅ Hierarchical categories
-- ✅ Multi-image products
-- ✅ Customer addresses
-- ✅ Order tracking & status
-- ✅ Payment integration
-- ✅ Shipment tracking
-- ✅ Product reviews with approval
-- ✅ Wishlist functionality
-- ✅ Coupon system
-- ✅ Inventory management
-- ✅ Stock reservations
+This schema tests:
+- ✅ Simple models (Brand)
+- ✅ Complex models (Product, Order)
+- ✅ Nested relations (Category hierarchy)
+- ✅ Multiple enums per model
+- ✅ Join tables (CartItem, OrderItem)
+- ✅ Unique constraints
+- ✅ Cascade deletes
+- ✅ Optional relations
+- ✅ Array fields
+- ✅ Self-referencing relations
+- ✅ Computed fields (order totals)
+- ✅ Timestamps
+- ✅ Default values
 
-## What You Get
-
-Complete e-commerce API:
-- Full CRUD for all models
-- Complex relationship handling
-- Advanced search & filtering
-- Order management workflows
-- Payment processing ready
-- Review moderation
-- Inventory tracking
-
-**Production-ready e-commerce backend!**
+Perfect for testing the entire generation pipeline! 🚀
