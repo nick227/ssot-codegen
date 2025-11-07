@@ -1,6 +1,14 @@
 /**
  * Generation Phases - Exports all discrete generation phases
+ * 
+ * Two versions available:
+ * 1. Legacy phases (original, runtime-checked)
+ * 2. Typed phases (strongly-typed, compile-time safe)
  */
+
+// ============================================================================
+// LEGACY PHASES (Original)
+// ============================================================================
 
 export { SetupOutputDirPhase } from './00-setup-output-dir.phase.js'
 export { ParseSchemaPhase } from './01-parse-schema.phase.js'
@@ -16,6 +24,17 @@ export { GenerateTsConfigPhase } from './10-generate-tsconfig.phase.js'
 export { WriteStandalonePhase } from './11-write-standalone.phase.js'
 export { WriteTestsPhase } from './12-write-tests.phase.js'
 export { FormatCodePhase } from './13-format-code.phase.js'
+
+// ============================================================================
+// TYPED PHASES (Strongly-Typed)
+// ============================================================================
+
+export { createAllTypedPhases } from './index.typed.js'
+export * from './index.typed.js'
+
+// ============================================================================
+// DEFAULT PHASE FACTORY
+// ============================================================================
 
 import { SetupOutputDirPhase } from './00-setup-output-dir.phase.js'
 import { ParseSchemaPhase } from './01-parse-schema.phase.js'
@@ -34,7 +53,9 @@ import { FormatCodePhase } from './13-format-code.phase.js'
 import type { GenerationPhase } from '../phase-runner.js'
 
 /**
- * Create all standard generation phases
+ * Create all standard generation phases (legacy version)
+ * 
+ * For strongly-typed phases, use createAllTypedPhases() from index.typed.js
  */
 export function createAllPhases(): GenerationPhase[] {
   return [

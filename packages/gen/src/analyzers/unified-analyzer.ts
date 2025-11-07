@@ -123,6 +123,11 @@ export interface UnifiedModelAnalysis {
 const SENSITIVE_FIELD_PATTERN = /^(password|token|secret|hash|salt|api[_-]?key|private[_-]?key)/i
 const DEFAULT_PARENT_PATTERN = /^(parent|ancestor|root)/i
 
+// Field kind constants
+const FIELD_KIND_SCALAR = 'scalar' as const
+const FIELD_KIND_ENUM = 'enum' as const
+const FIELD_KIND_OBJECT = 'object' as const
+
 // Default configuration
 const DEFAULT_CONFIG: UnifiedAnalyzerConfig = {
   junctionTableMaxDataFields: 2,
@@ -250,7 +255,7 @@ function analyzeRelationships(
     const backRef = findBackReference(field, targetModel, model)
     
     // Determine relationship type
-    // IMPROVED: Handle unidirectional relations with fallback heuristics
+    // IMPROVED: Handle unidirectional relations with better heuristics
     let isOneToOne = false
     let isManyToMany = false
     let isOneToMany = false
@@ -263,15 +268,27 @@ function analyzeRelationships(
       isOneToMany = field.isList && !backRef.isList
       isManyToOne = !field.isList && backRef.isList
     } else {
-      // Unidirectional - use heuristics
-      if (field.relationFromFields && field.relationFromFields.length > 0) {
-        // Has FK fields = this side owns the relation = likely M:1 or 1:1
-        isManyToOne = true  // Conservative: treat as M:1
+      // Unidirectional - use heuristics based on field characteristics
+      const hasFKFields = Array.isArray(field.relationFromFields) && field.relationFromFields.length > 0
+      
+      if (hasFKFields) {
+        // Has FK fields = this side owns the relation
+        // Check if FK is unique to distinguish 1:1 from M:1
+        const fkFieldsAreUnique = field.relationFromFields!.every(fkName => {
+          const fkField = model.scalarFields.find(f => f.name === fkName)
+          return fkField?.isUnique === true
+        })
+        
+        if (fkFieldsAreUnique) {
+          isOneToOne = true  // Unique FK = 1:1
+        } else {
+          isManyToOne = true  // Non-unique FK = M:1
+        }
       } else if (field.isList) {
         // List field without back-ref = likely 1:M
         isOneToMany = true
       } else {
-        // Scalar without FK = implicit 1:1
+        // Scalar without FK = implicit 1:1 (rare case)
         isOneToOne = true
       }
     }
@@ -456,23 +473,46 @@ function analyzeFieldsOnce(model: ParsedModel, config: UnifiedAnalyzerConfig): F
   // SINGLE PASS through ALL fields (not just scalarFields)
   for (const field of model.fields) {
     // Skip relation fields
-    if (field.kind === 'object') continue
+    if (field.kind === FIELD_KIND_OBJECT) continue
     
     const normalized = normalizeFieldName(field.name)
     
     // 1. Check for special fields (only on scalar fields, not enums)
-    if (field.kind === 'scalar' && foundKeys.size < matcherEntries.length) {
+    if (field.kind === FIELD_KIND_SCALAR && foundKeys.size < matcherEntries.length) {
       for (const [key, matcher] of matcherEntries) {
         if (foundKeys.has(key)) continue
         
         if (matcher.pattern.test(normalized)) {
-          if (key === 'slug' && field.type === 'String') {
-            if (isFieldUnique(model, field.name)) {
-              (specialFields as Record<string, ParsedField>)[key] = field
-              foundKeys.add(key)
+          // Special case for slug: must be unique
+          if (key === 'slug' && field.type === 'String' && !isFieldUnique(model, field.name)) {
+            continue
+          }
+          
+          if (matcher.validator(field)) {
+            // Type-safe assignment using explicit key checking
+            switch (key) {
+              case 'published':
+                specialFields.published = field
+                break
+              case 'slug':
+                specialFields.slug = field
+                break
+              case 'views':
+                specialFields.views = field
+                break
+              case 'likes':
+                specialFields.likes = field
+                break
+              case 'approved':
+                specialFields.approved = field
+                break
+              case 'deletedAt':
+                specialFields.deletedAt = field
+                break
+              case 'parentId':
+                specialFields.parentId = field
+                break
             }
-          } else if (matcher.validator(field)) {
-            (specialFields as Record<string, ParsedField>)[key] = field
             foundKeys.add(key)
           }
         }
@@ -480,7 +520,7 @@ function analyzeFieldsOnce(model: ParsedModel, config: UnifiedAnalyzerConfig): F
     }
     
     // 2. Check for searchable fields (String scalars only, not enums)
-    if (field.kind === 'scalar' && field.type === 'String' && !field.isId && !field.isReadOnly) {
+    if (field.kind === FIELD_KIND_SCALAR && field.type === 'String' && !field.isId && !field.isReadOnly) {
       if (!excludeSensitive || !isSensitiveField(field.name, sensitivePatterns)) {
         searchFields.push(field.name)
       }
@@ -488,9 +528,9 @@ function analyzeFieldsOnce(model: ParsedModel, config: UnifiedAnalyzerConfig): F
     
     // 3. Check for filterable fields (scalars AND enums)
     const isFilterable = 
-      (field.kind === 'enum' && !field.isReadOnly) ||
-      (field.kind === 'scalar' && field.isList && FILTERABLE_SCALAR_TYPES.has(field.type) && !field.isReadOnly) ||
-      (field.kind === 'scalar' && FILTERABLE_SCALAR_TYPES.has(field.type) && !field.isId && !field.isReadOnly)
+      (field.kind === FIELD_KIND_ENUM && !field.isReadOnly) ||
+      (field.kind === FIELD_KIND_SCALAR && field.isList && FILTERABLE_SCALAR_TYPES.has(field.type) && !field.isReadOnly) ||
+      (field.kind === FIELD_KIND_SCALAR && FILTERABLE_SCALAR_TYPES.has(field.type) && !field.isId && !field.isReadOnly)
     
     if (isFilterable) {
       filterFields.push({
@@ -557,20 +597,23 @@ function hasParentChildRelation(
   config: UnifiedAnalyzerConfig
 ): boolean {
   // Use the already-detected parentId field if available
-  if (specialFields.parentId) {
+  const parentIdField = specialFields.parentId
+  if (parentIdField) {
     return model.fields.some(field => 
-      field.kind === 'object' && 
+      field.kind === FIELD_KIND_OBJECT && 
       field.type === model.name &&
-      field.relationFromFields &&
-      field.relationFromFields.includes(specialFields.parentId!.name)
+      Array.isArray(field.relationFromFields) &&
+      field.relationFromFields.includes(parentIdField.name)
     )
   }
   
   // Fallback: detect using configurable pattern (parent|ancestor|root)
   const pattern = config.parentFieldPatterns ?? DEFAULT_PARENT_PATTERN
   return model.fields.some(field => {
-    if (field.kind !== 'object' || field.type !== model.name) return false
-    if (!field.relationFromFields || field.relationFromFields.length === 0) return false
+    if (field.kind !== FIELD_KIND_OBJECT || field.type !== model.name) return false
+    if (!Array.isArray(field.relationFromFields) || field.relationFromFields.length === 0) {
+      return false
+    }
     
     return field.relationFromFields.some(fkField => 
       pattern.test(normalizeFieldName(fkField))
@@ -585,15 +628,14 @@ function hasParentChildRelation(
 function getForeignKeys(model: ParsedModel): ForeignKeyInfo[] {
   return model.fields
     .filter(field => 
-      field.kind === 'object' && 
-      field.relationFromFields && 
+      field.kind === FIELD_KIND_OBJECT && 
+      Array.isArray(field.relationFromFields) &&
       field.relationFromFields.length > 0
-      // FIXED: Don't exclude self-references - they're still foreign keys
     )
     .map(field => ({
-      fieldNames: field.relationFromFields!,  // Return all fields for composite FKs
-      relationAlias: field.name,              // The field name (e.g., 'category')
-      relationName: field.relationName ?? null,  // Prisma @relation(name: "...")
+      fieldNames: field.relationFromFields as string[],  // Validated by filter above
+      relationAlias: field.name,
+      relationName: field.relationName ?? null,
       relatedModel: field.type
     }))
 }

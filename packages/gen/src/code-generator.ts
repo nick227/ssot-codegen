@@ -412,11 +412,8 @@ function generateSDKClients(
     : generateMainSDK(schema.models, schema)
   files.sdk.set('index.ts', mainSDK)
   
-  // Generate version file with schema hash
-  const versionFile = generateSDKVersion(
-    config.schemaHash || '', 
-    config.toolVersion || '0.5.0'
-  )
+  // Generate version file (schema hash and version will be added by manifest phase)
+  const versionFile = generateSDKVersion('placeholder', '0.4.0')
   files.sdk.set('version.ts', versionFile)
   
   // Generate SDK documentation files
