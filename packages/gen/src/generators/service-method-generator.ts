@@ -5,6 +5,8 @@
 
 import type { ParsedModel } from '../dmmf-parser.js'
 import { analyzeModelCapabilities, type ModelCapabilities } from '../analyzers/index.js'
+import { mapPrismaToTypeScript } from '../type-mapper.js'
+import { toCamelCase } from '../utils/naming.js'
 
 /**
  * Generate enhanced service methods based on detected capabilities
@@ -63,7 +65,7 @@ export function generateEnhancedServiceMethods(
 
 function generateSearchMethod(model: ParsedModel, caps: ModelCapabilities): string {
   const modelName = model.name
-  const modelLower = model.name.toLowerCase()
+  const modelCamel = toCamelCase(model.name)
   const searchConditions = caps.searchFields.map(field => 
     `            { ${field}: { contains: params.q, mode: 'insensitive' } }`
   ).join(',\n')
@@ -104,7 +106,7 @@ ${filterConditions}
       ].filter(condition => Object.keys(condition).length > 0)
     }
     
-    return prisma.${modelLower}.findMany({
+    return prisma.${modelCamel}.findMany({
       where,
       skip: params.skip || 0,
       take: Math.min(params.take || 20, 100)
@@ -137,14 +139,14 @@ function generateSearchParams(caps: ModelCapabilities): string {
 
 function generateFindBySlugMethod(model: ParsedModel): string {
   const modelName = model.name
-  const modelLower = model.name.toLowerCase()
+  const modelCamel = toCamelCase(model.name)
   
   return `/**
    * Find ${modelName} by slug
    * Auto-generated from 'slug' field detection
    */
   async findBySlug(slug: string) {
-    return prisma.${modelLower}.findUnique({
+    return prisma.${modelCamel}.findUnique({
       where: { slug }
     })
   }`
@@ -152,7 +154,7 @@ function generateFindBySlugMethod(model: ParsedModel): string {
 
 function generateGetFeaturedMethod(model: ParsedModel, hasActive: boolean): string {
   const modelName = model.name
-  const modelLower = model.name.toLowerCase()
+  const modelCamel = toCamelCase(model.name)
   const activeFilter = hasActive ? '\n        isActive: true,' : ''
   
   return `/**
@@ -160,7 +162,7 @@ function generateGetFeaturedMethod(model: ParsedModel, hasActive: boolean): stri
    * Auto-generated from 'isFeatured' field detection
    */
   async getFeatured(limit = 10) {
-    return prisma.${modelLower}.findMany({
+    return prisma.${modelCamel}.findMany({
       where: {${activeFilter}
         isFeatured: true
       },
@@ -172,14 +174,14 @@ function generateGetFeaturedMethod(model: ParsedModel, hasActive: boolean): stri
 
 function generateGetActiveMethod(model: ParsedModel): string {
   const modelName = model.name
-  const modelLower = model.name.toLowerCase()
+  const modelCamel = toCamelCase(model.name)
   
   return `/**
    * Get active ${modelName}s
    * Auto-generated from 'isActive' field detection
    */
   async getActive(query?: Prisma.${modelName}WhereInput) {
-    return prisma.${modelLower}.findMany({
+    return prisma.${modelCamel}.findMany({
       where: {
         isActive: true,
         ...query
@@ -190,14 +192,14 @@ function generateGetActiveMethod(model: ParsedModel): string {
 
 function generateGetPublishedMethod(model: ParsedModel): string {
   const modelName = model.name
-  const modelLower = model.name.toLowerCase()
+  const modelCamel = toCamelCase(model.name)
   
   return `/**
    * Get published ${modelName}s
    * Auto-generated from 'publishedAt' field detection
    */
   async getPublished(query?: Prisma.${modelName}WhereInput) {
-    return prisma.${modelLower}.findMany({
+    return prisma.${modelCamel}.findMany({
       where: {
         publishedAt: { lte: new Date() },
         ...query
@@ -214,19 +216,23 @@ function generateGetByRelationMethod(
   hasActive: boolean
 ): string {
   const modelName = model.name
-  const modelLower = model.name.toLowerCase()
+  const modelCamel = toCamelCase(model.name)
   const methodName = `getBy${capitalize(relationName)}`
   const activeFilter = hasActive ? ',\n        isActive: true' : ''
+  
+  // Get the actual field type from the model
+  const field = model.fields.find(f => f.name === fieldName)
+  const fieldType = field ? mapPrismaToTypeScript(field) : 'string'
   
   return `/**
    * Get ${modelName}s by ${relationName}
    * Auto-generated from foreign key detection: ${fieldName}
    */
-  async ${methodName}(${fieldName}: number, options?: {
+  async ${methodName}(${fieldName}: ${fieldType}, options?: {
     skip?: number
     take?: number
   }) {
-    return prisma.${modelLower}.findMany({
+    return prisma.${modelCamel}.findMany({
       where: { ${fieldName}${activeFilter} },
       skip: options?.skip || 0,
       take: options?.take || 20
@@ -236,14 +242,14 @@ function generateGetByRelationMethod(
 
 function generateHierarchyMethods(model: ParsedModel): string {
   const modelName = model.name
-  const modelLower = model.name.toLowerCase()
+  const modelCamel = toCamelCase(model.name)
   
   return `/**
    * Get children of parent ${modelName}
    * Auto-generated from self-referential relation detection
    */
   async getChildren(parentId: number) {
-    return prisma.${modelLower}.findMany({
+    return prisma.${modelCamel}.findMany({
       where: { parentId }
     })
   },
@@ -253,7 +259,7 @@ function generateHierarchyMethods(model: ParsedModel): string {
    * Auto-generated from self-referential relation detection
    */
   async getTree() {
-    const items = await prisma.${modelLower}.findMany({
+    const items = await prisma.${modelCamel}.findMany({
       orderBy: { id: 'asc' }
     })
     

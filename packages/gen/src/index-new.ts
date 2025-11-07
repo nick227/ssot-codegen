@@ -38,6 +38,7 @@ import {
 import { writeFile as writeFileWithLimit } from './generator/phase-utilities.js'
 import { mergePluginConfig } from './utils/config-loader.js'
 import { toKebabCase } from './utils/naming.js'
+import { getGeneratorVersion } from './utils/version.js'
 import type {
   GeneratorConfig,
   GeneratorResult,
@@ -168,11 +169,9 @@ export async function generateFromSchema(config: GeneratorConfig) {
     for (const model of parsedSchema.models) {
       logger.startModel(model.name)
       
-      // Detect junction tables
-      const isJunction = model.fields.length === 2 && 
-                        model.fields.every(f => f.kind === 'object' && !f.isList)
-      
-      if (isJunction) {
+      // Detect junction tables using centralized utility
+      const analysis = analyzeModel(model, parsedSchema)
+      if (analysis.isJunctionTable) {
         logger.logJunctionTable(model.name)
       }
       
@@ -206,7 +205,8 @@ export async function generateFromSchema(config: GeneratorConfig) {
     // Generate manifest
     logger.startPhase('Writing manifest')
     const schemaHash = hash(config.schemaText || '')
-    await writeManifest(cfg, schemaHash, modelNames, '0.5.0')
+    const version = await getGeneratorVersion()
+    await writeManifest(cfg, schemaHash, modelNames, version)
     logger.endPhase('Writing manifest', 1)
     
     // Generate tsconfig paths

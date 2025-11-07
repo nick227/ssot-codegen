@@ -5,27 +5,12 @@
  */
 
 import path from 'node:path'
-import { readFile } from 'node:fs/promises'
 import crypto from 'node:crypto'
-import { fileURLToPath } from 'node:url'
 import { GenerationPhase, type PhaseContext, type PhaseResult } from '../phase-runner.js'
 import { writeFile, getTrackedPaths } from '../phase-utilities.js'
+import { getGeneratorVersion } from '../../utils/version.js'
 
 const hash = (text: string) => crypto.createHash('sha256').update(text).digest('hex')
-
-/**
- * Read generator version from package.json
- */
-async function getGeneratorVersion(): Promise<string> {
-  try {
-    const __dirname = path.dirname(fileURLToPath(import.meta.url))
-    const packagePath = path.join(__dirname, '../../package.json')
-    const packageJson = JSON.parse(await readFile(packagePath, 'utf8'))
-    return packageJson.version || '0.4.0'
-  } catch {
-    return '0.4.0' // Fallback version
-  }
-}
 
 export class WriteManifestPhase extends GenerationPhase {
   readonly name = 'writeManifest'

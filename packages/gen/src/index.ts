@@ -3,6 +3,7 @@ import path from 'node:path'
 import crypto from 'node:crypto'
 import { normalize, Normalized } from '@ssot-codegen/core'
 import { PathsConfig, filePath, esmImport } from './path-resolver.js'
+import { defaultPaths } from './config/default-paths.js'
 
 export * from './project-scaffold.js'
 export * from './dependencies/index.js'
@@ -15,28 +16,6 @@ export interface GeneratorConfig {
   output?: string
   schemaText?: string
   paths?: Partial<PathsConfig>
-}
-
-const defaultPaths: PathsConfig = {
-  alias: '@gen',
-  rootDir: './gen',
-  perModelSubfolders: true,
-  useBarrels: true,
-  filenamePattern: 'model.artifact.suffix',
-  layers: {
-    contracts: 'contracts',
-    validators: 'validators',
-    routes: 'routes',
-    controllers: 'controllers',
-    services: 'services',
-    loaders: 'loaders',
-    auth: 'auth',
-    telemetry: 'telemetry',
-    openapi: 'openapi',
-    sdk: 'sdk',
-    manifests: 'manifests',
-    shared: 'shared'
-  }
 }
 
 const ensureDir = (p: string) => fs.mkdirSync(p, { recursive: true })

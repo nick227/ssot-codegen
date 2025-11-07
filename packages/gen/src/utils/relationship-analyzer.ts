@@ -3,6 +3,7 @@
  */
 
 import type { ParsedModel, ParsedField, ParsedSchema } from '../dmmf-parser.js'
+import { isJunctionTable, isJunctionTableSimple } from './junction-table.js'
 
 export interface RelationshipInfo {
   field: ParsedField
@@ -89,41 +90,10 @@ function findBackReference(targetModel: ParsedModel, sourceModel: ParsedModel): 
 
 /**
  * Detect if model is a junction table (many-to-many)
- * Junction tables typically:
- * - Have no scalar fields beyond IDs
- * - Have exactly 2 foreign key relationships
- * - Have a composite primary key
+ * @deprecated Use isJunctionTable from utils/junction-table.ts instead
  */
 function detectJunctionTable(model: ParsedModel, schema: ParsedSchema): boolean {
-  // Must have 2 or more relation fields
-  if (model.relationFields.length < 2) return false
-  
-  // Check for composite primary key
-  const hasCompositePK = !!(model.primaryKey && model.primaryKey.fields.length > 1)
-  
-  // Count non-id, non-relation scalar fields
-  const dataFields = model.scalarFields.filter(f => 
-    !f.isId && 
-    !f.isReadOnly && 
-    !f.isUpdatedAt &&
-    f.name !== 'createdAt'
-  )
-  
-  // Junction tables have few or no data fields beyond foreign keys
-  const maxDataFields = 2 // Allow a couple of extra fields (timestamps, etc.)
-  
-  return hasCompositePK && dataFields.length <= maxDataFields
-}
-
-/**
- * Check if a model is a junction table (simplified)
- */
-function isJunctionTable(model: ParsedModel): boolean {
-  // Quick check: if model has very few scalar fields and multiple relations, likely a junction
-  const scalarCount = model.scalarFields.filter(f => !f.isId && !f.isReadOnly).length
-  const relationCount = model.relationFields.length
-  
-  return relationCount >= 2 && scalarCount <= 3
+  return isJunctionTable(model)
 }
 
 /**

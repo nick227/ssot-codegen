@@ -399,13 +399,15 @@ function generateFieldValue(field: ParsedField): any {
 
 /**
  * Check if a model is a junction table (many-to-many)
+ * Uses centralized junction table detection
  */
 function isJunctionTable(model: ParsedModel): boolean {
+  // Simple heuristic for test generation
   const relationFields = model.fields.filter(f => f.kind === 'object')
-  const scalarFields = model.fields.filter(f => f.kind === 'scalar' && !f.isId)
+  const scalarFields = model.fields.filter(f => f.kind === 'scalar' && !f.isId && f.name !== 'createdAt' && !f.isUpdatedAt)
   
-  // Junction table typically has 2 relations and no other data fields
-  return relationFields.length === 2 && scalarFields.length === 0
+  // Junction table typically has 2+ relations and few/no other data fields
+  return relationFields.length >= 2 && scalarFields.length <= 2
 }
 
 /**

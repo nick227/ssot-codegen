@@ -204,18 +204,11 @@ export function getOptionalRelations(model: ParsedModel): ParsedField[] {
 
 /**
  * Check if model is a junction table (many-to-many)
+ * @deprecated Use isJunctionTable from utils/junction-table.ts instead
  */
 export function isJunctionTable(model: ParsedModel): boolean {
-  // Junction tables typically have:
-  // - Exactly 2 relation fields
-  // - All fields are either relations or id/timestamps
-  // - Compound unique constraint on the two relations
-  
-  const relationCount = model.relationFields.length
-  const scalarCount = model.scalarFields.filter(f => 
-    !f.isId && !f.isUpdatedAt && f.name !== 'createdAt'
-  ).length
-  
-  return relationCount === 2 && scalarCount === 0
+  // Delegate to centralized utility
+  const { isJunctionTableSimple } = require('./utils/junction-table.js')
+  return isJunctionTableSimple(model)
 }
 

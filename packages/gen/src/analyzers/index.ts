@@ -27,3 +27,12 @@ export {
   type ForeignKeyInfo
 } from './model-capabilities.js'
 
+// Unified analyzer (NEW - combines relationship + capability analysis)
+export {
+  analyzeModelUnified,
+  generateSummaryInclude,
+  type UnifiedModelAnalysis,
+  type RelationshipInfo,
+  type SpecialFields
+} from './unified-analyzer.js'
+

@@ -62,8 +62,11 @@ ${baseRoutes}${domainRoutes}
  * Generate base CRUD routes
  */
 function generateExpressBaseRoutes(model: ParsedModel, modelCamel: string): string {
-  return `// List all ${model.name} records
+  return `// List all ${model.name} records (simple pagination)
 ${modelCamel}Router.get('/', ${modelCamel}Controller.list${model.name}s)
+
+// Search ${model.name} records (complex filtering via POST body)
+${modelCamel}Router.post('/search', ${modelCamel}Controller.search${model.name}s)
 
 // Get ${model.name} by ID
 ${modelCamel}Router.get('/:id', ${modelCamel}Controller.get${model.name})

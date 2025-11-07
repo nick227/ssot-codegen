@@ -22,7 +22,7 @@ export interface CRUDServiceConfig {
   /** Model name (e.g., "User") */
   modelName: string
   
-  /** Model name in lowercase (e.g., "user") */
+  /** Model name in camelCase for Prisma client (e.g., "conversionJob") */
   modelLower: string
   
   /** ID field type */

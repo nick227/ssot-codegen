@@ -180,12 +180,14 @@ function enhanceModel(model: ParsedModel, modelMap: Map<string, ParsedModel>): v
   model.scalarFields = model.fields.filter(f => f.kind !== 'object')
   model.relationFields = model.fields.filter(f => f.kind === 'object')
   
-  // Fields for CreateDTO (exclude id, readonly, relations)
+  // Fields for CreateDTO (exclude id, readonly, relations, system timestamps)
   model.createFields = model.fields.filter(f => 
     !f.isId && 
     !f.isReadOnly && 
     !f.isUpdatedAt &&
-    f.kind !== 'object'
+    f.kind !== 'object' &&
+    // Exclude system-managed timestamp fields with @default
+    !(f.hasDefaultValue && (f.name === 'createdAt' || f.name === 'updatedAt'))
   )
   
   // Fields for UpdateDTO (same as create, all optional)

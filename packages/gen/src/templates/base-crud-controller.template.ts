@@ -92,8 +92,11 @@ export class BaseCRUDController<T, CreateDTO, UpdateDTO, QueryDTO> {
 
   async list(req: Request, res: Response): Promise<Response> {
     try {
-      const query = this.schemas.query.parse(req.query)
-      const result = await this.service.list(query)
+      // Simple GET: only pagination params from query string
+      const skip = req.query.skip ? parseInt(req.query.skip as string, 10) : 0
+      const take = req.query.take ? parseInt(req.query.take as string, 10) : 20
+      
+      const result = await this.service.list({ skip, take } as QueryDTO)
       return res.json(result)
     } catch (error) {
       if (error instanceof ZodError) {
@@ -101,6 +104,22 @@ export class BaseCRUDController<T, CreateDTO, UpdateDTO, QueryDTO> {
         return res
       }
       this.handleError(error, \`list\${this.config.modelName}s\`, {}, res)
+      return res
+    }
+  }
+
+  async search(req: Request, res: Response): Promise<Response> {
+    try {
+      // POST /search: accepts complex filtering in request body
+      const query = this.schemas.query.parse(req.body)
+      const result = await this.service.list(query)
+      return res.json(result)
+    } catch (error) {
+      if (error instanceof ZodError) {
+        this.handleValidationError(error, \`search\${this.config.modelName}s\`, res)
+        return res
+      }
+      this.handleError(error, \`search\${this.config.modelName}s\`, {}, res)
       return res
     }
   }

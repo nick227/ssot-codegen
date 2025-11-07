@@ -1,10 +1,13 @@
 /**
  * Validator Generator - Comprehensive Tests
  * Uses new test utilities for better coverage
+ * 
+ * TODO: Migrate to test production validator-generator.ts (functional API)
+ * These tests were for the experimental v2 class-based API (removed in consolidation)
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
-import { ValidatorGenerator } from '../validator-generator-v2.js'
+// import { ValidatorGenerator } from '../validator-generator-v2.js' // REMOVED: v2 generators consolidated
 import {
   models,
   field,
@@ -20,7 +23,8 @@ import {
 } from '../../__tests__/index.js'
 import { createMockModel } from './fixtures.js'
 
-describe('ValidatorGenerator - Comprehensive Tests', () => {
+describe.skip('ValidatorGenerator - Comprehensive Tests (V2 API - DEPRECATED)', () => {
+  // TODO: Rewrite tests for functional API (generateAllValidators from validator-generator.ts)
   describe('Basic Validator Generation', () => {
     let generator: ValidatorGenerator
 

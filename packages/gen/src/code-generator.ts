@@ -30,8 +30,10 @@ import { generateServiceSDK, generateMainSDKWithServices } from './generators/sd
 import { generateSDKReadme, generateAPIReference, generateSDKArchitecture, generateQuickStart, generateSDKTypes } from './generators/sdk-docs-generator.js'
 // Framework hooks generation (React, Vue, etc.)
 import { generateAllHooks } from './generators/hooks/index.js'
-// OPTIMIZATION: Pre-analysis utilities
-import { analyzeModel, type ModelAnalysis } from './utils/relationship-analyzer.js'
+// OPTIMIZATION: Pre-analysis utilities (UNIFIED - combines relationship + capability analysis)
+import { analyzeModelUnified, type UnifiedModelAnalysis } from './analyzers/unified-analyzer.js'
+// Legacy import for backwards compatibility (will be removed)
+import { type ModelAnalysis } from './utils/relationship-analyzer.js'
 // Registry-based architecture (78% less code)
 import { generateRegistrySystem } from './generators/registry-generator.js'
 // System health check dashboard
@@ -86,7 +88,7 @@ export interface GeneratedFiles {
  * OPTIMIZATION: Pre-analyze all models once instead of analyzing per-generator
  */
 interface AnalysisCache {
-  modelAnalysis: Map<string, ModelAnalysis>
+  modelAnalysis: Map<string, UnifiedModelAnalysis>  // UPDATED: Now uses UnifiedModelAnalysis
   serviceAnnotations: Map<string, ServiceAnnotation>
 }
 
@@ -119,9 +121,9 @@ export function generateCode(
   }
   
   for (const model of schema.models) {
-    // Analyze relationships and special fields once
+    // UNIFIED ANALYSIS: Analyze relationships, special fields, and capabilities ONCE
     if (config.useEnhancedGenerators ?? true) {
-      cache.modelAnalysis.set(model.name, analyzeModel(model, schema))
+      cache.modelAnalysis.set(model.name, analyzeModelUnified(model, schema))
     }
     
     // Parse service annotations once
