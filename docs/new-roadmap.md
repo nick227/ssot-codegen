@@ -67,10 +67,38 @@
 - Tests: `__tests__/typed-context.test.ts`
 - Docs: `TYPED_CONTEXT_MIGRATION.md`, `TYPED_PHASES_COMPLETE.md`
 
-### 6. Public Generator API
-**Status:** Planned
+### 6. ✅ Public Generator API
+**Status:** COMPLETE
 
-**Goal:** Surface a minimal `generateFromSchema(config)` entry point with clear config types
+**Implementation:**
+- Created clean `api/public-api.ts` with 4 main functions (generate, validateSchema, analyzeSchema, getVersion)
+- Created `api/implementation.ts` bridge between public API and internal generator
+- Added package exports for `@ssot-codegen/gen/api` sub-path
+- Full TypeScript typing with GenerateOptions and GenerateResult
+- Progress callback support for monitoring generation
+- Zero side effects - no console.log, no execSync, pure functions
+
+**Functions:**
+- `generate(options)` - Main code generation
+- `validateSchema(schema)` - Schema validation without generation
+- `analyzeSchema(schema)` - Get schema info (models, relationships, etc.)
+- `getVersion()` - Get generator version
+
+**Examples:**
+- 01-basic-usage.ts - Simplest API usage
+- 02-progress-monitoring.ts - Progress callbacks
+- 03-vite-plugin.ts - Vite integration
+- 04-ci-cd-integration.ts - CI/CD pipeline
+- 05-custom-logger.ts - Winston/Pino integration
+- 06-watch-mode.ts - File watching
+- 07-microservices.ts - Multi-service generation
+
+**Benefits:**
+- ✅ Embeddable in build tools (Vite, Webpack, Rollup)
+- ✅ CI/CD friendly (no colors, structured output)
+- ✅ Programmatic usage (no shell required)
+- ✅ Full TypeScript support
+- ✅ No CLI coupling or dependencies
 
 ### 7. Template Override Mechanism
 **Status:** Planned

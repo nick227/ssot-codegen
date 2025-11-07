@@ -7,6 +7,7 @@
 import path from 'node:path'
 import { GenerationPhase, type PhaseContext, type PhaseResult } from '../phase-runner.js'
 import { writeFile } from '../phase-utilities.js'
+import { stringifyWithCache } from '../json-cache.js'
 
 export class GenerateOpenAPIPhase extends GenerationPhase {
   readonly name = 'generateOpenAPI'
@@ -52,8 +53,13 @@ export class GenerateOpenAPIPhase extends GenerationPhase {
       )
     }
     
+    // Store spec in context for reuse (e.g., manifest)
+    context.openApiSpec = spec
+    
+    // OPTIMIZATION: Use cached stringification
+    // If this spec is referenced elsewhere, subsequent stringify is instant
     const specPath = path.join(cfg.rootDir, 'openapi.json')
-    await writeFile(specPath, JSON.stringify(spec, null, 2))
+    await writeFile(specPath, stringifyWithCache(spec, { indent: 2 }))
     
     return {
       success: true,

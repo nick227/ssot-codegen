@@ -651,3 +651,182 @@ describe('generateSummaryInclude (deprecated)', () => {
   })
 })
 
+describe('Critical Fix: Back-Reference Pairing', () => {
+  it('should correctly pair multiple relations without relationName using FK fields', () => {
+    const postModel = createMockModel({
+      name: 'Post',
+      fields: [
+        createMockField({ name: 'id', type: 'Int', isId: true }),
+        createMockField({ name: 'authorId', type: 'Int' }),
+        createMockField({ 
+          name: 'author', 
+          type: 'User', 
+          kind: 'object',
+          relationFromFields: ['authorId'],
+          relationToFields: ['id'],
+          relationName: undefined  // No explicit name
+        }),
+        createMockField({ name: 'editorId', type: 'Int' }),
+        createMockField({ 
+          name: 'editor', 
+          type: 'User', 
+          kind: 'object',
+          relationFromFields: ['editorId'],
+          relationToFields: ['id'],
+          relationName: undefined  // No explicit name
+        })
+      ]
+    })
+    
+    const userModel = createMockModel({
+      name: 'User',
+      fields: [
+        createMockField({ name: 'id', type: 'Int', isId: true }),
+        createMockField({ 
+          name: 'authoredPosts', 
+          type: 'Post', 
+          kind: 'object',
+          isList: true,
+          relationToFields: ['authorId'],  // References author relation
+          relationName: undefined
+        }),
+        createMockField({ 
+          name: 'editedPosts', 
+          type: 'Post', 
+          kind: 'object',
+          isList: true,
+          relationToFields: ['editorId'],  // References editor relation
+          relationName: undefined
+        })
+      ]
+    })
+    
+    const schema = createMockSchema([postModel, userModel])
+    const analysis = analyzeModelUnified(postModel, schema)
+    
+    // Should have found correct back-references
+    expect(analysis.relationships.length).toBe(2)
+    
+    const authorRel = analysis.relationships.find(r => r.field.name === 'author')
+    const editorRel = analysis.relationships.find(r => r.field.name === 'editor')
+    
+    expect(authorRel).toBeDefined()
+    expect(editorRel).toBeDefined()
+    expect(authorRel?.isManyToOne).toBe(true)
+    expect(editorRel?.isManyToOne).toBe(true)
+  })
+})
+
+describe('Critical Fix: Custom Auto-Include Hook', () => {
+  it('should use custom shouldAutoInclude hook when provided', () => {
+    const model = createMockModel({
+      name: 'Post',
+      fields: [
+        createMockField({ name: 'id', type: 'Int', isId: true }),
+        createMockField({ name: 'authorId', type: 'Int', isRequired: true }),
+        createMockField({ 
+          name: 'author', 
+          type: 'User', 
+          kind: 'object',
+          relationFromFields: ['authorId']
+        }),
+        createMockField({ name: 'categoryId', type: 'Int', isRequired: true }),
+        createMockField({ 
+          name: 'category', 
+          type: 'Category', 
+          kind: 'object',
+          relationFromFields: ['categoryId']
+        })
+      ]
+    })
+    
+    const userModel = createMockModel({
+      name: 'User',
+      fields: [
+        createMockField({ name: 'id', type: 'Int', isId: true }),
+        createMockField({ name: 'posts', type: 'Post', kind: 'object', isList: true })
+      ]
+    })
+    
+    const categoryModel = createMockModel({
+      name: 'Category',
+      fields: [
+        createMockField({ name: 'id', type: 'Int', isId: true }),
+        createMockField({ name: 'posts', type: 'Post', kind: 'object', isList: true })
+      ]
+    })
+    
+    const schema = createMockSchema([model, userModel, categoryModel])
+    
+    // Custom hook: only include 'author', not 'category'
+    const analysis = analyzeModelUnified(model, schema, {
+      shouldAutoInclude: (rel, model) => rel.field.name === 'author'
+    })
+    
+    expect(analysis.autoIncludeRelations.length).toBe(1)
+    expect(analysis.autoIncludeRelations[0].field.name).toBe('author')
+  })
+})
+
+describe('Critical Fix: Unidirectional M:N Detection', () => {
+  it('should not classify list to junction table as 1:M', () => {
+    const userModel = createMockModel({
+      name: 'User',
+      fields: [
+        createMockField({ name: 'id', type: 'Int', isId: true }),
+        createMockField({ 
+          name: 'userRoles', 
+          type: 'UserRole', 
+          kind: 'object',
+          isList: true
+          // No back-reference
+        })
+      ]
+    })
+    
+    const junctionModel = createMockModel({
+      name: 'UserRole',
+      fields: [
+        createMockField({ name: 'userId', type: 'Int', isId: true }),
+        createMockField({ name: 'roleId', type: 'Int', isId: true }),
+        createMockField({ name: 'user', type: 'User', kind: 'object', relationFromFields: ['userId'] }),
+        createMockField({ name: 'role', type: 'Role', kind: 'object', relationFromFields: ['roleId'] })
+      ],
+      primaryKey: { fields: ['userId', 'roleId'] }
+    })
+    
+    const schema = createMockSchema([userModel, junctionModel])
+    const analysis = analyzeModelUnified(userModel, schema)
+    
+    const userRolesRel = analysis.relationships[0]
+    
+    // Should NOT be classified as 1:M (ambiguous M:N)
+    expect(userRolesRel.isOneToMany).toBe(false)
+    expect(userRolesRel.isManyToMany).toBe(false)
+    expect(userRolesRel.isManyToOne).toBe(false)
+    expect(userRolesRel.isOneToOne).toBe(false)
+  })
+})
+
+describe('Enhanced Sensitive Field Patterns', () => {
+  it('should exclude additional sensitive fields', () => {
+    const model = createMockModel({
+      name: 'User',
+      fields: [
+        createMockField({ name: 'id', type: 'Int', isId: true }),
+        createMockField({ name: 'email', type: 'String' }),
+        createMockField({ name: 'credential', type: 'String' }),
+        createMockField({ name: 'authCode', type: 'String' }),
+        createMockField({ name: 'refresh_token', type: 'String' })
+      ]
+    })
+    const schema = createMockSchema([model])
+    const analysis = analyzeModelUnified(model, schema)
+    
+    expect(analysis.capabilities.searchFields).toEqual(['email'])
+    expect(analysis.capabilities.searchFields).not.toContain('credential')
+    expect(analysis.capabilities.searchFields).not.toContain('authCode')
+    expect(analysis.capabilities.searchFields).not.toContain('refresh_token')
+  })
+})
+

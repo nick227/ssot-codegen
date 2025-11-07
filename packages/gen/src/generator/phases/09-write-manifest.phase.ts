@@ -9,6 +9,7 @@ import crypto from 'node:crypto'
 import { GenerationPhase, type PhaseContext, type PhaseResult } from '../phase-runner.js'
 import { writeFile, getTrackedPaths } from '../phase-utilities.js'
 import { getGeneratorVersion } from '../../utils/version.js'
+import { stringifyWithCache } from '../json-cache.js'
 
 const hash = (text: string) => crypto.createHash('sha256').update(text).digest('hex')
 
@@ -52,7 +53,9 @@ export class WriteManifestPhase extends GenerationPhase {
     }
     
     const manifestPath = path.join(cfg.rootDir, 'manifests', 'generation.json')
-    await writeFile(manifestPath, JSON.stringify(manifest, null, 2))
+    // OPTIMIZATION: Use cached stringification
+    // If manifest is logged/reused elsewhere, subsequent stringify is instant
+    await writeFile(manifestPath, stringifyWithCache(manifest, { indent: 2 }))
     
     return {
       success: true,
