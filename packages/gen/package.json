@@ -20,7 +20,8 @@
   "dependencies": {
     "@prisma/generator-helper": "^5.22.0",
     "@prisma/internals": "^5.22.0",
-    "@ssot-codegen/core": "workspace:*"
+    "@ssot-codegen/core": "workspace:*",
+    "p-limit": "^5.0.0"
   },
   "peerDependencies": {
     "prisma": "^5.0.0"

@@ -6,8 +6,19 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
+import pLimit from 'p-limit'
 import type { PathsConfig } from '../path-resolver.js'
 import { esmImport } from '../path-resolver.js'
+
+/**
+ * Concurrency limiter for file operations
+ * Limits concurrent file writes to prevent overwhelming the file system
+ * 
+ * Default: 100 concurrent writes
+ * Can be overridden via SSOT_WRITE_CONCURRENCY environment variable
+ */
+const FILE_WRITE_CONCURRENCY = parseInt(process.env.SSOT_WRITE_CONCURRENCY || '100', 10)
+const writeLimit = pLimit(FILE_WRITE_CONCURRENCY)
 
 /**
  * File I/O utilities
@@ -16,9 +27,17 @@ export const ensureDir = async (p: string): Promise<void> => {
   await fs.promises.mkdir(p, { recursive: true })
 }
 
-export const writeFile = async (filePath: string, content: string): Promise<void> => { 
-  await ensureDir(path.dirname(filePath))
-  await fs.promises.writeFile(filePath, content, 'utf8')
+/**
+ * Write a file with concurrency throttling
+ * 
+ * Uses p-limit to ensure we don't exceed FILE_WRITE_CONCURRENCY simultaneous writes.
+ * This prevents file system overwhelm and improves reliability on slower disks.
+ */
+export const writeFile = async (filePath: string, content: string): Promise<void> => {
+  return writeLimit(async () => {
+    await ensureDir(path.dirname(filePath))
+    await fs.promises.writeFile(filePath, content, 'utf8')
+  })
 }
 
 /**

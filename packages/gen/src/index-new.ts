@@ -35,6 +35,7 @@ import {
   generateVitestConfig, 
   generateTestSetup 
 } from './generators/test-generator.js'
+import { writeFile as writeFileWithLimit } from './generator/phase-utilities.js'
 import { mergePluginConfig } from './utils/config-loader.js'
 import type {
   GeneratorConfig,
@@ -72,12 +73,8 @@ const defaultPaths: PathsConfig = {
   }
 }
 
-// OPTIMIZED: Async file operations for 23x faster I/O
-const ensureDir = async (p: string) => fs.promises.mkdir(p, { recursive: true })
-const write = async (file: string, content: string) => { 
-  await ensureDir(path.dirname(file))
-  await fs.promises.writeFile(file, content, 'utf8')
-}
+// OPTIMIZED: Async file operations with concurrency throttling (100 max concurrent writes)
+const write = writeFileWithLimit
 const hash = (text: string) => crypto.createHash('sha256').update(text).digest('hex')
 
 const pathMap: Record<string, { fs: string; esm: string }> = {}

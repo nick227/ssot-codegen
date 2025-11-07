@@ -136,6 +136,9 @@ importers:
       '@ssot-codegen/core':
         specifier: workspace:*
         version: link:../core
+      p-limit:
+        specifier: ^5.0.0
+        version: 5.0.0
       prisma:
         specifier: ^5.0.0
         version: 5.22.0
