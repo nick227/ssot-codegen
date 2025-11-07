@@ -1,6 +1,6 @@
 {
   "name": "@ssot-codegen/cli",
-  "version": "0.5.0",
+  "version": "0.4.0",
   "type": "module",
   "description": "CLI tool for SSOT Codegen",
   "bin": {
