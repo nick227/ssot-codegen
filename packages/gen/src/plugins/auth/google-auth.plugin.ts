@@ -288,7 +288,7 @@ import { Router } from 'express'
 import passport from 'passport'
 import { authService } from '../services/auth.service.js'
 import { rateLimit } from 'express-rate-limit'
-${this.config.strategy === 'jwt' ? "import { generateToken } from '../utils/jwt.util.js'" : ''}
+${this.config.strategy === 'jwt' ? "import { generateToken } from '@/utils/jwt.util.js'" : ''}
 
 export const authRouter = Router()
 
@@ -498,7 +498,7 @@ export const authService = {
       return `// @generated
 // JWT-based authentication middleware
 
-import { verifyToken } from '../utils/jwt.util.js'
+import { verifyToken } from '@/utils/jwt.util.js'
 import { authService } from '../services/auth.service.js'
 import type { Request, Response, NextFunction } from 'express'
 

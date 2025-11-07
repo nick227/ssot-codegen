@@ -6,7 +6,7 @@
  */
 
 import { BarrelBuilder } from './utils/barrel-builder.js'
-import { toKebabCase } from '../utils/naming.js'
+import { toKebabCase } from '@/utils/naming.js'
 
 type ModelName = string
 

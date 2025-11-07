@@ -9,7 +9,7 @@
 import path from 'node:path'
 import { TypedPhaseAdapter } from '../typed-phase-adapter.js'
 import { writeFile, trackPath, generateEsmPath } from '../phase-utilities.js'
-import { toKebabCase } from '../../utils/naming.js'
+import { toKebabCase } from '@/utils/naming.js'
 import type { 
   ContextAfterPhase4, 
   WriteFilesOutput 

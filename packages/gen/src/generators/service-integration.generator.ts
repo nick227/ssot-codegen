@@ -12,7 +12,7 @@ import {
   inferRoutePath,
   parseRateLimit
 } from '../service-linker.js'
-import { kebabToCamelCase } from '../utils/naming.js'
+import { kebabToCamelCase } from '@/utils/naming.js'
 
 /**
  * Generate controller for service integration (using BaseServiceController)

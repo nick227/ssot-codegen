@@ -11,7 +11,7 @@ import {
   generateSelfValidationTests, 
   generateVitestConfig, 
   generateTestSetup 
-} from '../../generators/test-generator.js'
+} from '@/generators/test-generator.js'
 import { writeFile } from '../phase-utilities.js'
 
 export class WriteTestsPhase extends GenerationPhase {

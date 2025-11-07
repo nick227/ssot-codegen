@@ -4,7 +4,7 @@
  * Standardizes code generation across all generators with reusable patterns
  */
 
-import { TemplateBuilder } from '../generators/utils/template-builder.js'
+import { TemplateBuilder } from '@/generators/utils/template-builder.js'
 
 // ============================================================================
 // COMMON PATTERNS

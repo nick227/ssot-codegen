@@ -8,7 +8,7 @@ import { beforePhase, afterPhase, onError } from '../phase-hooks.js'
 import type { 
   ContextAfterPhase1,
   ContextAfterPhase4 
-} from '../../typed-context.js'
+} from '@/pipeline/typed-context.js'
 
 /**
  * Register logging hooks for all phases

@@ -4,7 +4,7 @@
 
 import type { ParsedModel, ParsedField } from '../dmmf-parser.js'
 import { mapPrismaToZod } from '../type-mapper.js'
-import { toKebabCase } from '../utils/naming.js'
+import { toKebabCase } from '@/utils/naming.js'
 
 export { generateValidatorsBarrel } from './barrel-generator.js'
 

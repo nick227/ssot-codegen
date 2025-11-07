@@ -14,7 +14,7 @@ import type {
   ParseSchemaOutput
 } from '../typed-context.js'
 import type { GeneratorConfig } from '../types.js'
-import type { CLILogger } from '../../utils/cli-logger.js'
+import type { CLILogger } from '@/utils/cli-logger.js'
 
 describe('Typed Context System', () => {
   describe('BaseContext', () => {

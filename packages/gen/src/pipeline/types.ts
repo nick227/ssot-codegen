@@ -1,6 +1,6 @@
 import type { PathsConfig } from '../path-resolver.js'
 import type { ParsedModel } from '../dmmf-parser.js'
-import type { LogLevel } from '../utils/cli-logger.js'
+import type { LogLevel } from '@/utils/cli-logger.js'
 
 /**
  * Phase Result - Return value from phase execution

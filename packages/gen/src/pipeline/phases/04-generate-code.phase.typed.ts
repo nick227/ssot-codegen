@@ -8,7 +8,7 @@
 
 import path from 'node:path'
 import { generateCode, countGeneratedFiles } from '../../code-generator.js'
-import { analyzeModel } from '../../utils/relationship-analyzer.js'
+import { analyzeModel } from '@/utils/relationship-analyzer.js'
 import { TypedPhaseAdapter } from '../typed-phase-adapter.js'
 import { defaultPaths } from '../../config/default-paths.js'
 import type { 

@@ -5,7 +5,7 @@
  */
 
 import path from 'node:path'
-import { findWorkspaceRoot, getNextProjectFolder, deriveProjectName } from '../../utils/gen-folder.js'
+import { findWorkspaceRoot, getNextProjectFolder, deriveProjectName } from '@/utils/gen-folder.js'
 import { GenerationPhase, type PhaseContext, type PhaseResult } from '../phase-runner.js'
 
 export class SetupOutputDirPhase extends GenerationPhase {

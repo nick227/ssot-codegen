@@ -9,7 +9,7 @@
 
 import { readFile, writeFile as fsWriteFile } from 'node:fs/promises'
 import { TypedPhaseAdapter } from '../typed-phase-adapter.js'
-import { formatCode, isFormattingEnabled } from '../../utils/formatter.js'
+import { formatCode, isFormattingEnabled } from '@/utils/formatter.js'
 import { getTrackedPaths } from '../phase-utilities.js'
 import pLimit from 'p-limit'
 import type { 

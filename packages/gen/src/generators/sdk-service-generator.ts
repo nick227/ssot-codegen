@@ -5,7 +5,7 @@
 
 import type { ServiceAnnotation } from '../service-linker.js'
 import { inferHTTPMethod, inferRoutePath } from '../service-linker.js'
-import { kebabToCamelCase } from '../utils/naming.js'
+import { kebabToCamelCase } from '@/utils/naming.js'
 
 /**
  * Generate SDK client for a service integration

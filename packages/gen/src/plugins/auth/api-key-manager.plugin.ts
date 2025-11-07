@@ -348,7 +348,7 @@ export function extractApiKey(headers: Record<string, string | string[] | undefi
 // Manages API key lifecycle: create, validate, revoke, rotate
 
 import prisma from '@/db'
-import { generateApiKey, hashApiKey, verifyApiKey } from '../utils/api-key.util.js'
+import { generateApiKey, hashApiKey, verifyApiKey } from '@/utils/api-key.util.js'
 import type { ApiKeyCreateInput, ApiKeyRecord, ApiKeyValidationResult } from '../types/api-key.types.js'
 import { logger } from '@/logger'
 
@@ -663,7 +663,7 @@ function calculateExpiry(expiresIn: string): Date {
 // API Key Authentication Middleware
 
 import type { Request, Response, NextFunction } from 'express'
-import { extractApiKey, isValidApiKeyFormat } from '../utils/api-key.util.js'
+import { extractApiKey, isValidApiKeyFormat } from '@/utils/api-key.util.js'
 import { apiKeyService } from '../services/api-key.service.js'
 
 /**

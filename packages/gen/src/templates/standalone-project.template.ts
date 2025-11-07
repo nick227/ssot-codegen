@@ -322,7 +322,7 @@ export const notFoundHandler = (req: Request, res: Response) => {
 /**
  * Convert PascalCase to camelCase for variable names
  */
-import { toKebabCase } from '../utils/naming.js'
+import { toKebabCase } from '@/utils/naming.js'
 
 const toCamelCase = (str: string): string => {
   return str.charAt(0).toLowerCase() + str.slice(1)

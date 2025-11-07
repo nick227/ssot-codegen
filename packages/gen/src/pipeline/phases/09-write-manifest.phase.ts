@@ -8,7 +8,7 @@ import path from 'node:path'
 import crypto from 'node:crypto'
 import { GenerationPhase, type PhaseContext, type PhaseResult } from '../phase-runner.js'
 import { writeFile, getTrackedPaths } from '../phase-utilities.js'
-import { getGeneratorVersion } from '../../utils/version.js'
+import { getGeneratorVersion } from '@/utils/version.js'
 import { stringifyWithCache } from '../json-cache.js'
 
 const hash = (text: string) => crypto.createHash('sha256').update(text).digest('hex')

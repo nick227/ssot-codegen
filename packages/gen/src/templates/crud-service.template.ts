@@ -16,7 +16,7 @@
 
 import type { ParsedModel } from '../dmmf-parser.js'
 
-export { generateServiceBarrel } from '../generators/barrel-generator.js'
+export { generateServiceBarrel } from '@/generators/barrel-generator.js'
 
 export interface CRUDServiceConfig {
   /** Model name (e.g., "User") */

@@ -6,8 +6,8 @@
 
 import { describe, it, expect, beforeEach } from 'vitest'
 import { PhaseHookRegistry } from '../phase-hooks.js'
-import type { BaseContext } from '../../typed-context.js'
-import type { PhaseResult } from '../../phase-runner.js'
+import type { BaseContext } from '@/pipeline/typed-context.js'
+import type { PhaseResult } from '@/pipeline/phase-runner.js'
 
 describe('PhaseHookRegistry', () => {
   let registry: PhaseHookRegistry

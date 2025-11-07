@@ -8,7 +8,7 @@
 import path from 'node:path'
 import { readFile, writeFile as fsWriteFile } from 'node:fs/promises'
 import { GenerationPhase, type PhaseContext, type PhaseResult } from '../phase-runner.js'
-import { formatCode, isFormattingEnabled } from '../../utils/formatter.js'
+import { formatCode, isFormattingEnabled } from '@/utils/formatter.js'
 import { getTrackedPaths } from '../phase-utilities.js'
 import pLimit from 'p-limit'
 

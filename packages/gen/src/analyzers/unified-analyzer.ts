@@ -19,7 +19,7 @@
 
 import type { ParsedModel, ParsedField, ParsedSchema } from '../dmmf-parser.js'
 import type { FilterField } from './field-analyzer.js'
-import { isJunctionTable } from '../utils/junction-table.js'
+import { isJunctionTable } from '@/utils/junction-table.js'
 
 // ============================================================================
 // CONFIGURATION

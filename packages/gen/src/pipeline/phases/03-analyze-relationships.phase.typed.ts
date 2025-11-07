@@ -6,7 +6,7 @@
  * MIGRATION STATUS: ✅ Migrated to typed context
  */
 
-import { analyzeRelationshipsForSchema } from '../../utils/relationship-analyzer.js'
+import { analyzeRelationshipsForSchema } from '@/utils/relationship-analyzer.js'
 import { TypedPhaseAdapter } from '../typed-phase-adapter.js'
 import type { 
   ContextAfterPhase2, 

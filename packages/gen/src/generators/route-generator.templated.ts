@@ -6,8 +6,8 @@
  */
 
 import type { ParsedModel } from '../dmmf-parser.js'
-import { toCamelCase, toKebabCase } from '../utils/naming.js'
-import { createGeneratedFile } from '../templates/template-registry.js'
+import { toCamelCase, toKebabCase } from '@/utils/naming.js'
+import { createGeneratedFile } from '@/templates/template-registry.js'
 
 /**
  * Generate routes using template system

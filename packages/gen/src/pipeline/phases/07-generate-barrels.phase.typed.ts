@@ -8,7 +8,7 @@
 
 import { TypedPhaseAdapter } from '../typed-phase-adapter.js'
 import { writeFile, trackPath, generateEsmPath } from '../phase-utilities.js'
-import { determineBarrelWrites } from '../../utils/barrel-orchestrator.js'
+import { determineBarrelWrites } from '@/utils/barrel-orchestrator.js'
 import type { 
   ContextAfterPhase6, 
   GenerateBarrelsOutput 

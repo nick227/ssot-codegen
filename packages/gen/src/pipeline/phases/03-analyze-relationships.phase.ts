@@ -4,7 +4,7 @@
  * Analyzes model relationships (one-to-one, one-to-many, many-to-many)
  */
 
-import { analyzeRelationshipsForSchema } from '../../utils/relationship-analyzer.js'
+import { analyzeRelationshipsForSchema } from '@/utils/relationship-analyzer.js'
 import { GenerationPhase, type PhaseContext, type PhaseResult } from '../phase-runner.js'
 
 export class AnalyzeRelationshipsPhase extends GenerationPhase {

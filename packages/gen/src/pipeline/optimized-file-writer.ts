@@ -17,7 +17,7 @@
 import path from 'node:path'
 import { writeFile, generateEsmPath, trackPath as trackPathUtil } from './phase-utilities.js'
 import type { PathsConfig } from '../path-resolver.js'
-import { toKebabCase } from '../utils/naming.js'
+import { toKebabCase } from '@/utils/naming.js'
 
 // ============================================================================
 // TYPES

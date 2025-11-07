@@ -4,8 +4,8 @@
  */
 
 import type { ParsedModel, ParsedSchema } from '../dmmf-parser.js'
-import type { ModelAnalysis } from '../utils/relationship-analyzer.js'
-import { toKebabCase, toCamelCase } from '../utils/naming.js'
+import type { ModelAnalysis } from '@/utils/relationship-analyzer.js'
+import { toKebabCase, toCamelCase } from '@/utils/naming.js'
 
 // Keep for ReturnType usage
 type AnalysisType = ModelAnalysis

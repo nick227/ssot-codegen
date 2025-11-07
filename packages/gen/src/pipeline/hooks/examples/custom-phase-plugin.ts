@@ -5,8 +5,8 @@
  */
 
 import { replacePhase, wrapPhase } from '../phase-hooks.js'
-import type { ContextAfterPhase3, GenerateCodeOutput } from '../../typed-context.js'
-import type { PhaseResult } from '../../phase-runner.js'
+import type { ContextAfterPhase3, GenerateCodeOutput } from '@/pipeline/typed-context.js'
+import type { PhaseResult } from '@/pipeline/phase-runner.js'
 
 /**
  * Replace code generation phase with custom implementation

@@ -10,7 +10,7 @@ import path from 'node:path'
 import crypto from 'node:crypto'
 import { TypedPhaseAdapter } from '../typed-phase-adapter.js'
 import { writeFile, getTrackedPaths } from '../phase-utilities.js'
-import { getGeneratorVersion } from '../../utils/version.js'
+import { getGeneratorVersion } from '@/utils/version.js'
 import type { 
   ContextAfterPhase8, 
   WriteManifestOutput 

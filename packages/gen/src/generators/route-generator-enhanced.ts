@@ -3,8 +3,8 @@
  */
 
 import type { ParsedModel, ParsedSchema } from '../dmmf-parser.js'
-import type { ModelAnalysis } from '../utils/relationship-analyzer.js'
-import { toCamelCase, toKebabCase } from '../utils/naming.js'
+import type { ModelAnalysis } from '@/utils/relationship-analyzer.js'
+import { toCamelCase, toKebabCase } from '@/utils/naming.js'
 
 /**
  * Generate enhanced routes with domain methods

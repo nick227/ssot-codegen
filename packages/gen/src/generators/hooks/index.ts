@@ -5,8 +5,8 @@
  */
 
 import type { ParsedModel, ParsedSchema } from '../../dmmf-parser.js'
-import type { ModelAnalysis } from '../../utils/relationship-analyzer.js'
-import { analyzeModel } from '../../utils/relationship-analyzer.js'
+import type { ModelAnalysis } from '@/utils/relationship-analyzer.js'
+import { analyzeModel } from '@/utils/relationship-analyzer.js'
 import { generateCoreQueries, generateCoreQueriesIndex } from './core-queries-generator.js'
 import { 
   generateReactHooks, 

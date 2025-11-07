@@ -6,7 +6,7 @@
 
 import { beforePhase, afterPhase, onError } from '../phase-hooks.js'
 import { writeFile } from 'fs/promises'
-import type { BaseContext } from '../../typed-context.js'
+import type { BaseContext } from '@/pipeline/typed-context.js'
 
 interface AuditLog {
   timestamp: Date

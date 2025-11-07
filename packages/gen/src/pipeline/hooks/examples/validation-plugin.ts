@@ -5,7 +5,7 @@
  */
 
 import { afterPhase } from '../phase-hooks.js'
-import type { ContextAfterPhase1 } from '../../typed-context.js'
+import type { ContextAfterPhase1 } from '@/pipeline/typed-context.js'
 
 /**
  * Register custom validation hooks

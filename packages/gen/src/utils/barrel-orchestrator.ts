@@ -13,7 +13,7 @@ import {
   generateControllerBarrel,
   generateRoutesBarrel,
   generateLayerIndexBarrel
-} from '../generators/barrel-generator.js'
+} from '@/generators/barrel-generator.js'
 import type { PathsConfig } from '../path-resolver.js'
 
 export interface BarrelWrite {

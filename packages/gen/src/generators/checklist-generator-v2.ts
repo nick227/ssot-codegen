@@ -7,7 +7,7 @@
 
 import type { ParsedSchema, ParsedModel } from '../dmmf-parser.js'
 import type { GeneratedFiles } from '../code-generator.js'
-import { renderChecklistHTML, renderSection, type ChecklistTemplateData } from '../templates/checklist/renderer.js'
+import { renderChecklistHTML, renderSection, type ChecklistTemplateData } from '@/templates/checklist/renderer.js'
 
 export interface ChecklistConfig {
   projectName: string

@@ -3,7 +3,7 @@
  */
 
 import type { ParsedModel } from '../dmmf-parser.js'
-import { toCamelCase, toKebabCase } from '../utils/naming.js'
+import { toCamelCase, toKebabCase } from '@/utils/naming.js'
 
 export { generateRoutesBarrel } from './barrel-generator.js'
 

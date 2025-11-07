@@ -6,7 +6,7 @@
 
 import { GenerationPhase, type PhaseContext, type PhaseResult } from '../phase-runner.js'
 import { writeFile, trackPath, generateEsmPath } from '../phase-utilities.js'
-import { determineBarrelWrites } from '../../utils/barrel-orchestrator.js'
+import { determineBarrelWrites } from '@/utils/barrel-orchestrator.js'
 
 export class GenerateBarrelsPhase extends GenerationPhase {
   readonly name = 'generateBarrels'

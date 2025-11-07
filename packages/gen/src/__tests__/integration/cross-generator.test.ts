@@ -8,12 +8,12 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { TEST_OUTPUT_DIR } from './setup.js'
 import { parseDMMF } from '../../dmmf-parser.js'
-import { DTOGenerator } from '../../generators/dto-generator.js'
-import { ValidatorGenerator } from '../../generators/validator-generator.js'
-import { ServiceGenerator } from '../../generators/service-generator.js'
-import { ControllerGenerator } from '../../generators/controller-generator.js'
-import { RouteGenerator } from '../../generators/route-generator.js'
-import { generateModelSDK } from '../../generators/sdk-generator.js'
+import { DTOGenerator } from '@/generators/dto-generator.js'
+import { ValidatorGenerator } from '@/generators/validator-generator.js'
+import { ServiceGenerator } from '@/generators/service-generator.js'
+import { ControllerGenerator } from '@/generators/controller-generator.js'
+import { RouteGenerator } from '@/generators/route-generator.js'
+import { generateModelSDK } from '@/generators/sdk-generator.js'
 
 const TEST_SCHEMA = `
 datasource db {

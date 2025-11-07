@@ -6,7 +6,7 @@
 
 import type { ParsedModel } from '../dmmf-parser.js'
 import { generateEnhancedServiceMethods } from './service-method-generator.js'
-import { generateCRUDService } from '../templates/crud-service.template.js'
+import { generateCRUDService } from '@/templates/crud-service.template.js'
 
 export { generateServiceBarrel } from './barrel-generator.js'
 

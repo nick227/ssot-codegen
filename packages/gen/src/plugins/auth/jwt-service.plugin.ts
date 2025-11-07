@@ -369,7 +369,7 @@ export function generateCustomToken(payload: object, options: JWTOptions): strin
 // JWT Authentication Middleware
 
 import type { Request, Response, NextFunction } from 'express'
-import { verifyAccessToken, decodeToken } from '../utils/jwt.util.js'
+import { verifyAccessToken, decodeToken } from '@/utils/jwt.util.js'
 ${this.config.enableBlacklist ? "import { tokenService } from '../services/token.service.js'" : ''}
 
 /**
@@ -560,7 +560,7 @@ declare global {
 // Token Service - Refresh and revocation management
 
 import prisma from '@/db'
-${this.config.enableRefreshTokens ? "import { generateAccessToken, verifyRefreshToken } from '../utils/jwt.util.js'" : ''}
+${this.config.enableRefreshTokens ? "import { generateAccessToken, verifyRefreshToken } from '@/utils/jwt.util.js'" : ''}
 import type { TokenPair } from '../types/jwt.types.js'
 
 ${this.config.enableBlacklist ? `

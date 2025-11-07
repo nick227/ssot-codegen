@@ -21,7 +21,7 @@
  */
 
 import path from 'node:path'
-import { findWorkspaceRoot, getNextProjectFolder, deriveProjectName } from '../../utils/gen-folder.js'
+import { findWorkspaceRoot, getNextProjectFolder, deriveProjectName } from '@/utils/gen-folder.js'
 import { TypedPhaseAdapter } from '../typed-phase-adapter.js'
 import type { BaseContext, SetupOutputDirOutput } from '../typed-context.js'
 

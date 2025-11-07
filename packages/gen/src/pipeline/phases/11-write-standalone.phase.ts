@@ -6,9 +6,9 @@
  */
 
 import path from 'node:path'
-import { analyzeModel } from '../../utils/relationship-analyzer.js'
+import { analyzeModel } from '@/utils/relationship-analyzer.js'
 import { GenerationPhase, type PhaseContext, type PhaseResult } from '../phase-runner.js'
-import * as standaloneTemplates from '../../templates/standalone-project.template.js'
+import * as standaloneTemplates from '@/templates/standalone-project.template.js'
 import { writeFile } from '../phase-utilities.js'
 
 export class WriteStandalonePhase extends GenerationPhase {

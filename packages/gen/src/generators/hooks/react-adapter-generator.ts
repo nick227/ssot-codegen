@@ -5,7 +5,7 @@
  */
 
 import type { ParsedModel, ParsedSchema } from '../../dmmf-parser.js'
-import { analyzeModel } from '../../utils/relationship-analyzer.js'
+import { analyzeModel } from '@/utils/relationship-analyzer.js'
 
 /**
  * Generate React hooks for a model

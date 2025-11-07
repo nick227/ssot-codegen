@@ -5,10 +5,10 @@
  */
 
 import type { ParsedModel, ParsedSchema } from '../dmmf-parser.js'
-import { analyzeModel, generateSummaryInclude } from '../utils/relationship-analyzer.js'
+import { analyzeModel, generateSummaryInclude } from '@/utils/relationship-analyzer.js'
 import { generateEnhancedServiceMethods } from './service-method-generator.js'
-import { generateCRUDServiceMethods } from '../templates/crud-service.template.js'
-import { toKebabCase, toCamelCase } from '../utils/naming.js'
+import { generateCRUDServiceMethods } from '@/templates/crud-service.template.js'
+import { toKebabCase, toCamelCase } from '@/utils/naming.js'
 
 /**
  * Generate enhanced service with relationships and domain methods

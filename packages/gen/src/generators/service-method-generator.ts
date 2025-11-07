@@ -4,9 +4,9 @@
  */
 
 import type { ParsedModel } from '../dmmf-parser.js'
-import { analyzeModelCapabilities, type ModelCapabilities } from '../analyzers/index.js'
+import { analyzeModelCapabilities, type ModelCapabilities } from '@/analyzers/index.js'
 import { mapPrismaToTypeScript } from '../type-mapper.js'
-import { toCamelCase } from '../utils/naming.js'
+import { toCamelCase } from '@/utils/naming.js'
 
 /**
  * Generate enhanced service methods based on detected capabilities

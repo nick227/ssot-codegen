@@ -8,9 +8,9 @@
  */
 
 import path from 'node:path'
-import { analyzeModel } from '../../utils/relationship-analyzer.js'
+import { analyzeModel } from '@/utils/relationship-analyzer.js'
 import { TypedPhaseAdapter } from '../typed-phase-adapter.js'
-import * as standaloneTemplates from '../../templates/standalone-project.template.js'
+import * as standaloneTemplates from '@/templates/standalone-project.template.js'
 import { writeFile } from '../phase-utilities.js'
 import type { 
   ContextAfterPhase10, 
