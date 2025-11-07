@@ -18,9 +18,6 @@ Generates a complete, production-ready REST API from your Prisma schema:
 - ✅ **React Hooks** - Pre-built hooks for data fetching
 - ✅ **OpenAPI Spec** - Auto-generated API documentation
 
-- ✅ [read more...](https://medium.com/@nick.rios/ssot-codegen-pipeline-with-prisma-backed-dmmf-templates-e0fc152d469f)
-
-
 ## Quick Start
 
 ### Installation
@@ -277,6 +274,7 @@ MIT © [Nick227](https://github.com/nick227)
 - [Examples](examples/)
 - [NPM Package](https://www.npmjs.com/package/@ssot-codegen/gen)
 - [Issues](https://github.com/nick227/ssot-codegen/issues)
+- [Blog Article](https://medium.com/@nick.rios/ssot-codegen-pipeline-with-prisma-backed-dmmf-templates-e0fc152d469f)
 
 ---
 
