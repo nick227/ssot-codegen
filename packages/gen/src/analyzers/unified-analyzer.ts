@@ -382,11 +382,14 @@ function analyzeRelationships(
       
       if (hasFKFields) {
         // Has FK fields = this side owns the relation
+        // Extract to local variable for type safety (validated by hasFKFields check above)
+        const fkFields = field.relationFromFields as string[]
+        
         // Check if FK is unique to distinguish 1:1 from M:1
         
         // For single FK: check if it's unique
-        if (field.relationFromFields!.length === 1) {
-          const fkIsUnique = isFieldUnique(model, field.relationFromFields![0])
+        if (fkFields.length === 1) {
+          const fkIsUnique = isFieldUnique(model, fkFields[0])
           if (fkIsUnique) {
             isOneToOne = true  // Unique single FK = 1:1
           } else {
@@ -396,11 +399,11 @@ function analyzeRelationships(
           // For composite FK: check if there's a unique index covering ALL FK fields
           const hasCompositeUnique = Array.isArray(model.uniqueFields) && 
             model.uniqueFields.some(uniqueIndex => {
-              const fkSet = new Set(field.relationFromFields!)
+              const fkSet = new Set(fkFields)
               const indexSet = new Set(uniqueIndex)
-              // Check if FK fields are a subset of (or equal to) the unique index
-              return field.relationFromFields!.every(fk => indexSet.has(fk)) &&
-                     uniqueIndex.length === field.relationFromFields!.length
+              // Check if FK fields match the unique index exactly
+              return fkFields.every(fk => indexSet.has(fk)) &&
+                     uniqueIndex.length === fkFields.length
             })
           
           if (hasCompositeUnique) {

@@ -59,7 +59,7 @@ ${baseRoutes}${domainRoutes}
 }
 
 /**
- * Generate base CRUD routes
+ * Generate base CRUD routes (including bulk operations)
  */
 function generateExpressBaseRoutes(model: ParsedModel, modelCamel: string): string {
   return `// List all ${model.name} records (simple pagination)
@@ -83,6 +83,11 @@ ${modelCamel}Router.delete('/:id', ${modelCamel}Controller.delete${model.name})
 
 // Count ${model.name} records
 ${modelCamel}Router.get('/meta/count', ${modelCamel}Controller.count${model.name}s)
+
+// Bulk operations
+${modelCamel}Router.post('/bulk/create', ${modelCamel}Controller.bulkCreate${model.name}s)
+${modelCamel}Router.put('/bulk/update', ${modelCamel}Controller.bulkUpdate${model.name}s)
+${modelCamel}Router.delete('/bulk/delete', ${modelCamel}Controller.bulkDelete${model.name}s)
 `
 }
 

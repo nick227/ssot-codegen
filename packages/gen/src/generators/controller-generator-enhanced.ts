@@ -35,6 +35,55 @@ export function generateEnhancedController(
 }
 
 /**
+ * Generate bulk operation controllers for Express
+ */
+function generateBulkControllers(model: ParsedModel, modelCamel: string): string {
+  return `
+/**
+ * Bulk create ${model.name} records
+ */
+export const bulkCreate${model.name}s = async (req: Request, res: Response) => {
+  try {
+    const data = req.body as Array<any>
+    const result = await ${modelCamel}Service.createMany(data)
+    return res.status(201).json({ count: result.count, message: \`Created \${result.count} ${model.name} records\` })
+  } catch (error) {
+    logger.error({ error }, 'Error bulk creating ${model.name}s')
+    return res.status(500).json({ error: 'Internal Server Error' })
+  }
+}
+
+/**
+ * Bulk update ${model.name} records
+ */
+export const bulkUpdate${model.name}s = async (req: Request, res: Response) => {
+  try {
+    const { where, data } = req.body
+    const result = await ${modelCamel}Service.updateMany(where, data)
+    return res.json({ count: result.count, message: \`Updated \${result.count} ${model.name} records\` })
+  } catch (error) {
+    logger.error({ error }, 'Error bulk updating ${model.name}s')
+    return res.status(500).json({ error: 'Internal Server Error' })
+  }
+}
+
+/**
+ * Bulk delete ${model.name} records
+ */
+export const bulkDelete${model.name}s = async (req: Request, res: Response) => {
+  try {
+    const { where } = req.body
+    const result = await ${modelCamel}Service.deleteMany(where)
+    return res.json({ count: result.count, message: \`Deleted \${result.count} ${model.name} records\` })
+  } catch (error) {
+    logger.error({ error }, 'Error bulk deleting ${model.name}s')
+    return res.status(500).json({ error: 'Internal Server Error' })
+  }
+}
+`
+}
+
+/**
  * Generate Express controller with enhanced features
  */
 function generateExpressController(
@@ -70,6 +119,8 @@ function generateExpressBaseMethods(
   idType: string,
   parseId: string
 ): string {
+  const bulkMethods = generateBulkControllers(model, modelCamel)
+  
   return `/**
  * List all ${model.name} records (simple pagination from query string)
  */

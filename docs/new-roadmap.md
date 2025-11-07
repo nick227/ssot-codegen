@@ -105,10 +105,74 @@
 
 **Goal:** Support `--template-dir` flag or config that points at user templates
 
-### 8. Incremental Formatting Phase
-**Status:** Planned
+### 7. ✅ Incremental Formatting Phase
+**Status:** COMPLETE (Already Exists)
 
-**Goal:** Add final "FormatPhase" that runs Prettier/ESLint on generated tree
+**Implementation:**
+- Phase 13: FormatCodePhase already implemented
+- Runs Prettier on all generated TypeScript/JavaScript files
+- Configurable concurrency (default: 10 concurrent formats)
+- Enabled via `--format` flag or `SSOT_FORMAT_CODE=true`
+- Graceful fallback on errors
+
+**Files:**
+- `packages/gen/src/generator/phases/13-format-code.phase.ts`
+- `packages/gen/src/generator/phases/13-format-code.phase.typed.ts`
+- `packages/gen/src/utils/formatter.ts`
+
+### 8. ✅ Plugin Hook API
+**Status:** COMPLETE
+
+**Implementation:**
+- Created `hooks/phase-hooks.ts` with PhaseHookRegistry
+- beforePhase: Run code before any phase
+- afterPhase: Run code after phase completes
+- replacePhase: Replace entire phases
+- wrapPhase: Wrap with before/after logic
+- onError: Global error handler
+- Strongly-typed hooks with context safety
+
+**Examples:**
+- logging-plugin.ts: Comprehensive logging
+- validation-plugin.ts: Custom validation rules
+- custom-phase-plugin.ts: Phase replacement
+- audit-plugin.ts: Compliance tracking
+
+**Integration:**
+- PhaseRunner executes hooks automatically
+- Hook registry passed as optional param
+- Fully typed with compile-time safety
+
+**Files:**
+- `packages/gen/src/generator/hooks/phase-hooks.ts`
+- `packages/gen/src/generator/hooks/README.md`
+- `packages/gen/src/generator/hooks/examples/*.ts` (4 examples)
+- `packages/gen/src/generator/hooks/__tests__/phase-hooks.test.ts`
+- Updated: `phase-runner.ts` (hook integration)
+
+### 9. ✅ Simplified Generated APIs
+**Status:** COMPLETE
+
+**Implementation:**
+- Added bulk operation routes (POST /bulk/create, PUT /bulk/update, DELETE /bulk/delete)
+- Added bulk operation controllers (bulkCreate, bulkUpdate, bulkDelete)
+- 100% service method → HTTP endpoint coverage
+- Zero breaking changes (additive only)
+
+**Problem Solved:**
+- Before: Bulk service methods (createMany, updateMany, deleteMany) had no routes
+- After: All service methods accessible via HTTP
+
+**Benefits:**
+- Complete API coverage
+- Admin panel ready
+- Data migration support
+- Better documentation
+
+**Files:**
+- Updated: `route-generator-enhanced.ts` (added bulk routes)
+- Updated: `controller-generator-enhanced.ts` (added bulk controllers)
+- Docs: `SIMPLIFIED_API_ANALYSIS.md`, `SIMPLIFIED_API_IMPLEMENTATION.md`
 
 ---
 
