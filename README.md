@@ -270,11 +270,11 @@ MIT © [Nick227](https://github.com/nick227)
 
 ## Links
 
+- [Blog Article](https://medium.com/@nick.rios/ssot-codegen-pipeline-with-prisma-backed-dmmf-templates-e0fc152d469f)
 - [Documentation](docs/)
 - [Examples](examples/)
 - [NPM Package](https://www.npmjs.com/package/@ssot-codegen/gen)
 - [Issues](https://github.com/nick227/ssot-codegen/issues)
-- [Blog Article](https://medium.com/@nick.rios/ssot-codegen-pipeline-with-prisma-backed-dmmf-templates-e0fc152d469f)
 
 ---
 
