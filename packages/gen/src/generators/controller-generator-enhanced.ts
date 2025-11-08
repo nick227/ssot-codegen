@@ -5,9 +5,16 @@
 import type { ParsedModel, ParsedSchema } from '../dmmf-parser.js'
 import type { ModelAnalysis } from '@/utils/relationship-analyzer.js'
 import { toKebabCase, toCamelCase } from '@/utils/naming.js'
+import {
+  type ControllerConfig,
+  DEFAULT_CONTROLLER_CONFIG,
+  generateIdValidator,
+  generateErrorHandler,
+  generateBulkValidators,
+  generatePaginationHelper
+} from './controller-helpers.js'
 
-// Keep for ReturnType usage
-type AnalysisType = ModelAnalysis
+export type { ControllerConfig } from './controller-helpers.js'
 
 /**
  * Generate enhanced controller with proper logging
@@ -17,20 +24,17 @@ export function generateEnhancedController(
   model: ParsedModel,
   schema: ParsedSchema,
   framework: 'express' | 'fastify' = 'express',
-  analysis: ModelAnalysis  // ⭐ Accept cached analysis
+  analysis: ModelAnalysis,
+  config: ControllerConfig = DEFAULT_CONTROLLER_CONFIG
 ): string {
-  // Remove: const analysis = analyzeModel(model, schema)
-  const modelKebab = toKebabCase(model.name)  // Use kebab-case for imports
-  const modelCamel = toCamelCase(model.name)  // Use camelCase for variables
+  const modelKebab = toKebabCase(model.name)
+  const modelCamel = toCamelCase(model.name)
   const idType = model.idField?.type === 'String' ? 'string' : 'number'
-  const parseId = idType === 'number' 
-    ? 'parseInt(req.params.id, 10)'
-    : 'req.params.id'
   
   if (framework === 'express') {
-    return generateExpressController(model, analysis, modelKebab, modelCamel, idType, parseId)
+    return generateExpressController(model, analysis, modelKebab, modelCamel, idType, config)
   } else {
-    return generateFastifyController(model, analysis, modelKebab, modelCamel, idType, parseId)
+    return generateFastifyController(model, analysis, modelKebab, modelCamel, idType, config)
   }
 }
 
@@ -44,12 +48,16 @@ function generateBulkControllers(model: ParsedModel, modelCamel: string): string
  */
 export const bulkCreate${model.name}s = async (req: Request, res: Response) => {
   try {
-    const data = req.body as Array<any>
-    const result = await ${modelCamel}Service.createMany(data)
-    return res.status(201).json({ count: result.count, message: \`Created \${result.count} ${model.name} records\` })
+    const validated = BulkCreate${model.name}Schema.parse(req.body)
+    const result = await ${modelCamel}Service.createMany(validated.data)
+    
+    logger.info({ count: result.count }, 'Bulk created ${model.name} records')
+    return res.status(201).json({ 
+      count: result.count, 
+      message: \`Created \${String(result.count)} ${model.name} records\`
+    })
   } catch (error) {
-    logger.error({ error }, 'Error bulk creating ${model.name}s')
-    return res.status(500).json({ error: 'Internal Server Error' })
+    return handleError(error, res, 'bulk creating ${model.name}s', { operation: 'bulkCreate' })
   }
 }
 
@@ -58,12 +66,19 @@ export const bulkCreate${model.name}s = async (req: Request, res: Response) => {
  */
 export const bulkUpdate${model.name}s = async (req: Request, res: Response) => {
   try {
-    const { where, data } = req.body
-    const result = await ${modelCamel}Service.updateMany(where, data)
-    return res.json({ count: result.count, message: \`Updated \${result.count} ${model.name} records\` })
+    const validated = BulkUpdate${model.name}Schema.parse(req.body)
+    const result = await ${modelCamel}Service.updateMany(validated.where, validated.data)
+    
+    logger.info({ count: result.count, where: validated.where }, 'Bulk updated ${model.name} records')
+    return res.json({ 
+      count: result.count, 
+      message: \`Updated \${String(result.count)} ${model.name} records\`
+    })
   } catch (error) {
-    logger.error({ error }, 'Error bulk updating ${model.name}s')
-    return res.status(500).json({ error: 'Internal Server Error' })
+    return handleError(error, res, 'bulk updating ${model.name}s', { 
+      operation: 'bulkUpdate',
+      where: req.body?.where 
+    })
   }
 }
 
@@ -72,14 +87,31 @@ export const bulkUpdate${model.name}s = async (req: Request, res: Response) => {
  */
 export const bulkDelete${model.name}s = async (req: Request, res: Response) => {
   try {
-    const { where } = req.body
-    const result = await ${modelCamel}Service.deleteMany(where)
-    return res.json({ count: result.count, message: \`Deleted \${result.count} ${model.name} records\` })
+    const validated = BulkDelete${model.name}Schema.parse(req.body)
+    const result = await ${modelCamel}Service.deleteMany(validated.where)
+    
+    logger.info({ count: result.count, where: validated.where }, 'Bulk deleted ${model.name} records')
+    return res.json({ 
+      count: result.count, 
+      message: \`Deleted \${String(result.count)} ${model.name} records\`
+    })
   } catch (error) {
-    logger.error({ error }, 'Error bulk deleting ${model.name}s')
-    return res.status(500).json({ error: 'Internal Server Error' })
+    return handleError(error, res, 'bulk deleting ${model.name}s', { 
+      operation: 'bulkDelete',
+      where: req.body?.where 
+    })
   }
 }
+`
+}
+
+/**
+ * Generate helper utilities for controllers
+ */
+function generateHelpers(idType: string, config: ControllerConfig): string {
+  return `${generateIdValidator(idType)}
+${generateErrorHandler()}
+${generatePaginationHelper(config)}
 `
 }
 
@@ -88,14 +120,21 @@ export const bulkDelete${model.name}s = async (req: Request, res: Response) => {
  */
 function generateExpressController(
   model: ParsedModel,
-  analysis: AnalysisType,
+  analysis: ModelAnalysis,
   modelKebab: string,
   modelCamel: string,
   idType: string,
-  parseId: string
+  config: ControllerConfig
 ): string {
-  const baseMethods = generateExpressBaseMethods(model, modelCamel, idType, parseId)
-  const domainMethods = generateExpressDomainMethods(model, analysis, modelCamel, idType, parseId)
+  const helpers = generateHelpers(idType, config)
+  const bulkMethods = config.enableBulkOperations ? generateBulkControllers(model, modelCamel) : ''
+  const baseMethods = generateExpressBaseMethods(model, modelCamel, config)
+  const domainMethods = config.enableDomainMethods 
+    ? generateExpressDomainMethods(model, analysis, modelCamel, idType)
+    : ''
+  
+  const bulkImport = config.enableBulkOperations ? `, z` : ''
+  const bulkValidators = config.enableBulkOperations ? `\n${generateBulkValidators(model.name)}` : ''
   
   return `// @generated
 // This file is automatically generated. Do not edit manually.
@@ -103,10 +142,11 @@ function generateExpressController(
 import type { Request, Response } from 'express'
 import { ${modelCamel}Service } from '@/services/${modelKebab}/index.js'
 import { ${model.name}CreateSchema, ${model.name}UpdateSchema, ${model.name}QuerySchema } from '@/validators/${modelKebab}/index.js'
-import { ZodError } from 'zod'
-import { logger } from '@/logger'
-
-${baseMethods}${domainMethods}
+import { ZodError${bulkImport} } from 'zod'
+import { logger } from '@/logger.js'
+${bulkValidators}
+${helpers}
+${baseMethods}${bulkMethods}${domainMethods}
 `
 }
 
@@ -116,25 +156,19 @@ ${baseMethods}${domainMethods}
 function generateExpressBaseMethods(
   model: ParsedModel,
   modelCamel: string,
-  idType: string,
-  parseId: string
+  config: ControllerConfig
 ): string {
-  const bulkMethods = generateBulkControllers(model, modelCamel)
-  
   return `/**
  * List all ${model.name} records (simple pagination from query string)
  */
 export const list${model.name}s = async (req: Request, res: Response) => {
   try {
-    // Simple GET: only pagination from query params
-    const skip = req.query.skip ? parseInt(req.query.skip as string, 10) : 0
-    const take = req.query.take ? parseInt(req.query.take as string, 10) : 20
+    const pagination = parsePagination(req.query as Record<string, unknown>)
+    const result = await ${modelCamel}Service.list(pagination)
     
-    const result = await ${modelCamel}Service.list({ skip, take } as any)
     return res.json(result)
   } catch (error) {
-    logger.error({ error }, 'Error listing ${model.name}s')
-    return res.status(500).json({ error: 'Internal Server Error' })
+    return handleError(error, res, 'listing ${model.name}s', {})
   }
 }
 
@@ -145,14 +179,10 @@ export const search${model.name}s = async (req: Request, res: Response) => {
   try {
     const query = ${model.name}QuerySchema.parse(req.body)
     const result = await ${modelCamel}Service.list(query)
+    
     return res.json(result)
   } catch (error) {
-    if (error instanceof ZodError) {
-      logger.warn({ error: error.errors }, 'Validation error in search${model.name}s')
-      return res.status(400).json({ error: 'Validation Error', details: error.errors })
-    }
-    logger.error({ error }, 'Error searching ${model.name}s')
-    return res.status(500).json({ error: 'Internal Server Error' })
+    return handleError(error, res, 'searching ${model.name}s', { bodyKeys: Object.keys(req.body || {}) })
   }
 }
 
@@ -161,24 +191,23 @@ export const search${model.name}s = async (req: Request, res: Response) => {
  */
 export const get${model.name} = async (req: Request, res: Response) => {
   try {
-    const id = ${parseId}
-    ${idType === 'number' ? `
-    if (isNaN(id)) {
-      logger.warn({ id: req.params.id }, 'Invalid ID format')
-      return res.status(400).json({ error: 'Invalid ID format' })
-    }` : ''}
+    const idResult = parseIdParam(req.params.id)
     
-    const item = await ${modelCamel}Service.findById(id)
+    if (!idResult.valid) {
+      logger.warn({ idParam: req.params.id }, idResult.error)
+      return res.status(400).json({ error: idResult.error })
+    }
+    
+    const item = await ${modelCamel}Service.findById(idResult.id!)
     
     if (!item) {
-      logger.debug({ ${modelCamel}Id: id }, '${model.name} not found')
+      logger.info({ ${modelCamel}Id: idResult.id }, '${model.name} not found')
       return res.status(404).json({ error: '${model.name} not found' })
     }
     
     return res.json(item)
   } catch (error) {
-    logger.error({ error, ${modelCamel}Id: req.params.id }, 'Error getting ${model.name}')
-    return res.status(500).json({ error: 'Internal Server Error' })
+    return handleError(error, res, 'getting ${model.name}', { ${modelCamel}Id: req.params.id })
   }
 }
 
@@ -189,14 +218,10 @@ export const create${model.name} = async (req: Request, res: Response) => {
   try {
     const data = ${model.name}CreateSchema.parse(req.body)
     const item = await ${modelCamel}Service.create(data)
+    
     return res.status(201).json(item)
   } catch (error) {
-    if (error instanceof ZodError) {
-      logger.warn({ error: error.errors }, 'Validation error in create${model.name}')
-      return res.status(400).json({ error: 'Validation Error', details: error.errors })
-    }
-    logger.error({ error }, 'Error creating ${model.name}')
-    return res.status(500).json({ error: 'Internal Server Error' })
+    return handleError(error, res, 'creating ${model.name}', { bodyKeys: Object.keys(req.body || {}) })
   }
 }
 
@@ -205,29 +230,27 @@ export const create${model.name} = async (req: Request, res: Response) => {
  */
 export const update${model.name} = async (req: Request, res: Response) => {
   try {
-    const id = ${parseId}
-    ${idType === 'number' ? `
-    if (isNaN(id)) {
-      logger.warn({ id: req.params.id }, 'Invalid ID format')
-      return res.status(400).json({ error: 'Invalid ID format' })
-    }` : ''}
+    const idResult = parseIdParam(req.params.id)
+    
+    if (!idResult.valid) {
+      logger.warn({ idParam: req.params.id }, idResult.error)
+      return res.status(400).json({ error: idResult.error })
+    }
     
     const data = ${model.name}UpdateSchema.parse(req.body)
-    const item = await ${modelCamel}Service.update(id, data)
+    const item = await ${modelCamel}Service.update(idResult.id!, data)
     
     if (!item) {
-      logger.debug({ ${modelCamel}Id: id }, '${model.name} not found for update')
+      logger.info({ ${modelCamel}Id: idResult.id }, '${model.name} not found for update')
       return res.status(404).json({ error: '${model.name} not found' })
     }
     
     return res.json(item)
   } catch (error) {
-    if (error instanceof ZodError) {
-      logger.warn({ error: error.errors, ${modelCamel}Id: req.params.id }, 'Validation error in update${model.name}')
-      return res.status(400).json({ error: 'Validation Error', details: error.errors })
-    }
-    logger.error({ error, ${modelCamel}Id: req.params.id }, 'Error updating ${model.name}')
-    return res.status(500).json({ error: 'Internal Server Error' })
+    return handleError(error, res, 'updating ${model.name}', { 
+      ${modelCamel}Id: req.params.id,
+      bodyKeys: Object.keys(req.body || {})
+    })
   }
 }
 
@@ -236,24 +259,23 @@ export const update${model.name} = async (req: Request, res: Response) => {
  */
 export const delete${model.name} = async (req: Request, res: Response) => {
   try {
-    const id = ${parseId}
-    ${idType === 'number' ? `
-    if (isNaN(id)) {
-      logger.warn({ id: req.params.id }, 'Invalid ID format')
-      return res.status(400).json({ error: 'Invalid ID format' })
-    }` : ''}
+    const idResult = parseIdParam(req.params.id)
     
-    const deleted = await ${modelCamel}Service.delete(id)
+    if (!idResult.valid) {
+      logger.warn({ idParam: req.params.id }, idResult.error)
+      return res.status(400).json({ error: idResult.error })
+    }
+    
+    const deleted = await ${modelCamel}Service.delete(idResult.id!)
     
     if (!deleted) {
-      logger.debug({ ${modelCamel}Id: id }, '${model.name} not found for delete')
+      logger.info({ ${modelCamel}Id: idResult.id }, '${model.name} not found for delete')
       return res.status(404).json({ error: '${model.name} not found' })
     }
     
     return res.status(204).send()
   } catch (error) {
-    logger.error({ error, ${modelCamel}Id: req.params.id }, 'Error deleting ${model.name}')
-    return res.status(500).json({ error: 'Internal Server Error' })
+    return handleError(error, res, 'deleting ${model.name}', { ${modelCamel}Id: req.params.id })
   }
 }
 
@@ -263,10 +285,10 @@ export const delete${model.name} = async (req: Request, res: Response) => {
 export const count${model.name}s = async (_req: Request, res: Response) => {
   try {
     const total = await ${modelCamel}Service.count()
+    
     return res.json({ total })
   } catch (error) {
-    logger.error({ error }, 'Error counting ${model.name}s')
-    return res.status(500).json({ error: 'Internal Server Error' })
+    return handleError(error, res, 'counting ${model.name}s', {})
   }
 }
 `
@@ -277,10 +299,9 @@ export const count${model.name}s = async (_req: Request, res: Response) => {
  */
 function generateExpressDomainMethods(
   model: ParsedModel,
-  analysis: AnalysisType,
+  analysis: ModelAnalysis,
   modelCamel: string,
-  idType: string,
-  parseId: string
+  idType: string
 ): string {
   const methods: string[] = []
   
@@ -293,22 +314,22 @@ function generateExpressDomainMethods(
 export const get${model.name}BySlug = async (req: Request, res: Response) => {
   try {
     const { slug } = req.params
-    if (!slug) {
-      logger.warn('Slug parameter missing')
+    
+    if (!slug || typeof slug !== 'string' || slug.trim() === '') {
+      logger.warn({ slug }, 'Invalid or missing slug parameter')
       return res.status(400).json({ error: 'Slug parameter is required' })
     }
     
-    const item = await ${modelCamel}Service.findBySlug(slug)
+    const item = await ${modelCamel}Service.findBySlug(slug.trim())
     
     if (!item) {
-      logger.debug({ slug }, '${model.name} not found by slug')
+      logger.info({ slug }, '${model.name} not found by slug')
       return res.status(404).json({ error: '${model.name} not found' })
     }
     
     return res.json(item)
   } catch (error) {
-    logger.error({ error, slug: req.params.slug }, 'Error getting ${model.name} by slug')
-    return res.status(500).json({ error: 'Internal Server Error' })
+    return handleError(error, res, 'getting ${model.name} by slug', { slug: req.params.slug })
   }
 }`)
   }
@@ -323,14 +344,10 @@ export const listPublished${model.name}s = async (req: Request, res: Response) =
   try {
     const query = ${model.name}QuerySchema.parse(req.query)
     const result = await ${modelCamel}Service.listPublished(query)
+    
     return res.json(result)
   } catch (error) {
-    if (error instanceof ZodError) {
-      logger.warn({ error: error.errors }, 'Validation error in listPublished${model.name}s')
-      return res.status(400).json({ error: 'Validation Error', details: error.errors })
-    }
-    logger.error({ error }, 'Error listing published ${model.name}s')
-    return res.status(500).json({ error: 'Internal Server Error' })
+    return handleError(error, res, 'listing published ${model.name}s', {})
   }
 }
 
@@ -339,24 +356,23 @@ export const listPublished${model.name}s = async (req: Request, res: Response) =
  */
 export const publish${model.name} = async (req: Request, res: Response) => {
   try {
-    const id = ${parseId}
-    ${idType === 'number' ? `
-    if (isNaN(id)) {
-      logger.warn({ id: req.params.id }, 'Invalid ID format')
-      return res.status(400).json({ error: 'Invalid ID format' })
-    }` : ''}
+    const idResult = parseIdParam(req.params.id)
     
-    const item = await ${modelCamel}Service.publish(id)
+    if (!idResult.valid) {
+      logger.warn({ idParam: req.params.id }, idResult.error)
+      return res.status(400).json({ error: idResult.error })
+    }
+    
+    const item = await ${modelCamel}Service.publish(idResult.id!)
     
     if (!item) {
-      logger.debug({ ${modelCamel}Id: id }, '${model.name} not found for publish')
+      logger.info({ ${modelCamel}Id: idResult.id }, '${model.name} not found for publish')
       return res.status(404).json({ error: '${model.name} not found' })
     }
     
     return res.json(item)
   } catch (error) {
-    logger.error({ error, ${modelCamel}Id: req.params.id }, 'Error publishing ${model.name}')
-    return res.status(500).json({ error: 'Internal Server Error' })
+    return handleError(error, res, 'publishing ${model.name}', { ${modelCamel}Id: req.params.id })
   }
 }
 
@@ -365,54 +381,53 @@ export const publish${model.name} = async (req: Request, res: Response) => {
  */
 export const unpublish${model.name} = async (req: Request, res: Response) => {
   try {
-    const id = ${parseId}
-    ${idType === 'number' ? `
-    if (isNaN(id)) {
-      logger.warn({ id: req.params.id }, 'Invalid ID format')
-      return res.status(400).json({ error: 'Invalid ID format' })
-    }` : ''}
+    const idResult = parseIdParam(req.params.id)
     
-    const item = await ${modelCamel}Service.unpublish(id)
+    if (!idResult.valid) {
+      logger.warn({ idParam: req.params.id }, idResult.error)
+      return res.status(400).json({ error: idResult.error })
+    }
+    
+    const item = await ${modelCamel}Service.unpublish(idResult.id!)
     
     if (!item) {
-      logger.debug({ ${modelCamel}Id: id }, '${model.name} not found for unpublish')
+      logger.info({ ${modelCamel}Id: idResult.id }, '${model.name} not found for unpublish')
       return res.status(404).json({ error: '${model.name} not found' })
     }
     
     return res.json(item)
   } catch (error) {
-    logger.error({ error, ${modelCamel}Id: req.params.id }, 'Error unpublishing ${model.name}')
-    return res.status(500).json({ error: 'Internal Server Error' })
+    return handleError(error, res, 'unpublishing ${model.name}', { ${modelCamel}Id: req.params.id })
   }
 }`)
   }
   
-  // View counter
-  if (analysis.specialFields.views) {
+  // View counter (with null check for specialFields)
+  if (analysis.specialFields?.views) {
     methods.push(`
 /**
  * Increment ${model.name} views
  */
 export const increment${model.name}Views = async (req: Request, res: Response) => {
   try {
-    const id = ${parseId}
-    ${idType === 'number' ? `
-    if (isNaN(id)) {
-      logger.warn({ id: req.params.id }, 'Invalid ID format')
-      return res.status(400).json({ error: 'Invalid ID format' })
-    }` : ''}
+    const idResult = parseIdParam(req.params.id)
     
-    await ${modelCamel}Service.incrementViews(id)
+    if (!idResult.valid) {
+      logger.warn({ idParam: req.params.id }, idResult.error)
+      return res.status(400).json({ error: idResult.error })
+    }
+    
+    await ${modelCamel}Service.incrementViews(idResult.id!)
+    
     return res.status(204).send()
   } catch (error) {
-    logger.error({ error, ${modelCamel}Id: req.params.id }, 'Error incrementing ${model.name} views')
-    return res.status(500).json({ error: 'Internal Server Error' })
+    return handleError(error, res, 'incrementing ${model.name} views', { ${modelCamel}Id: req.params.id })
   }
 }`)
   }
   
-  // Approval workflow
-  if (analysis.specialFields.approved) {
+  // Approval workflow (with null check for specialFields)
+  if (analysis.specialFields?.approved) {
     methods.push(`
 /**
  * List pending ${model.name} records
@@ -421,14 +436,10 @@ export const listPending${model.name}s = async (req: Request, res: Response) => 
   try {
     const query = ${model.name}QuerySchema.parse(req.query)
     const result = await ${modelCamel}Service.listPending(query)
+    
     return res.json(result)
   } catch (error) {
-    if (error instanceof ZodError) {
-      logger.warn({ error: error.errors }, 'Validation error in listPending${model.name}s')
-      return res.status(400).json({ error: 'Validation Error', details: error.errors })
-    }
-    logger.error({ error }, 'Error listing pending ${model.name}s')
-    return res.status(500).json({ error: 'Internal Server Error' })
+    return handleError(error, res, 'listing pending ${model.name}s', {})
   }
 }
 
@@ -437,51 +448,502 @@ export const listPending${model.name}s = async (req: Request, res: Response) => 
  */
 export const approve${model.name} = async (req: Request, res: Response) => {
   try {
-    const id = ${parseId}
-    ${idType === 'number' ? `
-    if (isNaN(id)) {
-      logger.warn({ id: req.params.id }, 'Invalid ID format')
-      return res.status(400).json({ error: 'Invalid ID format' })
-    }` : ''}
+    const idResult = parseIdParam(req.params.id)
     
-    const item = await ${modelCamel}Service.approve(id)
+    if (!idResult.valid) {
+      logger.warn({ idParam: req.params.id }, idResult.error)
+      return res.status(400).json({ error: idResult.error })
+    }
+    
+    const item = await ${modelCamel}Service.approve(idResult.id!)
     
     if (!item) {
-      logger.debug({ ${modelCamel}Id: id }, '${model.name} not found for approval')
+      logger.info({ ${modelCamel}Id: idResult.id }, '${model.name} not found for approval')
       return res.status(404).json({ error: '${model.name} not found' })
     }
     
     return res.json(item)
   } catch (error) {
-    logger.error({ error, ${modelCamel}Id: req.params.id }, 'Error approving ${model.name}')
-    return res.status(500).json({ error: 'Internal Server Error' })
+    return handleError(error, res, 'approving ${model.name}', { ${modelCamel}Id: req.params.id })
   }
 }`)
   }
   
-  return methods.length > 0 ? '\n' + methods.join('\n') : ''
+  return methods.length > 0 ? '\n' + methods.join('') : ''
 }
 
 /**
- * Generate Fastify controller (similar pattern)
+ * Generate Fastify controller with proper implementation
  */
 function generateFastifyController(
   model: ParsedModel,
-  analysis: AnalysisType,
+  analysis: ModelAnalysis,
   modelKebab: string,
   modelCamel: string,
   idType: string,
-  parseId: string
+  config: ControllerConfig
 ): string {
-  // For brevity, similar structure to Express but with Fastify types
+  const helpers = generateFastifyHelpers(idType, config)
+  const bulkMethods = config.enableBulkOperations ? generateFastifyBulkControllers(model, modelCamel) : ''
+  const baseMethods = generateFastifyBaseMethods(model, modelCamel, config)
+  const domainMethods = config.enableDomainMethods 
+    ? generateFastifyDomainMethods(model, analysis, modelCamel, idType)
+    : ''
+  
+  const bulkImport = config.enableBulkOperations ? `, z` : ''
+  const bulkValidators = config.enableBulkOperations ? `\n${generateBulkValidators(model.name)}` : ''
+  
   return `// @generated
-// Fastify controller - TBD
+// This file is automatically generated. Do not edit manually.
+
 import type { FastifyRequest, FastifyReply } from 'fastify'
 import { ${modelCamel}Service } from '@/services/${modelKebab}/index.js'
+import { ${model.name}CreateSchema, ${model.name}UpdateSchema, ${model.name}QuerySchema } from '@/validators/${modelKebab}/index.js'
+import { ZodError${bulkImport} } from 'zod'
 import { logger } from '@/logger.js'
-
-// TODO: Generate Fastify controller methods
+${bulkValidators}
+${helpers}
+${baseMethods}${bulkMethods}${domainMethods}
 `
 }
+
+/**
+ * Generate helper utilities for Fastify controllers
+ */
+function generateFastifyHelpers(idType: string, config: ControllerConfig): string {
+  const { skip, take } = config.paginationDefaults || { skip: 0, take: 20 }
+  
+  const idValidator = idType === 'number' ? `
+/**
+ * Parse and validate ID parameter
+ */
+function parseIdParam(idParam: string): { valid: boolean; id?: number; error?: string } {
+  const parsed = parseInt(idParam, 10)
+  if (isNaN(parsed) || !Number.isFinite(parsed)) {
+    return { valid: false, error: 'Invalid ID format: expected a valid number' }
+  }
+  return { valid: true, id: parsed }
+}` : `
+/**
+ * Parse and validate ID parameter
+ */
+function parseIdParam(idParam: string): { valid: boolean; id?: string; error?: string } {
+  if (!idParam || typeof idParam !== 'string' || idParam.trim() === '') {
+    return { valid: false, error: 'Invalid ID format: expected a non-empty string' }
+  }
+  return { valid: true, id: idParam.trim() }
+}`
+
+  return `${idValidator}
+
+/**
+ * Standard error response handler for Fastify
+ */
+function handleError(
+  error: unknown,
+  reply: FastifyReply,
+  context: string,
+  logContext?: Record<string, unknown>
+): FastifyReply {
+  if (error instanceof ZodError) {
+    logger.warn({ ...logContext, validationErrors: error.errors }, \`Validation error: \${context}\`)
+    return reply.code(400).send({ error: 'Validation Error', details: error.errors })
+  }
+  
+  logger.error({ ...logContext, error }, \`Error: \${context}\`)
+  return reply.code(500).send({ error: 'Internal Server Error' })
+}
+
+/**
+ * Parse pagination from query params with defaults
+ */
+function parsePagination(query: Record<string, unknown>): { skip: number; take: number } {
+  const skip = query.skip ? parseInt(query.skip as string, 10) : ${skip}
+  const take = query.take ? parseInt(query.take as string, 10) : ${take}
+  
+  return {
+    skip: isNaN(skip) || skip < 0 ? ${skip} : skip,
+    take: isNaN(take) || take < 1 ? ${take} : Math.min(take, 100)
+  }
+}
+`
+}
+
+/**
+ * Generate Fastify base CRUD methods
+ */
+function generateFastifyBaseMethods(
+  model: ParsedModel,
+  modelCamel: string,
+  config: ControllerConfig
+): string {
+  return `/**
+ * List all ${model.name} records
+ */
+export const list${model.name}s = async (req: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const pagination = parsePagination(req.query as Record<string, unknown>)
+    const result = await ${modelCamel}Service.list(pagination)
+    
+    return reply.send(result)
+  } catch (error) {
+    return handleError(error, reply, 'listing ${model.name}s', {})
+  }
+}
+
+/**
+ * Search ${model.name} records
+ */
+export const search${model.name}s = async (req: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const query = ${model.name}QuerySchema.parse(req.body)
+    const result = await ${modelCamel}Service.list(query)
+    
+    return reply.send(result)
+  } catch (error) {
+    return handleError(error, reply, 'searching ${model.name}s', {})
+  }
+}
+
+/**
+ * Get ${model.name} by ID
+ */
+export const get${model.name} = async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  try {
+    const idResult = parseIdParam(req.params.id)
+    
+    if (!idResult.valid) {
+      logger.warn({ idParam: req.params.id }, idResult.error)
+      return reply.code(400).send({ error: idResult.error })
+    }
+    
+    const item = await ${modelCamel}Service.findById(idResult.id!)
+    
+    if (!item) {
+      logger.info({ ${modelCamel}Id: idResult.id }, '${model.name} not found')
+      return reply.code(404).send({ error: '${model.name} not found' })
+    }
+    
+    return reply.send(item)
+  } catch (error) {
+    return handleError(error, reply, 'getting ${model.name}', { ${modelCamel}Id: req.params.id })
+  }
+}
+
+/**
+ * Create ${model.name}
+ */
+export const create${model.name} = async (req: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const data = ${model.name}CreateSchema.parse(req.body)
+    const item = await ${modelCamel}Service.create(data)
+    
+    return reply.code(201).send(item)
+  } catch (error) {
+    return handleError(error, reply, 'creating ${model.name}', {})
+  }
+}
+
+/**
+ * Update ${model.name}
+ */
+export const update${model.name} = async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  try {
+    const idResult = parseIdParam(req.params.id)
+    
+    if (!idResult.valid) {
+      logger.warn({ idParam: req.params.id }, idResult.error)
+      return reply.code(400).send({ error: idResult.error })
+    }
+    
+    const data = ${model.name}UpdateSchema.parse(req.body)
+    const item = await ${modelCamel}Service.update(idResult.id!, data)
+    
+    if (!item) {
+      logger.info({ ${modelCamel}Id: idResult.id }, '${model.name} not found for update')
+      return reply.code(404).send({ error: '${model.name} not found' })
+    }
+    
+    return reply.send(item)
+  } catch (error) {
+    return handleError(error, reply, 'updating ${model.name}', { ${modelCamel}Id: req.params.id })
+  }
+}
+
+/**
+ * Delete ${model.name}
+ */
+export const delete${model.name} = async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  try {
+    const idResult = parseIdParam(req.params.id)
+    
+    if (!idResult.valid) {
+      logger.warn({ idParam: req.params.id }, idResult.error)
+      return reply.code(400).send({ error: idResult.error })
+    }
+    
+    const deleted = await ${modelCamel}Service.delete(idResult.id!)
+    
+    if (!deleted) {
+      logger.info({ ${modelCamel}Id: idResult.id }, '${model.name} not found for delete')
+      return reply.code(404).send({ error: '${model.name} not found' })
+    }
+    
+    return reply.code(204).send()
+  } catch (error) {
+    return handleError(error, reply, 'deleting ${model.name}', { ${modelCamel}Id: req.params.id })
+  }
+}
+
+/**
+ * Count ${model.name} records
+ */
+export const count${model.name}s = async (_req: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const total = await ${modelCamel}Service.count()
+    
+    return reply.send({ total })
+  } catch (error) {
+    return handleError(error, reply, 'counting ${model.name}s', {})
+  }
+}
+`
+}
+
+/**
+ * Generate Fastify bulk controllers
+ */
+function generateFastifyBulkControllers(model: ParsedModel, modelCamel: string): string {
+  return `
+/**
+ * Bulk create ${model.name} records
+ */
+export const bulkCreate${model.name}s = async (req: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const validated = BulkCreate${model.name}Schema.parse(req.body)
+    const result = await ${modelCamel}Service.createMany(validated.data)
+    
+    logger.info({ count: result.count }, 'Bulk created ${model.name} records')
+    return reply.code(201).send({ 
+      count: result.count, 
+      message: \`Created \${String(result.count)} ${model.name} records\`
+    })
+  } catch (error) {
+    return handleError(error, reply, 'bulk creating ${model.name}s', { operation: 'bulkCreate' })
+  }
+}
+
+/**
+ * Bulk update ${model.name} records
+ */
+export const bulkUpdate${model.name}s = async (req: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const validated = BulkUpdate${model.name}Schema.parse(req.body)
+    const result = await ${modelCamel}Service.updateMany(validated.where, validated.data)
+    
+    logger.info({ count: result.count }, 'Bulk updated ${model.name} records')
+    return reply.send({ 
+      count: result.count, 
+      message: \`Updated \${String(result.count)} ${model.name} records\`
+    })
+  } catch (error) {
+    return handleError(error, reply, 'bulk updating ${model.name}s', { operation: 'bulkUpdate' })
+  }
+}
+
+/**
+ * Bulk delete ${model.name} records
+ */
+export const bulkDelete${model.name}s = async (req: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const validated = BulkDelete${model.name}Schema.parse(req.body)
+    const result = await ${modelCamel}Service.deleteMany(validated.where)
+    
+    logger.info({ count: result.count }, 'Bulk deleted ${model.name} records')
+    return reply.send({ 
+      count: result.count, 
+      message: \`Deleted \${String(result.count)} ${model.name} records\`
+    })
+  } catch (error) {
+    return handleError(error, reply, 'bulk deleting ${model.name}s', { operation: 'bulkDelete' })
+  }
+}
+`
+}
+
+/**
+ * Generate Fastify domain methods
+ */
+function generateFastifyDomainMethods(
+  model: ParsedModel,
+  analysis: ModelAnalysis,
+  modelCamel: string,
+  idType: string
+): string {
+  const methods: string[] = []
+  
+  if (analysis.hasSlugField) {
+    methods.push(`
+/**
+ * Get ${model.name} by slug
+ */
+export const get${model.name}BySlug = async (req: FastifyRequest<{ Params: { slug: string } }>, reply: FastifyReply) => {
+  try {
+    const { slug } = req.params
+    
+    if (!slug || typeof slug !== 'string' || slug.trim() === '') {
+      logger.warn({ slug }, 'Invalid or missing slug parameter')
+      return reply.code(400).send({ error: 'Slug parameter is required' })
+    }
+    
+    const item = await ${modelCamel}Service.findBySlug(slug.trim())
+    
+    if (!item) {
+      logger.info({ slug }, '${model.name} not found by slug')
+      return reply.code(404).send({ error: '${model.name} not found' })
+    }
+    
+    return reply.send(item)
+  } catch (error) {
+    return handleError(error, reply, 'getting ${model.name} by slug', { slug: req.params.slug })
+  }
+}`)
+  }
+  
+  if (analysis.hasPublishedField) {
+    methods.push(`
+/**
+ * List published ${model.name} records
+ */
+export const listPublished${model.name}s = async (req: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const query = ${model.name}QuerySchema.parse(req.query)
+    const result = await ${modelCamel}Service.listPublished(query)
+    
+    return reply.send(result)
+  } catch (error) {
+    return handleError(error, reply, 'listing published ${model.name}s', {})
+  }
+}
+
+/**
+ * Publish ${model.name}
+ */
+export const publish${model.name} = async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  try {
+    const idResult = parseIdParam(req.params.id)
+    
+    if (!idResult.valid) {
+      logger.warn({ idParam: req.params.id }, idResult.error)
+      return reply.code(400).send({ error: idResult.error })
+    }
+    
+    const item = await ${modelCamel}Service.publish(idResult.id!)
+    
+    if (!item) {
+      logger.info({ ${modelCamel}Id: idResult.id }, '${model.name} not found for publish')
+      return reply.code(404).send({ error: '${model.name} not found' })
+    }
+    
+    return reply.send(item)
+  } catch (error) {
+    return handleError(error, reply, 'publishing ${model.name}', { ${modelCamel}Id: req.params.id })
+  }
+}
+
+/**
+ * Unpublish ${model.name}
+ */
+export const unpublish${model.name} = async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  try {
+    const idResult = parseIdParam(req.params.id)
+    
+    if (!idResult.valid) {
+      logger.warn({ idParam: req.params.id }, idResult.error)
+      return reply.code(400).send({ error: idResult.error })
+    }
+    
+    const item = await ${modelCamel}Service.unpublish(idResult.id!)
+    
+    if (!item) {
+      logger.info({ ${modelCamel}Id: idResult.id }, '${model.name} not found for unpublish')
+      return reply.code(404).send({ error: '${model.name} not found' })
+    }
+    
+    return reply.send(item)
+  } catch (error) {
+    return handleError(error, reply, 'unpublishing ${model.name}', { ${modelCamel}Id: req.params.id })
+  }
+}`)
+  }
+  
+  if (analysis.specialFields?.views) {
+    methods.push(`
+/**
+ * Increment ${model.name} views
+ */
+export const increment${model.name}Views = async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  try {
+    const idResult = parseIdParam(req.params.id)
+    
+    if (!idResult.valid) {
+      logger.warn({ idParam: req.params.id }, idResult.error)
+      return reply.code(400).send({ error: idResult.error })
+    }
+    
+    await ${modelCamel}Service.incrementViews(idResult.id!)
+    
+    return reply.code(204).send()
+  } catch (error) {
+    return handleError(error, reply, 'incrementing ${model.name} views', { ${modelCamel}Id: req.params.id })
+  }
+}`)
+  }
+  
+  if (analysis.specialFields?.approved) {
+    methods.push(`
+/**
+ * List pending ${model.name} records
+ */
+export const listPending${model.name}s = async (req: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const query = ${model.name}QuerySchema.parse(req.query)
+    const result = await ${modelCamel}Service.listPending(query)
+    
+    return reply.send(result)
+  } catch (error) {
+    return handleError(error, reply, 'listing pending ${model.name}s', {})
+  }
+}
+
+/**
+ * Approve ${model.name}
+ */
+export const approve${model.name} = async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  try {
+    const idResult = parseIdParam(req.params.id)
+    
+    if (!idResult.valid) {
+      logger.warn({ idParam: req.params.id }, idResult.error)
+      return reply.code(400).send({ error: idResult.error })
+    }
+    
+    const item = await ${modelCamel}Service.approve(idResult.id!)
+    
+    if (!item) {
+      logger.info({ ${modelCamel}Id: idResult.id }, '${model.name} not found for approval')
+      return reply.code(404).send({ error: '${model.name} not found' })
+    }
+    
+    return reply.send(item)
+  } catch (error) {
+    return handleError(error, reply, 'approving ${model.name}', { ${modelCamel}Id: req.params.id })
+  }
+}`)
+  }
+  
+  return methods.length > 0 ? '\n' + methods.join('') : ''
+}
+
 
 
