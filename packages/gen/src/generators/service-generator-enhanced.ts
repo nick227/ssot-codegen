@@ -2,10 +2,12 @@
  * Enhanced Service Generator - Generates services with relationships and domain logic
  * 
  * REFACTORED: Now uses shared CRUD template for base methods
+ * ENHANCED: Uses unified analyzer for soft-delete + auto-includes
  */
 
 import type { ParsedModel, ParsedSchema } from '../dmmf-parser.js'
 import { analyzeModel, generateSummaryInclude } from '@/utils/relationship-analyzer.js'
+import { analyzeModelUnified, generateIncludeObject } from '../analyzers/unified-analyzer.js'
 import { generateEnhancedServiceMethods } from './service-method-generator.js'
 import { generateCRUDServiceMethods } from '@/templates/crud-service.template.js'
 import { toKebabCase, toCamelCase } from '@/utils/naming.js'
@@ -15,12 +17,13 @@ import { toKebabCase, toCamelCase } from '@/utils/naming.js'
  */
 export function generateEnhancedService(model: ParsedModel, schema: ParsedSchema): string {
   const analysis = analyzeModel(model, schema)
+  const unifiedAnalysis = analyzeModelUnified(model, schema)
   const modelKebab = toKebabCase(model.name)  // Use kebab-case for imports
   const modelCamel = toCamelCase(model.name)  // Use camelCase for variable names
   const idType = model.idField?.type === 'String' ? 'string' : 'number'
   
   // Base CRUD methods
-  const baseMethods = generateBaseMethods(model, analysis, modelCamel, idType)
+  const baseMethods = generateBaseMethods(model, analysis, unifiedAnalysis, modelCamel, idType)
   
   // Domain-specific methods
   const domainMethods = generateDomainMethods(model, analysis, modelCamel, idType)
@@ -49,15 +52,21 @@ ${baseMethods}${domainMethods}${enhancedMethods}
 /**
  * Generate base CRUD methods with relationship loading
  * REFACTORED: Now uses shared CRUD template (eliminates ~110 lines)
+ * ENHANCED: Now includes soft-delete filtering and auto-includes from unified analyzer
  */
 function generateBaseMethods(
   model: ParsedModel,
   analysis: ReturnType<typeof analyzeModel>,
+  unifiedAnalysis: ReturnType<typeof analyzeModelUnified>,
   modelCamel: string,
   idType: string
 ): string {
   const includeStmt = generateSummaryInclude(analysis)
   const hasRelationships = analysis.autoIncludeRelations.length > 0
+  
+  // Get soft-delete and auto-include info from unified analyzer
+  const hasSoftDelete = unifiedAnalysis.capabilities.hasSoftDelete
+  const autoInclude = generateIncludeObject(unifiedAnalysis)
   
   // Use shared CRUD template for standard operations
   const crudMethods = generateCRUDServiceMethods({
@@ -66,7 +75,9 @@ function generateBaseMethods(
     idType: idType as 'string' | 'number',
     includeRelationships: hasRelationships,
     includeStatement: includeStmt,
-    enableLogging: true
+    enableLogging: true,
+    hasSoftDelete,
+    autoInclude
   })
   
   // Add bulk operations (specific to enhanced generator)

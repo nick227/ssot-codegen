@@ -57,7 +57,8 @@ export class WriteInfrastructurePhase extends GenerationPhase {
     const platformDir = path.join(cfg.rootDir, 'platform')
     
     // Load platform templates
-    const platformTemplates = await this.loadPlatformTemplates()
+    const dbName = context.config.projectName || 'app'
+    const platformTemplates = await this.loadPlatformTemplates(dbName)
     
     // Write config.ts
     const configPath = path.join(platformDir, 'config.ts')
@@ -100,7 +101,6 @@ export * from './health.js'
     // ENVIRONMENT TEMPLATES
     // ========================================================================
     const projectRoot = cfg.rootDir.replace(/[\/\\]src$/, '')
-    const dbName = context.config.projectName || 'app'
     
     // .env.example
     const envExamplePath = path.join(projectRoot, '.env.example')
@@ -131,22 +131,27 @@ export * from './health.js'
     }
   }
   
-  private async loadPlatformTemplates() {
-    const templatePath = (name: string) => 
-      path.join(process.cwd(), 'packages', 'templates-default', 'src', 'platform', `${name}.hbs`)
-    
-    const envTemplatePath = (name: string) =>
-      path.join(process.cwd(), 'packages', 'templates-default', 'src', 'env', `${name}.hbs`)
+  private async loadPlatformTemplates(dbName: string = 'app') {
+    const {
+      getConfigTemplate,
+      getLoggerTemplate,
+      getErrorTemplate,
+      getSecurityTemplate,
+      getHealthTemplate,
+      getEnvExampleTemplate,
+      getEnvDevelopmentTemplate,
+      getEnvTestTemplate
+    } = await import('../../templates/platform-infrastructure.template.js')
     
     return {
-      config: await fs.readFile(templatePath('config'), 'utf-8'),
-      logger: await fs.readFile(templatePath('logger'), 'utf-8'),
-      error: await fs.readFile(templatePath('error'), 'utf-8'),
-      security: await fs.readFile(templatePath('security'), 'utf-8'),
-      health: await fs.readFile(templatePath('health'), 'utf-8'),
-      envExample: await fs.readFile(envTemplatePath('env-example'), 'utf-8'),
-      envDevelopment: await fs.readFile(envTemplatePath('env-development'), 'utf-8'),
-      envTest: await fs.readFile(envTemplatePath('env-test'), 'utf-8'),
+      config: getConfigTemplate(),
+      logger: getLoggerTemplate(),
+      error: getErrorTemplate(),
+      security: getSecurityTemplate(),
+      health: getHealthTemplate(),
+      envExample: getEnvExampleTemplate(dbName),
+      envDevelopment: getEnvDevelopmentTemplate(dbName),
+      envTest: getEnvTestTemplate(),
     }
   }
   
