@@ -34,16 +34,42 @@ export const DEFAULT_CONTROLLER_CONFIG: ControllerConfig = {
 }
 
 /**
- * Generate centralized ID validation helper
+ * Generate centralized ID validation helper with proper type handling
  */
-export function generateIdValidator(idType: string, sanitizeErrors: boolean = true): string {
-  const errorMessage = sanitizeErrors ? 'Invalid identifier' : 
-    (idType === 'number' ? 'Invalid ID format: expected a valid number' : 'Invalid ID format: expected a non-empty string')
+export function generateIdValidator(
+  idType: 'string' | 'number' | 'bigint',
+  parseStrategy: 'string' | 'parseInt' | 'BigInt' | 'validate-uuid' | 'validate-cuid',
+  sanitizeErrors: boolean = true
+): string {
+  const errorMessage = sanitizeErrors ? 'Invalid identifier' : 'Invalid ID format'
   
+  // BigInt IDs
+  if (idType === 'bigint') {
+    return `
+/**
+ * Parse and validate BigInt ID parameter
+ */
+function parseIdParam(idParam: string): { valid: boolean; id?: bigint; error?: string } {
+  if (!idParam) {
+    return { valid: false, error: '${errorMessage}' }
+  }
+  try {
+    const parsed = BigInt(idParam)
+    if (parsed < 0n) {
+      return { valid: false, error: '${errorMessage}' }
+    }
+    return { valid: true, id: parsed }
+  } catch {
+    return { valid: false, error: '${errorMessage}' }
+  }
+}`
+  }
+  
+  // Number IDs (Int, Float, Decimal)
   if (idType === 'number') {
     return `
 /**
- * Parse and validate ID parameter
+ * Parse and validate numeric ID parameter
  */
 function parseIdParam(idParam: string): { valid: boolean; id?: number; error?: string } {
   if (!idParam) {
@@ -57,9 +83,56 @@ function parseIdParam(idParam: string): { valid: boolean; id?: number; error?: s
 }`
   }
   
+  // UUID validation
+  if (parseStrategy === 'validate-uuid') {
+    return `
+/**
+ * Parse and validate UUID ID parameter
+ */
+function parseIdParam(idParam: string): { valid: boolean; id?: string; error?: string } {
+  if (!idParam || typeof idParam !== 'string') {
+    return { valid: false, error: '${errorMessage}' }
+  }
+  
+  const trimmed = idParam.trim()
+  // UUID v4 format: 8-4-4-4-12 hex characters
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  
+  if (!uuidRegex.test(trimmed)) {
+    return { valid: false, error: '${errorMessage}' }
+  }
+  
+  return { valid: true, id: trimmed }
+}`
+  }
+  
+  // CUID validation
+  if (parseStrategy === 'validate-cuid') {
+    return `
+/**
+ * Parse and validate CUID ID parameter
+ */
+function parseIdParam(idParam: string): { valid: boolean; id?: string; error?: string } {
+  if (!idParam || typeof idParam !== 'string') {
+    return { valid: false, error: '${errorMessage}' }
+  }
+  
+  const trimmed = idParam.trim()
+  // CUID format: starts with 'c', 25 characters total, alphanumeric
+  const cuidRegex = /^c[a-z0-9]{24}$/i
+  
+  if (!cuidRegex.test(trimmed)) {
+    return { valid: false, error: '${errorMessage}' }
+  }
+  
+  return { valid: true, id: trimmed }
+}`
+  }
+  
+  // Generic string IDs
   return `
 /**
- * Parse and validate ID parameter
+ * Parse and validate string ID parameter
  */
 function parseIdParam(idParam: string): { valid: boolean; id?: string; error?: string } {
   if (!idParam || typeof idParam !== 'string' || idParam.trim() === '') {
@@ -198,12 +271,13 @@ export function generateMethodComment(description: string): string {
  * Eliminates duplication between framework-specific generators
  */
 export function generateUnifiedHelpers(
-  idType: string,
+  idType: 'string' | 'number' | 'bigint',
+  parseStrategy: 'string' | 'parseInt' | 'BigInt' | 'validate-uuid' | 'validate-cuid',
   config: ControllerConfig,
   framework: 'express' | 'fastify'
 ): string {
   const sanitize = config.sanitizeErrorMessages ?? true
-  const idValidator = generateIdValidator(idType, sanitize)
+  const idValidator = generateIdValidator(idType, parseStrategy, sanitize)
   const pagination = generatePaginationHelper(config)
   
   if (framework === 'fastify') {

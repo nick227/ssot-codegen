@@ -46,30 +46,59 @@ export function generateEnhancedController(
     )
   }
   
-  // LIMITATION: Detect composite primary keys
-  const idFields = model.scalarFields.filter(f => f.isId)
-  if (idFields.length > 1) {
+  // LIMITATION: Detect composite primary keys (@@id([field1, field2]))
+  if (model.primaryKey && model.primaryKey.fields.length > 1) {
     throw new ControllerGenerationError(
-      `Model '${model.name}' has composite primary key [${idFields.map(f => f.name).join(', ')}]. ` +
+      `Model '${model.name}' has composite primary key @@id([${model.primaryKey.fields.join(', ')}]). ` +
       `Composite keys require custom controller implementation. Consider using separate endpoints ` +
-      `or a compound key string format.`
+      `or a compound key string format like "field1-field2".`
     )
   }
   
+  // Check for single @id field
   if (!model.idField) {
     throw new ControllerGenerationError(
-      `Model '${model.name}' has no primary key field. Add @id or @@id to your Prisma schema.`
+      `Model '${model.name}' has no primary key field. Add @id to a field or @@id([...]) to your Prisma schema.`
     )
   }
   
   const modelKebab = toKebabCase(model.name)
   const modelCamel = toCamelCase(model.name)
-  const idType = model.idField.type === 'String' ? 'string' : 'number'
+  
+  // Determine ID type with proper handling for all Prisma types
+  const idFieldType = model.idField.type
+  let idType: 'string' | 'number' | 'bigint'
+  let parseStrategy: 'string' | 'parseInt' | 'BigInt' | 'validate-uuid' | 'validate-cuid'
+  
+  // Determine parsing strategy based on field type and default
+  const defaultValue = model.idField.default
+  const defaultName = typeof defaultValue === 'object' && defaultValue !== null && 'name' in defaultValue 
+    ? defaultValue.name 
+    : null
+  
+  if (idFieldType === 'String') {
+    idType = 'string'
+    // Check if it's a UUID or CUID
+    if (defaultName === 'uuid') {
+      parseStrategy = 'validate-uuid'
+    } else if (defaultName === 'cuid') {
+      parseStrategy = 'validate-cuid'
+    } else {
+      parseStrategy = 'string'
+    }
+  } else if (idFieldType === 'BigInt') {
+    idType = 'bigint'
+    parseStrategy = 'BigInt'
+  } else {
+    // Int, Float, Decimal - treat as number
+    idType = 'number'
+    parseStrategy = 'parseInt'
+  }
   
   if (framework === 'express') {
-    return generateExpressController(model, analysis, modelKebab, modelCamel, idType, config)
+    return generateExpressController(model, analysis, modelKebab, modelCamel, idType, parseStrategy, config)
   } else {
-    return generateFastifyController(model, analysis, modelKebab, modelCamel, idType, config)
+    return generateFastifyController(model, analysis, modelKebab, modelCamel, idType, parseStrategy, config)
   }
 }
 
@@ -142,10 +171,11 @@ function generateExpressController(
   analysis: UnifiedModelAnalysis,
   modelKebab: string,
   modelCamel: string,
-  idType: string,
+  idType: 'string' | 'number' | 'bigint',
+  parseStrategy: 'string' | 'parseInt' | 'BigInt' | 'validate-uuid' | 'validate-cuid',
   config: ControllerConfig
 ): string {
-  const helpers = generateUnifiedHelpers(idType, config, 'express')
+  const helpers = generateUnifiedHelpers(idType, parseStrategy, config, 'express')
   const bulkMethods = config.enableBulkOperations ? generateBulkControllers(model, modelCamel) : ''
   const baseMethods = generateExpressBaseMethods(model, modelCamel, config)
   const domainMethods = config.enableDomainMethods 
@@ -588,10 +618,11 @@ function generateFastifyController(
   analysis: UnifiedModelAnalysis,
   modelKebab: string,
   modelCamel: string,
-  idType: string,
+  idType: 'string' | 'number' | 'bigint',
+  parseStrategy: 'string' | 'parseInt' | 'BigInt' | 'validate-uuid' | 'validate-cuid',
   config: ControllerConfig
 ): string {
-  const helpers = generateFastifyHelpers(idType, config)
+  const helpers = generateUnifiedHelpers(idType, parseStrategy, config, 'fastify')
   const bulkMethods = config.enableBulkOperations ? generateFastifyBulkControllers(model, modelCamel) : ''
   const baseMethods = generateFastifyBaseMethods(model, modelCamel, config)
   const domainMethods = config.enableDomainMethods 
@@ -635,68 +666,6 @@ import { logger } from '@/logger.js'
 ${bulkValidators}
 ${helpers}
 ${baseMethods}${bulkMethods}${domainMethods}
-`
-}
-
-/**
- * Generate helper utilities for Fastify controllers
- */
-function generateFastifyHelpers(idType: string, config: ControllerConfig): string {
-  const { skip, take } = config.paginationDefaults || { skip: 0, take: 20 }
-  
-  const idValidator = idType === 'number' ? `
-/**
- * Parse and validate ID parameter
- */
-function parseIdParam(idParam: string): { valid: boolean; id?: number; error?: string } {
-  const parsed = parseInt(idParam, 10)
-  if (isNaN(parsed) || !Number.isFinite(parsed)) {
-    return { valid: false, error: 'Invalid ID format: expected a valid number' }
-  }
-  return { valid: true, id: parsed }
-}` : `
-/**
- * Parse and validate ID parameter
- */
-function parseIdParam(idParam: string): { valid: boolean; id?: string; error?: string } {
-  if (!idParam || typeof idParam !== 'string' || idParam.trim() === '') {
-    return { valid: false, error: 'Invalid ID format: expected a non-empty string' }
-  }
-  return { valid: true, id: idParam.trim() }
-}`
-
-  return `${idValidator}
-
-/**
- * Standard error response handler for Fastify
- */
-function handleError(
-  error: unknown,
-  reply: FastifyReply,
-  context: string,
-  logContext?: Record<string, unknown>
-): FastifyReply {
-  if (error instanceof ZodError) {
-    logger.warn({ ...logContext, validationErrors: error.errors }, \`Validation error: \${context}\`)
-    return reply.code(400).send({ error: 'Validation Error', details: error.errors })
-  }
-  
-  logger.error({ ...logContext, error }, \`Error: \${context}\`)
-  return reply.code(500).send({ error: 'Internal Server Error' })
-}
-
-/**
- * Parse pagination from query params with defaults
- */
-function parsePagination(query: Record<string, unknown>): { skip: number; take: number } {
-  const skip = query.skip ? parseInt(query.skip as string, 10) : ${skip}
-  const take = query.take ? parseInt(query.take as string, 10) : ${take}
-  
-  return {
-    skip: isNaN(skip) || skip < 0 ? ${skip} : skip,
-    take: isNaN(take) || take < 1 ? ${take} : Math.min(take, 100)
-  }
-}
 `
 }
 
