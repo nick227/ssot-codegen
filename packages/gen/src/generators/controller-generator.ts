@@ -26,7 +26,7 @@ export function generateController(model: ParsedModel, framework: 'express' | 'f
 }
 
 /**
- * Generate Express controller
+ * Generate Express controller with centralized error handling
  */
 function generateExpressController(
   model: ParsedModel,
@@ -41,130 +41,114 @@ function generateExpressController(
 import type { Request, Response } from 'express'
 import { ${modelCamel}Service } from '@/services/${modelKebab}'
 import { ${model.name}CreateSchema, ${model.name}UpdateSchema, ${model.name}QuerySchema } from '@/validators/${modelKebab}'
-import { ZodError } from 'zod'
+import { asyncHandler, ValidationError, NotFoundError } from '@/platform/error'
 
 /**
- * List all ${model.name} records
+ * List all ${model.name} records with pagination
  */
-export const list${model.name}s = async (req: Request, res: Response) => {
-  try {
-    const query = ${model.name}QuerySchema.parse(req.query)
-    const result = await ${modelCamel}Service.list(query)
-    return res.json(result)
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return res.status(400).json({ error: 'Validation Error', details: error.errors })
-    }
-    console.error(error)
-    return res.status(500).json({ error: 'Internal Server Error' })
+export const list${model.name}s = asyncHandler(async (req: Request, res: Response) => {
+  // Validate query parameters
+  const validation = ${model.name}QuerySchema.safeParse(req.query)
+  
+  if (!validation.success) {
+    throw new ValidationError('Invalid query parameters', validation.error.errors)
   }
-}
+  
+  const result = await ${modelCamel}Service.list(validation.data)
+  res.json(result)
+})
 
 /**
  * Get ${model.name} by ID
  */
-export const get${model.name} = async (req: Request, res: Response) => {
-  try {
-    const id = ${parseId}
-    ${idType === 'number' ? `
-    if (isNaN(id)) {
-      return res.status(400).json({ error: 'Invalid ID format' })
-    }` : ''}
-    
-    const item = await ${modelCamel}Service.findById(id)
-    
-    if (!item) {
-      return res.status(404).json({ error: '${model.name} not found' })
-    }
-    
-    return res.json(item)
-  } catch (error) {
-    console.error(error)
-    return res.status(500).json({ error: 'Internal Server Error' })
+export const get${model.name} = asyncHandler(async (req: Request, res: Response) => {
+  const id = ${parseId}
+  ${idType === 'number' ? `
+  if (isNaN(id)) {
+    throw new ValidationError('Invalid ID format: must be a number')
+  }` : ''}
+  
+  const item = await ${modelCamel}Service.findById(id)
+  
+  if (!item) {
+    throw new NotFoundError('${model.name}', id)
   }
-}
+  
+  res.json(item)
+})
 
 /**
- * Create ${model.name}
+ * Create new ${model.name}
  */
-export const create${model.name} = async (req: Request, res: Response) => {
-  try {
-    const data = ${model.name}CreateSchema.parse(req.body)
-    const item = await ${modelCamel}Service.create(data)
-    return res.status(201).json(item)
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return res.status(400).json({ error: 'Validation Error', details: error.errors })
-    }
-    console.error(error)
-    return res.status(500).json({ error: 'Internal Server Error' })
+export const create${model.name} = asyncHandler(async (req: Request, res: Response) => {
+  // Validate request body
+  const validation = ${model.name}CreateSchema.safeParse(req.body)
+  
+  if (!validation.success) {
+    throw new ValidationError('Invalid request body', validation.error.errors)
   }
-}
+  
+  const item = await ${modelCamel}Service.create(validation.data)
+  
+  // 201 Created with Location header
+  res.status(201)
+     .location(\`\${req.baseUrl}/\${item.id}\`)
+     .json(item)
+})
 
 /**
- * Update ${model.name}
+ * Update ${model.name} by ID
  */
-export const update${model.name} = async (req: Request, res: Response) => {
-  try {
-    const id = ${parseId}
-    ${idType === 'number' ? `
-    if (isNaN(id)) {
-      return res.status(400).json({ error: 'Invalid ID format' })
-    }` : ''}
-    
-    const data = ${model.name}UpdateSchema.parse(req.body)
-    const item = await ${modelCamel}Service.update(id, data)
-    
-    if (!item) {
-      return res.status(404).json({ error: '${model.name} not found' })
-    }
-    
-    return res.json(item)
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return res.status(400).json({ error: 'Validation Error', details: error.errors })
-    }
-    console.error(error)
-    return res.status(500).json({ error: 'Internal Server Error' })
+export const update${model.name} = asyncHandler(async (req: Request, res: Response) => {
+  const id = ${parseId}
+  ${idType === 'number' ? `
+  if (isNaN(id)) {
+    throw new ValidationError('Invalid ID format: must be a number')
+  }` : ''}
+  
+  // Validate request body
+  const validation = ${model.name}UpdateSchema.safeParse(req.body)
+  
+  if (!validation.success) {
+    throw new ValidationError('Invalid request body', validation.error.errors)
   }
-}
+  
+  const item = await ${modelCamel}Service.update(id, validation.data)
+  
+  if (!item) {
+    throw new NotFoundError('${model.name}', id)
+  }
+  
+  res.json(item)
+})
 
 /**
- * Delete ${model.name}
+ * Delete ${model.name} by ID
  */
-export const delete${model.name} = async (req: Request, res: Response) => {
-  try {
-    const id = ${parseId}
-    ${idType === 'number' ? `
-    if (isNaN(id)) {
-      return res.status(400).json({ error: 'Invalid ID format' })
-    }` : ''}
-    
-    const deleted = await ${modelCamel}Service.delete(id)
-    
-    if (!deleted) {
-      return res.status(404).json({ error: '${model.name} not found' })
-    }
-    
-    return res.status(204).send()
-  } catch (error) {
-    console.error(error)
-    return res.status(500).json({ error: 'Internal Server Error' })
+export const delete${model.name} = asyncHandler(async (req: Request, res: Response) => {
+  const id = ${parseId}
+  ${idType === 'number' ? `
+  if (isNaN(id)) {
+    throw new ValidationError('Invalid ID format: must be a number')
+  }` : ''}
+  
+  const deleted = await ${modelCamel}Service.delete(id)
+  
+  if (!deleted) {
+    throw new NotFoundError('${model.name}', id)
   }
-}
+  
+  // 204 No Content - successful deletion
+  res.status(204).send()
+})
 
 /**
  * Count ${model.name} records
  */
-export const count${model.name}s = async (_req: Request, res: Response) => {
-  try {
-    const total = await ${modelCamel}Service.count()
-    return res.json({ total })
-  } catch (error) {
-    console.error(error)
-    return res.status(500).json({ error: 'Internal Server Error' })
-  }
-}
+export const count${model.name}s = asyncHandler(async (_req: Request, res: Response) => {
+  const total = await ${modelCamel}Service.count()
+  res.json({ total })
+})
 `
 }
 

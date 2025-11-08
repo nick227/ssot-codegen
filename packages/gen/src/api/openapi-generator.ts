@@ -339,6 +339,7 @@ function generateModelPaths(model: ParsedModel, paths: Record<string, any>, incl
         },
         '400': { $ref: '#/components/responses/BadRequest' },
         '401': { $ref: '#/components/responses/Unauthorized' },
+        '429': { $ref: '#/components/responses/RateLimitExceeded' },
         '500': { $ref: '#/components/responses/InternalError' }
       }
     },
@@ -395,6 +396,7 @@ function generateModelPaths(model: ParsedModel, paths: Record<string, any>, incl
         },
         '401': { $ref: '#/components/responses/Unauthorized' },
         '404': { $ref: '#/components/responses/NotFound' },
+        '429': { $ref: '#/components/responses/RateLimitExceeded' },
         '500': { $ref: '#/components/responses/InternalError' }
       }
     },
@@ -427,6 +429,7 @@ function generateModelPaths(model: ParsedModel, paths: Record<string, any>, incl
         '400': { $ref: '#/components/responses/BadRequest' },
         '401': { $ref: '#/components/responses/Unauthorized' },
         '404': { $ref: '#/components/responses/NotFound' },
+        '429': { $ref: '#/components/responses/RateLimitExceeded' },
         '500': { $ref: '#/components/responses/InternalError' }
       }
     },
@@ -445,6 +448,7 @@ function generateModelPaths(model: ParsedModel, paths: Record<string, any>, incl
         },
         '401': { $ref: '#/components/responses/Unauthorized' },
         '404': { $ref: '#/components/responses/NotFound' },
+        '429': { $ref: '#/components/responses/RateLimitExceeded' },
         '500': { $ref: '#/components/responses/InternalError' }
       }
     }
@@ -452,29 +456,84 @@ function generateModelPaths(model: ParsedModel, paths: Record<string, any>, incl
 }
 
 /**
- * Standard error response schemas
+ * Standard error response schemas (RFC 7807 Problem Details)
+ * 
+ * All error responses follow RFC 7807 Problem Details for HTTP APIs
+ * @see https://datatracker.ietf.org/doc/html/rfc7807
  */
 function getStandardErrorResponses(): Record<string, any> {
+  // Base Problem Details schema
+  const problemDetailsSchema = {
+    type: 'object',
+    required: ['type', 'title', 'status', 'detail', 'instance'],
+    properties: {
+      type: { 
+        type: 'string', 
+        description: 'A URI reference that identifies the problem type',
+        example: '/errors/validation'
+      },
+      title: { 
+        type: 'string', 
+        description: 'A short, human-readable summary of the problem',
+        example: 'Validation Error'
+      },
+      status: { 
+        type: 'integer', 
+        description: 'The HTTP status code',
+        example: 400
+      },
+      detail: { 
+        type: 'string', 
+        description: 'A human-readable explanation of the problem',
+        example: 'The request body is invalid'
+      },
+      instance: { 
+        type: 'string', 
+        description: 'A URI reference that identifies the specific occurrence',
+        example: '/api/v1/users/123'
+      }
+    }
+  }
+
   return {
     BadRequest: {
       description: 'Bad Request - Invalid input',
       content: {
-        'application/json': {
+        'application/problem+json': {
           schema: {
-            type: 'object',
-            required: ['error'],
-            properties: {
-              error: { type: 'string', example: 'Validation Error' },
-              details: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    field: { type: 'string' },
-                    message: { type: 'string' }
+            allOf: [
+              problemDetailsSchema,
+              {
+                type: 'object',
+                properties: {
+                  errors: {
+                    type: 'array',
+                    description: 'Validation error details',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        path: { type: 'array', items: { type: 'string' } },
+                        message: { type: 'string' },
+                        code: { type: 'string' }
+                      }
+                    }
                   }
                 }
               }
+            ],
+            example: {
+              type: '/errors/validation',
+              title: 'Validation Error',
+              status: 400,
+              detail: 'Invalid request body',
+              instance: '/api/v1/users',
+              errors: [
+                {
+                  path: ['email'],
+                  message: 'Invalid email format',
+                  code: 'invalid_string'
+                }
+              ]
             }
           }
         }
@@ -483,12 +542,15 @@ function getStandardErrorResponses(): Record<string, any> {
     Unauthorized: {
       description: 'Unauthorized - Authentication required',
       content: {
-        'application/json': {
+        'application/problem+json': {
           schema: {
-            type: 'object',
-            required: ['error'],
-            properties: {
-              error: { type: 'string', example: 'Unauthorized' }
+            ...problemDetailsSchema,
+            example: {
+              type: 'about:blank',
+              title: 'Unauthorized',
+              status: 401,
+              detail: 'Authentication is required to access this resource',
+              instance: '/api/v1/users/123'
             }
           }
         }
@@ -497,12 +559,15 @@ function getStandardErrorResponses(): Record<string, any> {
     Forbidden: {
       description: 'Forbidden - Insufficient permissions',
       content: {
-        'application/json': {
+        'application/problem+json': {
           schema: {
-            type: 'object',
-            required: ['error'],
-            properties: {
-              error: { type: 'string', example: 'Forbidden' }
+            ...problemDetailsSchema,
+            example: {
+              type: 'about:blank',
+              title: 'Forbidden',
+              status: 403,
+              detail: 'You do not have permission to access this resource',
+              instance: '/api/v1/users/123'
             }
           }
         }
@@ -511,27 +576,69 @@ function getStandardErrorResponses(): Record<string, any> {
     NotFound: {
       description: 'Not Found - Resource does not exist',
       content: {
-        'application/json': {
+        'application/problem+json': {
           schema: {
-            type: 'object',
-            required: ['error'],
-            properties: {
-              error: { type: 'string', example: 'Not Found' }
+            allOf: [
+              problemDetailsSchema,
+              {
+                type: 'object',
+                properties: {
+                  resource: { type: 'string', description: 'Resource type', example: 'User' },
+                  id: { type: 'string', description: 'Resource ID', example: '123' }
+                }
+              }
+            ],
+            example: {
+              type: '/errors/not-found',
+              title: 'Not Found',
+              status: 404,
+              detail: 'User with id 123 not found',
+              instance: '/api/v1/users/123',
+              resource: 'User',
+              id: '123'
             }
           }
         }
       }
     },
     Conflict: {
-      description: 'Conflict - Resource already exists',
+      description: 'Conflict - Resource already exists or constraint violation',
       content: {
-        'application/json': {
+        'application/problem+json': {
           schema: {
-            type: 'object',
-            required: ['error'],
-            properties: {
-              error: { type: 'string', example: 'Resource already exists' },
-              field: { type: 'string' }
+            allOf: [
+              problemDetailsSchema,
+              {
+                type: 'object',
+                properties: {
+                  field: { type: 'string', description: 'Conflicting field', example: 'email' }
+                }
+              }
+            ],
+            example: {
+              type: '/errors/conflict',
+              title: 'Conflict',
+              status: 409,
+              detail: 'A record with this email already exists',
+              instance: '/api/v1/users',
+              field: 'email'
+            }
+          }
+        }
+      }
+    },
+    RateLimitExceeded: {
+      description: 'Too Many Requests - Rate limit exceeded',
+      content: {
+        'application/problem+json': {
+          schema: {
+            ...problemDetailsSchema,
+            example: {
+              type: '/errors/rate-limit',
+              title: 'Too Many Requests',
+              status: 429,
+              detail: 'Too many requests from this IP, please try again later',
+              instance: '/api/v1/users'
             }
           }
         }
@@ -540,13 +647,15 @@ function getStandardErrorResponses(): Record<string, any> {
     InternalError: {
       description: 'Internal Server Error',
       content: {
-        'application/json': {
+        'application/problem+json': {
           schema: {
-            type: 'object',
-            required: ['error'],
-            properties: {
-              error: { type: 'string', example: 'Internal Server Error' },
-              stack: { type: 'string', description: 'Available in development mode' }
+            ...problemDetailsSchema,
+            example: {
+              type: 'about:blank',
+              title: 'Internal Server Error',
+              status: 500,
+              detail: 'An unexpected error occurred',
+              instance: '/api/v1/users/123'
             }
           }
         }
