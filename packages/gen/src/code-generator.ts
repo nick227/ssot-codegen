@@ -74,7 +74,8 @@ export interface CodeGeneratorConfig {
 export enum ErrorSeverity {
   WARNING = 'warning',    // Non-critical, generation can continue
   ERROR = 'error',        // Critical, affects functionality but other models might succeed
-  FATAL = 'fatal'         // Critical, entire generation should fail
+  FATAL = 'fatal',        // Critical, entire generation should fail
+  VALIDATION = 'validation' // Code validation failure - always blocks generation
 }
 
 /**
@@ -86,6 +87,7 @@ export interface GenerationError {
   model?: string
   phase?: string
   error?: Error
+  blocksGeneration?: boolean  // If true, this error prevents successful generation regardless of continueOnError
 }
 
 // GeneratedFiles type moved to pipeline/types.ts to break circular dependency
@@ -124,15 +126,20 @@ function validateHookFrameworks(frameworks: string[] | undefined): HookFramework
 /**
  * Basic validation for generated TypeScript code
  * Checks for common syntax errors that would prevent compilation
+ * 
+ * CRITICAL: Validation failures ALWAYS block generation regardless of continueOnError
+ * setting, as shipping invalid code would cause runtime failures.
  */
 function validateGeneratedCode(code: string, filename: string, errors: GenerationError[]): boolean {
   if (!code || code.trim().length === 0) {
     const error: GenerationError = {
-      severity: ErrorSeverity.ERROR,
+      severity: ErrorSeverity.VALIDATION,
       message: `Generated code is empty for file: ${filename}`,
-      phase: 'code-validation'
+      phase: 'code-validation',
+      blocksGeneration: true
     }
     errors.push(error)
+    console.error(`[ssot-codegen] VALIDATION FAILURE: ${error.message}`)
     return false
   }
   
@@ -141,11 +148,13 @@ function validateGeneratedCode(code: string, filename: string, errors: Generatio
   const closeBraces = (code.match(/}/g) || []).length
   if (openBraces !== closeBraces) {
     const error: GenerationError = {
-      severity: ErrorSeverity.ERROR,
+      severity: ErrorSeverity.VALIDATION,
       message: `Unmatched braces in ${filename}: ${openBraces} open, ${closeBraces} close`,
-      phase: 'code-validation'
+      phase: 'code-validation',
+      blocksGeneration: true
     }
     errors.push(error)
+    console.error(`[ssot-codegen] VALIDATION FAILURE: ${error.message}`)
     return false
   }
   
@@ -154,11 +163,13 @@ function validateGeneratedCode(code: string, filename: string, errors: Generatio
   const closeParens = (code.match(/\)/g) || []).length
   if (openParens !== closeParens) {
     const error: GenerationError = {
-      severity: ErrorSeverity.ERROR,
+      severity: ErrorSeverity.VALIDATION,
       message: `Unmatched parentheses in ${filename}: ${openParens} open, ${closeParens} close`,
-      phase: 'code-validation'
+      phase: 'code-validation',
+      blocksGeneration: true
     }
     errors.push(error)
+    console.error(`[ssot-codegen] VALIDATION FAILURE: ${error.message}`)
     return false
   }
   
@@ -167,11 +178,13 @@ function validateGeneratedCode(code: string, filename: string, errors: Generatio
   const closeBrackets = (code.match(/]/g) || []).length
   if (openBrackets !== closeBrackets) {
     const error: GenerationError = {
-      severity: ErrorSeverity.ERROR,
+      severity: ErrorSeverity.VALIDATION,
       message: `Unmatched brackets in ${filename}: ${openBrackets} open, ${closeBrackets} close`,
-      phase: 'code-validation'
+      phase: 'code-validation',
+      blocksGeneration: true
     }
     errors.push(error)
+    console.error(`[ssot-codegen] VALIDATION FAILURE: ${error.message}`)
     return false
   }
   
@@ -192,12 +205,69 @@ function validateGeneratedCode(code: string, filename: string, errors: Generatio
   
   if (syntaxErrors.length > 0) {
     const error: GenerationError = {
-      severity: ErrorSeverity.ERROR,
+      severity: ErrorSeverity.VALIDATION,
       message: `Syntax errors in ${filename}: ${syntaxErrors.join(', ')}`,
-      phase: 'code-validation'
+      phase: 'code-validation',
+      blocksGeneration: true
+    }
+    errors.push(error)
+    console.error(`[ssot-codegen] VALIDATION FAILURE: ${error.message}`)
+    return false
+  }
+  
+  return true
+}
+
+/**
+ * Validate service annotation structure
+ */
+function validateServiceAnnotation(annotation: any, modelName: string, errors: GenerationError[]): annotation is ServiceAnnotation {
+  if (!annotation || typeof annotation !== 'object') {
+    const error: GenerationError = {
+      severity: ErrorSeverity.ERROR,
+      message: `Invalid service annotation structure for model ${modelName}`,
+      model: modelName,
+      phase: 'service-annotation-validation'
     }
     errors.push(error)
     return false
+  }
+  
+  // Validate required fields
+  if (!annotation.name || typeof annotation.name !== 'string') {
+    const error: GenerationError = {
+      severity: ErrorSeverity.ERROR,
+      message: `Service annotation missing 'name' field for model ${modelName}`,
+      model: modelName,
+      phase: 'service-annotation-validation'
+    }
+    errors.push(error)
+    return false
+  }
+  
+  if (!Array.isArray(annotation.methods)) {
+    const error: GenerationError = {
+      severity: ErrorSeverity.ERROR,
+      message: `Service annotation missing 'methods' array for model ${modelName}`,
+      model: modelName,
+      phase: 'service-annotation-validation'
+    }
+    errors.push(error)
+    return false
+  }
+  
+  // Validate method structure
+  for (const method of annotation.methods) {
+    if (!method.name || !method.httpMethod || !method.path) {
+      const error: GenerationError = {
+        severity: ErrorSeverity.ERROR,
+        message: `Invalid method structure in service annotation for model ${modelName}`,
+        model: modelName,
+        phase: 'service-annotation-validation'
+      }
+      errors.push(error)
+      return false
+    }
   }
   
   return true
@@ -302,24 +372,9 @@ export function generateCode(
   // Track errors with severity
   const errors: GenerationError[] = []
   
-  // PHASE 0: Pre-validation - Filter junction tables before analysis
-  const modelsToGenerate = useEnhanced
-    ? schema.models.filter(model => {
-        // Quick junction table detection (detailed analysis happens later)
-        const hasOnlyForeignKeys = model.fields.every(f => 
-          f.kind === 'scalar' || f.relationName
-        )
-        const hasTwoRelations = model.fields.filter(f => f.relationName).length >= 2
-        const isLikelyJunction = hasOnlyForeignKeys && hasTwoRelations && model.fields.length <= 4
-        
-        if (isLikelyJunction) {
-          console.log(`[ssot-codegen] Skipping junction table from analysis: ${model.name}`)
-        }
-        return !isLikelyJunction
-      })
-    : schema.models
-  
   // PHASE 1: Pre-analyze all models ONCE (O(n) instead of O(n×5))
+  // CRITICAL FIX: Analyze ALL models first, THEN filter for generation
+  // This ensures cache consistency and proper junction table detection
   const cache: AnalysisCache = {
     modelAnalysis: new Map(),
     serviceAnnotations: new Map()
@@ -365,11 +420,14 @@ export function generateCode(
         }
       }
       
-      // Parse service annotations once
+      // Parse service annotations once with validation
       try {
         const serviceAnnotation = parseServiceAnnotation(model)
         if (serviceAnnotation) {
-          cache.serviceAnnotations.set(model.name, serviceAnnotation)
+          // Validate annotation structure before caching
+          if (validateServiceAnnotation(serviceAnnotation, model.name, errors)) {
+            cache.serviceAnnotations.set(model.name, serviceAnnotation)
+          }
         }
       } catch (error) {
         const genError: GenerationError = {
@@ -395,23 +453,28 @@ export function generateCode(
     throw error
   }
   
-  // PHASE 1.5: Validate analysis results for enhanced mode
-  if (useEnhanced) {
-    const missingAnalysis = modelsToGenerate.filter(m => !cache.modelAnalysis.has(m.name))
-    if (missingAnalysis.length > 0) {
-      const error: GenerationError = {
-        severity: ErrorSeverity.ERROR,
-        message: `Missing analysis for models: ${missingAnalysis.map(m => m.name).join(', ')}`,
-        phase: 'validation'
-      }
-      errors.push(error)
-      console.error(`[ssot-codegen] ${error.message}`)
-      
-      if (failFast || !continueOnError) {
-        throw new Error(error.message)
+  // PHASE 1.5: Filter models for generation AFTER analysis (prevents cache inconsistency)
+  // Junction tables are detected via analysis results, not heuristics
+  const modelsToGenerate = schema.models.filter(model => {
+    // Skip models with failed validation
+    const hasValidationError = errors.some(e => 
+      e.model === model.name && e.severity === ErrorSeverity.ERROR
+    )
+    if (hasValidationError) {
+      return false
+    }
+    
+    // Skip junction tables (detected via analysis)
+    if (useEnhanced) {
+      const analysis = cache.modelAnalysis.get(model.name)
+      if (analysis?.isJunctionTable) {
+        console.log(`[ssot-codegen] Skipping junction table generation: ${model.name}`)
+        return false
       }
     }
-  }
+    
+    return true
+  })
   
   // PHASE 1.6: Detect naming conflicts between models and service annotations
   detectNamingConflicts(schema.models, cache.serviceAnnotations, errors)
@@ -516,7 +579,7 @@ export function generateCode(
       
       // Generate SDK and hooks
       try {
-        generateSDKClients(schema, files, cache, generatedPaths, errors, failFast, continueOnError)
+        generateSDKClients(schema, files, cache, generatedPaths, errors, failFast, continueOnError, config)
         
         // Validate analysis cache before generating hooks
         if (useEnhanced && cache.modelAnalysis.size === 0 && schema.models.length > 0) {
@@ -576,6 +639,23 @@ export function generateCode(
       // Log summary
       logGenerationSummary(errors)
       
+      // CRITICAL: Check for validation errors or blocking errors
+      const hasBlockingErrors = errors.some(e => 
+        e.severity === ErrorSeverity.VALIDATION || 
+        e.blocksGeneration === true
+      )
+      
+      if (hasBlockingErrors) {
+        const blockingErrors = errors.filter(e => 
+          e.severity === ErrorSeverity.VALIDATION || e.blocksGeneration === true
+        )
+        console.error('\n❌ [ssot-codegen] Registry generation FAILED due to validation/blocking errors:')
+        blockingErrors.forEach(e => {
+          console.error(`   - ${e.message}${e.model ? ` (model: ${e.model})` : ''}`)
+        })
+        throw new Error(`Registry code generation failed with ${blockingErrors.length} blocking error(s)`)
+      }
+      
       return files
     } catch (error) {
       const genError: GenerationError = {
@@ -626,7 +706,7 @@ export function generateCode(
   
   // PHASE 3: Generate SDK clients (after all models are processed)
   try {
-    generateSDKClients(schema, files, cache, generatedPaths, errors, failFast, continueOnError)
+    generateSDKClients(schema, files, cache, generatedPaths, errors, failFast, continueOnError, config)
   } catch (error) {
     const genError: GenerationError = {
       severity: ErrorSeverity.ERROR,
@@ -790,6 +870,24 @@ export function generateCode(
   
   // Log summary
   logGenerationSummary(errors)
+  
+  // CRITICAL: Check for validation errors or blocking errors
+  // These MUST fail the build regardless of continueOnError setting
+  const hasBlockingErrors = errors.some(e => 
+    e.severity === ErrorSeverity.VALIDATION || 
+    e.blocksGeneration === true
+  )
+  
+  if (hasBlockingErrors) {
+    const blockingErrors = errors.filter(e => 
+      e.severity === ErrorSeverity.VALIDATION || e.blocksGeneration === true
+    )
+    console.error('\n❌ [ssot-codegen] Generation FAILED due to validation/blocking errors:')
+    blockingErrors.forEach(e => {
+      console.error(`   - ${e.message}${e.model ? ` (model: ${e.model})` : ''}`)
+    })
+    throw new Error(`Code generation failed with ${blockingErrors.length} blocking error(s)`)
+  }
   
   return files
 }
@@ -968,7 +1066,8 @@ function generateSDKClients(
   generatedPaths: Set<string>,
   errors: GenerationError[],
   failFast: boolean,
-  continueOnError: boolean
+  continueOnError: boolean,
+  config: CodeGeneratorConfig
 ): void {
   const modelClients: Array<{ name: string; className: string }> = []
   const serviceClients: Array<{ name: string; className: string; annotation: ServiceAnnotation }> = []
@@ -1066,21 +1165,52 @@ function generateSDKClients(
   }
   
   // Generate version file
-  // NOTE: Placeholder values MUST be replaced by manifest phase during file writing.
-  // The manifest phase should replace __SCHEMA_HASH_PLACEHOLDER__ and __VERSION_PLACEHOLDER__.
-  // If you see these in the generated SDK, the manifest phase didn't run correctly.
+  // CRITICAL: Use real values if available, otherwise fail generation
+  // Placeholders indicate a configuration error that would break SDK at runtime
   try {
-    const versionFile = generateSDKVersion('__SCHEMA_HASH_PLACEHOLDER__', '__VERSION_PLACEHOLDER__')
-    files.sdk.set('version.ts', versionFile)
+    const schemaHash = config.schemaHash || 'development'
+    const toolVersion = config.toolVersion || '0.0.0-dev'
+    
+    // Warn if using fallback values
+    if (!config.schemaHash || !config.toolVersion) {
+      const error: GenerationError = {
+        severity: ErrorSeverity.WARNING,
+        message: `SDK version using fallback values (hash: ${schemaHash}, version: ${toolVersion})`,
+        phase: 'sdk-version'
+      }
+      errors.push(error)
+      console.warn(`[ssot-codegen] ${error.message}`)
+      console.warn('[ssot-codegen] Set config.schemaHash and config.toolVersion for production builds')
+    }
+    
+    const versionFile = generateSDKVersion(schemaHash, toolVersion)
+    
+    // Validate the generated version file doesn't contain placeholders
+    if (versionFile.includes('__PLACEHOLDER__')) {
+      const error: GenerationError = {
+        severity: ErrorSeverity.VALIDATION,
+        message: 'SDK version file contains unresolved placeholders',
+        phase: 'sdk-version',
+        blocksGeneration: true
+      }
+      errors.push(error)
+      console.error(`[ssot-codegen] VALIDATION FAILURE: ${error.message}`)
+    } else {
+      files.sdk.set('version.ts', versionFile)
+    }
   } catch (error) {
     const genError: GenerationError = {
-      severity: ErrorSeverity.WARNING,
+      severity: ErrorSeverity.ERROR,
       message: 'Error generating SDK version file',
       phase: 'sdk-version',
       error: error as Error
     }
     errors.push(genError)
-    console.warn(`[ssot-codegen] ${genError.message}:`, error)
+    console.error(`[ssot-codegen] ${genError.message}:`, error)
+    
+    if (failFast || !continueOnError) {
+      throw error
+    }
   }
   
   // Generate SDK documentation files
@@ -1168,6 +1298,7 @@ function logGenerationSummary(errors: GenerationError[]): void {
     return
   }
   
+  const validation = errors.filter(e => e.severity === ErrorSeverity.VALIDATION)
   const fatal = errors.filter(e => e.severity === ErrorSeverity.FATAL)
   const critical = errors.filter(e => e.severity === ErrorSeverity.ERROR)
   const warnings = errors.filter(e => e.severity === ErrorSeverity.WARNING)
@@ -1175,6 +1306,13 @@ function logGenerationSummary(errors: GenerationError[]): void {
   console.log('\n' + '='.repeat(60))
   console.log('[ssot-codegen] Generation Summary')
   console.log('='.repeat(60))
+  
+  if (validation.length > 0) {
+    console.log(`\n🚫 VALIDATION FAILURES: ${validation.length} (BLOCKS GENERATION)`)
+    validation.forEach(e => {
+      console.log(`   - ${e.message}${e.model ? ` (model: ${e.model})` : ''}`)
+    })
+  }
   
   if (fatal.length > 0) {
     console.log(`\n❌ FATAL ERRORS: ${fatal.length}`)
@@ -1199,7 +1337,9 @@ function logGenerationSummary(errors: GenerationError[]): void {
   
   console.log('\n' + '='.repeat(60))
   
-  if (fatal.length > 0 || critical.length > 0) {
+  if (validation.length > 0) {
+    console.log('🚫 Generation BLOCKED due to validation failures.')
+  } else if (fatal.length > 0 || critical.length > 0) {
     console.log('⚠️  Generation completed with errors. Some files may be missing or incomplete.')
   } else {
     console.log('✅ Generation completed with warnings only. All files generated.')
