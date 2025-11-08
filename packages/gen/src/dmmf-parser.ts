@@ -115,16 +115,21 @@ function parseModels(models: readonly DMMF.Model[], enumMap: Map<string, ParsedE
   return models.map(model => {
     const fields = parseFields(model.fields, enumMap, model.name)
     
+    // Validate primary key fields are strings
+    const primaryKey = model.primaryKey ? {
+      name: model.primaryKey.name || undefined,
+      fields: validateStringArray(model.primaryKey.fields, `${model.name}.primaryKey.fields`)
+    } : undefined
+    
     return {
       name: model.name,
       nameLower: model.name.toLowerCase(),
       dbName: model.dbName || undefined,
       fields,
-      primaryKey: model.primaryKey ? {
-        name: model.primaryKey.name || undefined,
-        fields: model.primaryKey.fields as string[]
-      } : undefined,
-      uniqueFields: model.uniqueFields as string[][],
+      primaryKey,
+      uniqueFields: model.uniqueFields.map((uf, i) => 
+        validateStringArray(uf, `${model.name}.uniqueFields[${i}]`)
+      ),
       documentation: sanitizeDocumentation(model.documentation),
       // These will be filled by enhanceModel
       scalarFields: [],
@@ -139,15 +144,48 @@ function parseModels(models: readonly DMMF.Model[], enumMap: Map<string, ParsedE
 }
 
 /**
+ * Validate array contains only strings
+ */
+function validateStringArray(arr: readonly any[], context: string): string[] {
+  if (!Array.isArray(arr)) {
+    throw new Error(`${context} is not an array`)
+  }
+  
+  for (let i = 0; i < arr.length; i++) {
+    if (typeof arr[i] !== 'string') {
+      throw new Error(`${context}[${i}] is not a string (got ${typeof arr[i]})`)
+    }
+  }
+  
+  return arr as string[]
+}
+
+/**
  * Parse fields
  */
 function parseFields(fields: readonly DMMF.Field[], enumMap: Map<string, ParsedEnum>, modelName: string): ParsedField[] {
   return fields.map(field => {
     const isEnum = enumMap.has(field.type)
+    
+    // Warn if enum type not found
+    if (field.kind === 'enum' && !isEnum) {
+      console.warn(`Field ${modelName}.${field.name} references enum ${field.type} which was not found in parsed enums`)
+    }
+    
     const kind = isEnum ? 'enum' : determineFieldKind(field)
     const hasDbDefault = isDbManagedDefault(field.default)
     const isReadOnly = determineReadOnly(field)
     const isSelfRelation = field.kind === 'object' && field.type === modelName
+    
+    // In Prisma's DMMF:
+    // - isRequired: true  → field String (cannot be null)
+    // - isRequired: false → field String? (can be null)
+    // So isNullable is correctly derived from !isRequired
+    const isNullable = !field.isRequired
+    
+    // isOptional means "can be omitted in create operations"
+    // True if: not required (can pass null) OR has a default value
+    const isOptional = !field.isRequired || field.hasDefaultValue
     
     return {
       name: field.name,
@@ -155,8 +193,8 @@ function parseFields(fields: readonly DMMF.Field[], enumMap: Map<string, ParsedE
       kind,
       isList: field.isList,
       isRequired: field.isRequired,
-      isNullable: !field.isRequired,
-      isOptional: !field.isRequired || field.hasDefaultValue,
+      isNullable,
+      isOptional,
       isUnique: field.isUnique || false,
       isId: field.isId,
       isReadOnly,
@@ -208,6 +246,9 @@ function determineReadOnly(field: DMMF.Field): boolean {
   // @updatedAt fields are read-only
   if (field.isUpdatedAt) return true
   
+  // @createdAt fields with @default(now()) are read-only
+  if (field.name === 'createdAt' && field.hasDefaultValue && isDbManagedDefault(field.default)) return true
+  
   return false
 }
 
@@ -219,9 +260,13 @@ function sanitizeDocumentation(doc: string | undefined): string | undefined {
   
   // Remove problematic characters that could break generated comments
   return doc
-    .replace(/\*\//g, '* /')  // Prevent closing block comments
-    .replace(/\/\*/g, '/ *')  // Prevent opening block comments
-    .replace(/\r\n/g, '\n')   // Normalize line endings
+    .replace(/\*\//g, '* /')    // Prevent closing block comments
+    .replace(/\/\*/g, '/ *')    // Prevent opening block comments
+    .replace(/\/\//g, '/ /')    // Escape single-line comment markers
+    .replace(/`/g, '\\`')       // Escape backticks
+    .replace(/\r\n/g, '\n')     // Normalize line endings
+    .replace(/\n/g, ' ')        // Convert to single line for JSDoc
+    .replace(/\s+/g, ' ')       // Collapse multiple spaces
     .trim()
 }
 
@@ -289,8 +334,8 @@ function enhanceModel(
     !f.isUpdatedAt &&
     f.kind !== 'object' &&
     f.kind !== 'unsupported' &&
-    // Exclude system-managed timestamp fields with @default
-    !(f.hasDefaultValue && (f.name === 'createdAt' || f.name === 'updatedAt'))
+    // Exclude timestamp fields with @default(now()) - these are DB-managed
+    !(f.hasDbDefault && (f.name === 'createdAt' || f.name === 'updatedAt'))
   )
   
   // Fields for UpdateDTO (exclude @updatedAt, readonly, id, unsupported)
@@ -300,8 +345,8 @@ function enhanceModel(
     !f.isUpdatedAt &&  // Exclude @updatedAt from updates
     f.kind !== 'object' &&
     f.kind !== 'unsupported' &&
-    // Exclude system-managed timestamp fields
-    !(f.hasDefaultValue && (f.name === 'createdAt' || f.name === 'updatedAt'))
+    // Exclude timestamp fields with @default(now()) - these are DB-managed
+    !(f.hasDbDefault && (f.name === 'createdAt' || f.name === 'updatedAt'))
   )
   
   // Fields for ReadDTO (all scalar fields, excluding unsupported)
@@ -392,6 +437,8 @@ export function getDefaultValueString(field: ParsedField): string | undefined {
  */
 export function validateSchema(schema: ParsedSchema, throwOnError = false): string[] {
   const errors: string[] = []
+  const warnings: string[] = []
+  const infos: string[] = []
   
   // Validate enums
   for (const enumDef of schema.enums) {
@@ -451,9 +498,14 @@ export function validateSchema(schema: ParsedSchema, throwOnError = false): stri
         }
       }
       
-      // Flag self-referencing relations (they need special handling)
+      // Self-referencing relations need special handling in generators
       if (field.isSelfRelation) {
-        errors.push(`INFO: Model ${model.name}.${field.name} is a self-referencing relation (requires special generator handling)`)
+        infos.push(`Model ${model.name}.${field.name} is a self-referencing relation (requires special generator handling)`)
+        
+        // Validate self-relation circular dependencies
+        if (field.isRequired && !field.isNullable) {
+          errors.push(`Self-referencing relation ${model.name}.${field.name} is required and non-nullable, creating impossible constraint`)
+        }
       }
     }
     
@@ -468,7 +520,7 @@ export function validateSchema(schema: ParsedSchema, throwOnError = false): stri
     const unsupportedFields = model.fields.filter(f => f.kind === 'unsupported')
     if (unsupportedFields.length > 0) {
       for (const field of unsupportedFields) {
-        errors.push(`WARNING: Field ${model.name}.${field.name} has unsupported type ${field.type}`)
+        warnings.push(`Field ${model.name}.${field.name} has unsupported type ${field.type}`)
       }
     }
   }
@@ -477,15 +529,18 @@ export function validateSchema(schema: ParsedSchema, throwOnError = false): stri
   const circularErrors = detectCircularRelations(schema)
   errors.push(...circularErrors)
   
+  // Combine all messages with prefixes
+  const allMessages = [
+    ...errors,
+    ...warnings.map(w => `WARNING: ${w}`),
+    ...infos.map(i => `INFO: ${i}`)
+  ]
+  
   if (throwOnError && errors.length > 0) {
-    // Filter out INFO and WARNING messages for throwing
-    const criticalErrors = errors.filter(e => !e.startsWith('INFO:') && !e.startsWith('WARNING:'))
-    if (criticalErrors.length > 0) {
-      throw new Error(`Schema validation failed:\n${criticalErrors.join('\n')}`)
-    }
+    throw new Error(`Schema validation failed:\n${errors.join('\n')}`)
   }
   
-  return errors
+  return allMessages
 }
 
 /**
