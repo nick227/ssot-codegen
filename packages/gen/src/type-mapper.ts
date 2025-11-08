@@ -195,7 +195,7 @@ export function getFieldTypeForDTO(field: ParsedField, optional: boolean = false
 /**
  * Get import statements for field types
  */
-export function getTypeImports(fields: ParsedField[]): string[] {
+export function getTypeImports(fields: readonly ParsedField[]): string[] {
   const imports: Set<string> = new Set()
   
   for (const field of fields) {

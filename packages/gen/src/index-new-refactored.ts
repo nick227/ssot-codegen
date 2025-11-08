@@ -1,12 +1,15 @@
 /**
- * SSOT Codegen - Main Generator (Refactored with PhaseRunner)
+ * SSOT Codegen - Main Generator (v2.0 - Unified Pipeline)
  * 
- * Uses discrete phase classes for better maintainability and testability
+ * Uses CodeGenerationPipeline (canonical implementation) via adapter.
+ * This provides PhaseRunner-compatible interface while using the unified pipeline.
+ * 
+ * MIGRATION: This file now uses UnifiedPipelineAdapter which wraps CodeGenerationPipeline.
+ * Eventually, callers should migrate to use CodeGenerationPipeline directly.
  */
 
 import { createLogger } from './utils/cli-logger.js'
-import { PhaseRunner } from '@/pipeline/phase-runner.js'
-import { createAllPhases } from '@/pipeline/phases/index.js'
+import { createUnifiedPipeline } from '@/pipeline/unified-pipeline-adapter.js'
 import type { GeneratorConfig, GeneratorResult } from '@/pipeline/types.js'
 import { ConfigValidationError, GeneratorError } from './errors/generator-errors.js'
 
@@ -48,7 +51,10 @@ function validateConfig(config: GeneratorConfig): void {
 }
 
 /**
- * Main generator function using PhaseRunner
+ * Main generator function using Unified Pipeline (v2.0)
+ * 
+ * Now uses CodeGenerationPipeline (canonical implementation) via adapter.
+ * This maintains backward compatibility while consolidating pipeline logic.
  * 
  * @throws {ConfigValidationError} if configuration is invalid
  * @throws {GeneratorError} if generation fails with phase information
@@ -66,25 +72,11 @@ export async function generateFromSchema(config: GeneratorConfig): Promise<Gener
   })
   
   try {
-    // Create and configure phase runner
-    const runner = new PhaseRunner(config, logger)
+    // Create unified pipeline (wraps CodeGenerationPipeline)
+    const pipeline = createUnifiedPipeline(config, logger)
     
-    // Register all standard phases
-    const phases = createAllPhases()
-    runner.registerPhases(phases)
-    
-    // Execute all phases
-    const result = await runner.run()
-    
-    // Log next steps for standalone projects
-    if (config.standalone ?? true) {
-      const context = runner.getContext()
-      console.log(`\n✅ Standalone project created at: ${context.outputDir}`)
-      console.log(`\nNext steps:`)
-      console.log(`  cd ${context.outputDir}`)
-      console.log(`  pnpm install`)
-      console.log(`  pnpm dev`)
-    }
+    // Execute pipeline (returns PhaseRunner-compatible result)
+    const result = await pipeline.run()
     
     return result
   } catch (error) {

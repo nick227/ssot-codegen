@@ -1,12 +1,19 @@
 /**
  * Code Generation Pipeline - Orchestrates all generation phases
  * Central coordinator for phase-based code generation
+ * 
+ * CANONICAL IMPLEMENTATION (v2.0)
+ * - Replaces dual PhaseRunner/Pipeline implementations
+ * - Supports hook system for extensibility
+ * - Type-safe with rollback support
+ * - Returns GeneratedFiles for direct use
  */
 
 import { GenerationContext } from './generation-context.js'
 import { ConfigNormalizer } from './config-normalizer.js'
 import type { GeneratedFiles } from './types.js'
 import type { CodeGeneratorConfig } from '../code-generator.js'
+import { PhaseHookRegistry } from './hooks/phase-hooks.js'
 import {
   GenerationFailedError,
   PhaseStatus,
@@ -35,7 +42,7 @@ import { ChecklistGenerationPhase } from './phases/checklist-generation-phase.js
  * 
  * Responsibilities:
  * - Create and order phases based on configuration
- * - Execute phases sequentially
+ * - Execute phases sequentially with hook support
  * - Handle phase failures with rollback
  * - Log progress and summary
  * - Validate final output
@@ -46,19 +53,28 @@ import { ChecklistGenerationPhase } from './phases/checklist-generation-phase.js
  * - Skip phases based on shouldExecute()
  * - Centralized error handling
  * - Progress tracking
+ * - Hook system (beforePhase, afterPhase, replacePhase)
  */
 export class CodeGenerationPipeline {
   private readonly context: GenerationContext
   private readonly phases: GenerationPhase[]
   private readonly phaseResults = new Map<string, PhaseResult>()
+  private readonly hookRegistry: PhaseHookRegistry
   
-  constructor(schema: ParsedSchema, config: CodeGeneratorConfig) {
+  constructor(
+    schema: ParsedSchema, 
+    config: CodeGeneratorConfig,
+    hookRegistry?: PhaseHookRegistry
+  ) {
     // Normalize and validate configuration
     const normalizer = new ConfigNormalizer()
     const normalizedConfig = normalizer.normalize(config)
     
     // Create context
     this.context = new GenerationContext(normalizedConfig, schema)
+    
+    // Initialize hook registry
+    this.hookRegistry = hookRegistry || new PhaseHookRegistry()
     
     // Initialize phases
     this.phases = this.createPhases()
@@ -165,7 +181,7 @@ export class CodeGenerationPipeline {
   }
   
   /**
-   * Execute a single phase with error handling and rollback
+   * Execute a single phase with error handling, hooks, and rollback
    */
   private async executePhase(phase: GenerationPhase): Promise<void> {
     // Check if phase should run
@@ -185,14 +201,29 @@ export class CodeGenerationPipeline {
     try {
       console.log(`[ssot-codegen] ▶ ${phase.name}`)
       
-      // Execute phase
-      const result = await phase.execute(this.context)
+      // Execute before hooks
+      await this.hookRegistry.executeBeforeHooks(phase.name, this.context as any)
+      
+      // Check if phase is replaced by a hook
+      let result: PhaseResult
+      if (this.hookRegistry.hasReplacement(phase.name)) {
+        console.log(`[ssot-codegen]   (using replacement hook)`)
+        const replacement = this.hookRegistry.getReplacement(phase.name)!
+        result = await replacement(this.context as any)
+      } else {
+        // Execute original phase
+        result = await phase.execute(this.context)
+      }
+      
       this.phaseResults.set(phase.name, result)
       
       // Add phase errors to context
       for (const error of result.errors) {
         this.context.addError(error)
       }
+      
+      // Execute after hooks
+      await this.hookRegistry.executeAfterHooks(phase.name, this.context as any, result)
       
       // Log result
       this.logPhaseResult(phase.name, result)
@@ -203,6 +234,9 @@ export class CodeGenerationPipeline {
         throw new GenerationFailedError(`Phase ${phase.name} failed with critical errors`)
       }
     } catch (error) {
+      // Execute error hooks
+      await this.hookRegistry.executeErrorHooks(phase.name, error as Error, this.context as any)
+      
       // Phase threw an error
       if (error instanceof GenerationFailedError) {
         // Expected failure
@@ -299,6 +333,20 @@ export class CodeGenerationPipeline {
    */
   getPhaseResults(): ReadonlyMap<string, PhaseResult> {
     return new Map(this.phaseResults)
+  }
+  
+  /**
+   * Get hook registry for plugin registration
+   */
+  getHookRegistry(): PhaseHookRegistry {
+    return this.hookRegistry
+  }
+  
+  /**
+   * Get context (for testing/debugging)
+   */
+  getContext(): GenerationContext {
+    return this.context
   }
 }
 

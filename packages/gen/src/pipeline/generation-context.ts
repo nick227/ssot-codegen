@@ -1,11 +1,14 @@
 /**
  * Generation Context - Central state management for code generation
  * Coordinates cache, errors, file builders, and snapshots
+ * 
+ * v2.0: Uses centralized ErrorEscalationPolicy for consistent error handling
  */
 
 import { ErrorCollector } from './error-collector.js'
 import { AnalysisCache } from '../cache/analysis-cache.js'
 import { GeneratedFilesBuilder } from '../builders/generated-files-builder.js'
+import { ErrorEscalationPolicy, ErrorPolicyFactory } from './error-escalation-policy.js'
 import type { GeneratedFiles } from './types.js'
 import {
   GenerationFailedError,
@@ -41,6 +44,7 @@ export class GenerationContext implements IGenerationContext {
   private readonly _cache: AnalysisCache
   private readonly _filesBuilder: GeneratedFilesBuilder
   private readonly snapshots = new Map<string, GeneratedFiles>()
+  private readonly errorPolicy: ErrorEscalationPolicy
   
   constructor(
     readonly config: NormalizedConfig,
@@ -49,6 +53,7 @@ export class GenerationContext implements IGenerationContext {
     this.errorCollector = new ErrorCollector()
     this._cache = new AnalysisCache()
     this._filesBuilder = new GeneratedFilesBuilder(this)
+    this.errorPolicy = ErrorPolicyFactory.fromConfig(config)
   }
   
   // ============================================================================
@@ -74,6 +79,8 @@ export class GenerationContext implements IGenerationContext {
   /**
    * Add error with centralized escalation logic
    * 
+   * Uses ErrorEscalationPolicy for consistent handling across the codebase.
+   * 
    * Escalation rules:
    * - VALIDATION errors: always throw (prevent invalid code)
    * - FATAL errors: always throw (system failure)
@@ -84,41 +91,10 @@ export class GenerationContext implements IGenerationContext {
   addError(error: GenerationError): void {
     this.errorCollector.addError(error)
     
-    // Centralized error escalation
-    if (this.shouldThrow(error)) {
+    // Use centralized policy to determine escalation
+    if (this.errorPolicy.shouldThrow(error)) {
       throw new GenerationFailedError(error.message, error, error.error)
     }
-  }
-  
-  /**
-   * Determine if error should throw
-   */
-  private shouldThrow(error: GenerationError): boolean {
-    // VALIDATION errors always throw (prevent invalid code)
-    if (error.severity === ErrorSeverity.VALIDATION || error.blocksGeneration) {
-      return true
-    }
-    
-    // FATAL errors always throw (system failure)
-    if (error.severity === ErrorSeverity.FATAL) {
-      return true
-    }
-    
-    // ERROR severity respects configuration
-    if (error.severity === ErrorSeverity.ERROR) {
-      // Fail-fast mode: throw immediately
-      if (this.config.errorHandling.failFast) {
-        return true
-      }
-      
-      // Continue-on-error disabled: throw
-      if (!this.config.errorHandling.continueOnError) {
-        return true
-      }
-    }
-    
-    // WARNING never throws
-    return false
   }
   
   /**
@@ -130,9 +106,10 @@ export class GenerationContext implements IGenerationContext {
   
   /**
    * Check if any blocking errors exist
+   * Uses ErrorEscalationPolicy for consistent blocking detection
    */
   hasBlockingErrors(): boolean {
-    return this.errorCollector.hasBlockingErrors()
+    return this.errorPolicy.hasBlockingErrors(this.getErrors() as GenerationError[])
   }
   
   /**
