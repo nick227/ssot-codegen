@@ -13,6 +13,9 @@ export * from './models/index.js'
 // Types
 export * from './types/index.js'
 
+// Search
+export * from './search/index.js'
+
 // Legacy export for backwards compatibility
 export type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
 export interface ClientConfig {
