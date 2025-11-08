@@ -185,11 +185,11 @@ export interface ParsedEnum {
 }
 
 export interface ParsedSchema {
-  models: ParsedModel[]
-  enums: ParsedEnum[]
+  readonly models: readonly ParsedModel[]  // Frozen to prevent mutations
+  readonly enums: readonly ParsedEnum[]    // Frozen to prevent mutations
   modelMap: Map<string, ParsedModel>
   enumMap: Map<string, ParsedEnum>
-  reverseRelationMap: Map<string, ParsedField[]>  // modelName -> fields that reference it
+  reverseRelationMap: Map<string, readonly ParsedField[]>  // modelName -> frozen fields that reference it
 }
 
 // ============================================================================
@@ -204,6 +204,7 @@ export interface ParsedSchema {
  * 2. Parse models (depends on enumMap)
  * 3. Build reverse relation map (depends on parsed models)
  * 4. Enhance models (depends on models, modelMap, reverseRelationMap)
+ * 5. Validate schema (if throwOnError is true)
  * 
  * This order ensures all dependencies are satisfied before enhancement.
  */
@@ -238,24 +239,34 @@ export function parseDMMF(dmmf: DMMF.Document, options: ParseOptions = {}): Pars
     enhanceModel(model, modelMap, reverseRelationMap)
   }
   
-  return {
-    models,
-    enums,
+  const schema: ParsedSchema = {
+    models: Object.freeze(models),  // Freeze top-level arrays
+    enums: Object.freeze(enums),    // Freeze top-level arrays
     modelMap,
     enumMap,
     reverseRelationMap
   }
+  
+  // Run validation if throwOnError is enabled
+  if (options.throwOnError) {
+    validateSchemaDetailed(schema, true)
+  }
+  
+  return schema
 }
 
 /**
  * Type guard for DMMF enum (deep validation)
+ * 
+ * Note: Allows empty enums (values.length === 0) to pass through parsing.
+ * Empty enums are caught later in validateSchema() with better error reporting.
  */
 function isValidDMMFEnum(e: unknown): e is DMMF.DatamodelEnum {
   if (!e || typeof e !== 'object') return false
   const obj = e as Record<string, unknown>
   
   if (typeof obj.name !== 'string' || obj.name.length === 0) return false
-  if (!Array.isArray(obj.values) || obj.values.length === 0) return false
+  if (!Array.isArray(obj.values)) return false  // Allow empty arrays
   
   // Validate nested values structure
   for (const val of obj.values) {
@@ -439,7 +450,9 @@ function parseFields(fields: readonly DMMF.Field[], enumMap: Map<string, ParsedE
     // This is more nuanced than isNullable and varies by field kind:
     // 
     // List fields:
-    //   Always optional (empty array is valid)
+    //   Optional if nullable OR has default OR is implicit relation list
+    //   Note: In Prisma, lists can be required (isRequired: true) and non-nullable
+    //   but usually have defaults (empty array) or are relation lists
     // 
     // Scalar/enum fields:
     //   Optional if nullable OR has any default value (DB or client-managed)
@@ -451,8 +464,19 @@ function parseFields(fields: readonly DMMF.Field[], enumMap: Map<string, ParsedE
     //   and don't need to be specified when creating this model
     let isOptional: boolean
     if (field.isList) {
-      // List fields are always optional in create operations (can be empty array)
-      isOptional = true
+      // List fields are usually optional, but check for edge cases:
+      // - Nullable lists are always optional
+      // - Lists with defaults are optional
+      // - Relation lists without FK ownership are optional (implicit)
+      // - Required non-nullable lists without defaults are NOT optional (rare edge case)
+      if (field.kind === 'object') {
+        // Relation list - optional if nullable or implicit
+        const isImplicitRelation = !field.relationFromFields || field.relationFromFields.length === 0
+        isOptional = isNullable || isImplicitRelation
+      } else {
+        // Scalar/enum list - optional if nullable or has default
+        isOptional = isNullable || field.hasDefaultValue
+      }
     } else if (field.kind === 'object') {
       // Relation field is optional if:
       // 1. It's nullable (can pass null/undefined), OR
@@ -468,6 +492,11 @@ function parseFields(fields: readonly DMMF.Field[], enumMap: Map<string, ParsedE
       isOptional = isNullable || field.hasDefaultValue
     }
     
+    // Shallow-copy and freeze default if it's an object to prevent external mutations
+    const safeDefault: PrismaDefaultValue | undefined = field.default && typeof field.default === 'object'
+      ? Object.freeze({ ...field.default as object }) as PrismaDefaultValue
+      : field.default
+    
     return {
       name: field.name,
       type: field.type,
@@ -482,7 +511,7 @@ function parseFields(fields: readonly DMMF.Field[], enumMap: Map<string, ParsedE
       isUpdatedAt: field.isUpdatedAt || false,
       hasDefaultValue: field.hasDefaultValue,
       hasDbDefault,
-      default: field.default,
+      default: safeDefault,  // Frozen copy to prevent mutations
       isPartOfCompositePrimaryKey: false,  // Set by enhanceModel
       isSelfRelation,
       relationName: field.relationName,
@@ -562,7 +591,11 @@ export function isClientManagedDefault(defaultValue: unknown): boolean {
 
 /**
  * Determine if field is read-only
- * Uses SYSTEM_TIMESTAMP_FIELDS consistently instead of hardcoding names
+ * 
+ * Uses SYSTEM_TIMESTAMP_FIELDS consistently instead of hardcoding names.
+ * 
+ * Important: createdAt/updatedAt with client-managed defaults (now()) are NOT read-only
+ * to allow user-provided values during creation. Only DB-managed defaults make them read-only.
  */
 function determineReadOnly(field: DMMF.Field, modelName: string): boolean {
   // Explicitly marked as read-only
@@ -571,13 +604,13 @@ function determineReadOnly(field: DMMF.Field, modelName: string): boolean {
   // ID fields with DB-managed defaults (autoincrement, uuid, etc)
   if (field.isId && field.hasDefaultValue && isDbManagedDefault(field.default)) return true
   
-  // @updatedAt fields are always read-only
+  // @updatedAt fields are always read-only (Prisma manages them automatically)
   if (field.isUpdatedAt) return true
   
-  // System timestamp fields with DB defaults are read-only
+  // System timestamp fields are read-only ONLY if they have DB-managed defaults
+  // Client-managed defaults (like now()) should allow user-provided values
   const isSystemTimestamp = SYSTEM_TIMESTAMP_FIELDS.includes(field.name as typeof SYSTEM_TIMESTAMP_FIELDS[number])
-  if (isSystemTimestamp && field.hasDefaultValue) {
-    // Only read-only if it has a default (now(), autoincrement, etc)
+  if (isSystemTimestamp && field.hasDefaultValue && isDbManagedDefault(field.default)) {
     return true
   }
   
@@ -674,8 +707,11 @@ function sanitizeDocumentation(doc: string | undefined): string | undefined {
  * 
  * This ensures each unique relation is recorded once, even across multiple
  * parsing passes or schema manipulations.
+ * 
+ * Returns map with frozen arrays to prevent external mutations that could
+ * corrupt results across multiple parse calls.
  */
-function buildReverseRelationMap(models: ParsedModel[]): Map<string, ParsedField[]> {
+function buildReverseRelationMap(models: ParsedModel[]): Map<string, readonly ParsedField[]> {
   const map = new Map<string, ParsedField[]>()
   const modelNames = new Set(models.map(m => m.name))
   
@@ -698,22 +734,34 @@ function buildReverseRelationMap(models: ParsedModel[]): Map<string, ParsedField
           const key = `${model.name}.${field.name}.${field.relationName || 'implicit'}.${field.type}`
           if (!globalSeen.has(key)) {
             globalSeen.add(key)
-            const targetRelations = map.get(field.type)!
-            // Create a deep frozen copy to prevent mutations affecting both forward and reverse views
-            // This is critical because ParsedField objects may be shared or referenced elsewhere
-            const frozenField: ParsedField = Object.freeze({
-              ...field,
-              relationFromFields: field.relationFromFields ? Object.freeze([...field.relationFromFields]) : undefined,
-              relationToFields: field.relationToFields ? Object.freeze([...field.relationToFields]) : undefined
-            })
-            targetRelations.push(frozenField)
+            const targetRelations = map.get(field.type)
+            if (targetRelations) {  // Defensive check instead of !
+              // Create a deep frozen copy to prevent mutations affecting both forward and reverse views
+              // This is critical because ParsedField objects may be shared or referenced elsewhere
+              const frozenField: ParsedField = Object.freeze({
+                ...field,
+                relationFromFields: field.relationFromFields ? Object.freeze([...field.relationFromFields]) : undefined,
+                relationToFields: field.relationToFields ? Object.freeze([...field.relationToFields]) : undefined,
+                // Shallow-copy default object to prevent external mutations
+                default: field.default && typeof field.default === 'object' 
+                  ? Object.freeze({ ...field.default as object }) as PrismaDefaultValue
+                  : field.default
+              })
+              targetRelations.push(frozenField)
+            }
           }
         }
       }
     }
   }
   
-  return map
+  // Freeze all arrays in the map before returning to prevent external mutations
+  const frozenMap = new Map<string, readonly ParsedField[]>()
+  for (const [key, value] of map.entries()) {
+    frozenMap.set(key, Object.freeze(value))
+  }
+  
+  return frozenMap
 }
 
 /**
@@ -728,7 +776,7 @@ function buildReverseRelationMap(models: ParsedModel[]): Map<string, ParsedField
 function enhanceModel(
   model: ParsedModel, 
   modelMap: Map<string, ParsedModel>,
-  reverseRelationMap: Map<string, ParsedField[]>
+  reverseRelationMap: Map<string, readonly ParsedField[]>
 ): void {
   // Cast to mutable version for initialization
   // This is safe because we're in the construction phase
@@ -878,13 +926,13 @@ function escapeForCodeGen(str: string): string {
  * Converts Prisma default values to TypeScript code strings for client-side defaults.
  * 
  * Supported:
- * - Primitive literals: string, number, boolean, null
+ * - Primitive literals: string, number (safe range), boolean, null
  * - Client-managed functions: now() → new Date()
+ * - Enum values: returns qualified reference (e.g., "EnumName.VALUE")
  * 
  * Not supported (returns undefined):
  * - DB-managed functions: autoincrement(), uuid(), cuid(), dbgenerated()
- * - Complex types: Decimal, BigInt (>= Number.MAX_SAFE_INTEGER), Bytes, JSON (requires special handling)
- * - Enum values (requires qualification, handled separately by generators)
+ * - Complex types: Decimal, BigInt, Bytes, JSON (requires special handling)
  * - Array/object literals (Prisma doesn't support for scalar fields)
  * - Unknown functions (future Prisma additions, treated conservatively as DB-managed)
  * 
@@ -900,7 +948,7 @@ function escapeForCodeGen(str: string): string {
  *  - No default value
  *  - DB-managed default (handled by database)
  *  - Cannot be safely represented in TypeScript
- *  - Requires special handling by generators (enums, complex types)
+ *  - Requires special handling by generators (complex types)
  */
 export function getDefaultValueString(field: ParsedField): string | undefined {
   if (!field.hasDefaultValue || !field.default) return undefined
@@ -908,14 +956,36 @@ export function getDefaultValueString(field: ParsedField): string | undefined {
   const def = field.default
   
   // Primitive values with proper escaping
-  if (typeof def === 'string') return `"${escapeForCodeGen(def)}"`
+  if (typeof def === 'string') {
+    // Check if it's an enum value (enum fields have kind === 'enum')
+    if (field.kind === 'enum') {
+      // Return qualified enum reference for generators to use
+      // Generators can import the enum type and reference it
+      return `${field.type}.${def}`
+    }
+    return `"${escapeForCodeGen(def)}"`
+  }
+  
   if (typeof def === 'number') {
     // Reject special numbers that don't have safe TypeScript representations
     if (!Number.isFinite(def)) return undefined
-    // Note: BigInt defaults would need special handling (e.g., 123n syntax)
-    // but Prisma doesn't currently support BigInt literals in defaults
+    
+    // Guard against BigInt values that exceed safe integer range
+    // Prisma may store BigInt defaults as numbers in DMMF
+    if (def > Number.MAX_SAFE_INTEGER || def < Number.MIN_SAFE_INTEGER) {
+      // BigInt literals would need special handling (e.g., 123n syntax)
+      return undefined
+    }
+    
+    // Guard against Decimal-like fractional values for BigInt fields
+    // If field type is BigInt but default has decimals, it's invalid
+    if (field.type === 'BigInt' && !Number.isInteger(def)) {
+      return undefined
+    }
+    
     return String(def)
   }
+  
   if (typeof def === 'boolean') return String(def)
   if (def === null) return 'null'
   
@@ -1067,7 +1137,7 @@ export function validateSchemaDetailed(schema: ParsedSchema, throwOnError = fals
         // - Required (not nullable) means it cannot be null
         // - relationFromFields means this side owns the foreign key
         // - This creates an impossible constraint: you can't insert the first record
-        // Solution: Make it optional (nullable) to allow two-step insert
+        // Solution: Make the FK scalar field optional to allow two-step insert
         // 
         // Note: isRequired and isNullable are inverses for most fields,
         // but we check both explicitly for clarity and future-proofing
@@ -1075,10 +1145,12 @@ export function validateSchemaDetailed(schema: ParsedSchema, throwOnError = fals
         const cannotBeNull = field.isRequired && !field.isNullable
         
         if (cannotBeNull && ownsFK) {
+          const fkFields = field.relationFromFields?.join(', ') || '<unknown>'
           errors.push(
             `Self-referencing relation ${model.name}.${field.name} is required (not nullable) ` +
-            `and owns the foreign key (relationFromFields), creating impossible constraint. ` +
-            `Consider making it optional (String? or add default value) to allow two-step insert.`
+            `and owns the foreign key (relationFromFields: [${fkFields}]), creating impossible constraint. ` +
+            `Solution: Make the foreign key scalar field(s) optional (e.g., parentId Int?) OR ` +
+            `add a default value to break the circular dependency and allow two-step insert.`
           )
         }
       }
@@ -1140,18 +1212,30 @@ export function validateSchemaDetailed(schema: ParsedSchema, throwOnError = fals
  * This prevents false positives for valid circular patterns like:
  * - User <-> Profile where one side is nullable
  * - Parent -> Child <- Parent where lists are involved
+ * 
+ * Performance: Uses single global DFS instead of per-model restarts.
+ * Deduplicates cycles to avoid reporting the same cycle multiple times.
  */
 function detectCircularRelations(schema: ParsedSchema): string[] {
   const errors: string[] = []
   const visiting = new Set<string>()
   const visited = new Set<string>()
+  const seenCycles = new Set<string>()  // Deduplicate cycles
   
   function visit(modelName: string, path: string[]): void {
     if (visiting.has(modelName)) {
-      errors.push(
-        `Circular relationship detected: ${path.join(' -> ')} -> ${modelName}. ` +
-        `Make at least one relation nullable or remove relationFromFields to break the cycle.`
-      )
+      // Found a cycle - normalize the path for deduplication
+      const cycleStart = path.indexOf(modelName)
+      const cycle = [...path.slice(cycleStart), modelName].sort().join(' -> ')
+      
+      if (!seenCycles.has(cycle)) {
+        seenCycles.add(cycle)
+        const displayPath = [...path.slice(cycleStart), modelName].join(' -> ')
+        errors.push(
+          `Circular relationship detected: ${displayPath}. ` +
+          `Make at least one relation nullable or remove relationFromFields to break the cycle.`
+        )
+      }
       return
     }
     
@@ -1174,6 +1258,7 @@ function detectCircularRelations(schema: ParsedSchema): string[] {
       const blocksInsertion = cannotBeNull && !field.isList && ownsFK
       
       if (blocksInsertion) {
+        // Use consistent path format: modelName.fieldName
         visit(field.type, [...path, `${modelName}.${field.name}`])
       }
     }
@@ -1182,10 +1267,11 @@ function detectCircularRelations(schema: ParsedSchema): string[] {
     visited.add(modelName)
   }
   
+  // Single global DFS pass - more efficient than per-model restarts
   for (const model of schema.models) {
-    visited.clear()
-    visiting.clear()
-    visit(model.name, [])
+    if (!visited.has(model.name)) {
+      visit(model.name, [])
+    }
   }
   
   return errors
