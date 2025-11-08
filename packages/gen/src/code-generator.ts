@@ -39,6 +39,8 @@ import { AnalysisCache } from '@/cache/analysis-cache.js'
 // v2.0: Centralized validation (runs before analysis)
 import { ConfigValidator } from '@/validation/config-validator.js'
 import { SchemaValidator } from '@/validation/schema-validator.js'
+// v2.0: Cross-platform path collision detection
+import { FilePathRegistry } from '@/utils/file-path-registry.js'
 // Registry-based architecture (78% less code)
 import { generateRegistrySystem } from '@/generators/registry-generator.js'
 import { generateRegistryMode, RegistryModeGenerator } from '@/generators/registry-mode-generator.js'
@@ -455,8 +457,8 @@ function generateCodeLegacy(
     }
   }
   
-  // Track all generated file paths to detect duplicates
-  const generatedPaths = new Set<string>()
+  // v2.0: Use FilePathRegistry for cross-platform collision detection
+  const pathRegistry = new FilePathRegistry()
   
   // Track errors with severity
   const errors: GenerationError[] = []
@@ -571,8 +573,8 @@ function generateCodeLegacy(
         (code: string, filename: string) => {
           const valid = validateGeneratedCode(code, filename, errors)
           if (valid && !filename.includes('.dto.') && !filename.includes('.zod.')) {
-            // Track paths for non-DTO/validator files
-            generatedPaths.add(filename)
+            // v2.0: Use FilePathRegistry for collision detection
+            pathRegistry.tryRegister(filename, 'registry', undefined, errors)
           }
           return valid
         }
@@ -596,7 +598,7 @@ function generateCodeLegacy(
       
       // Generate SDK and hooks
       try {
-        generateSDKClients(schema, files, cache, generatedPaths, errors, failFast, continueOnError, config)
+        generateSDKClients(schema, files, cache, pathRegistry, errors, failFast, continueOnError, config)
         
         // Validate analysis cache before generating hooks
         // CRITICAL FIX: Check if cache has analysis for all non-junction models
@@ -699,7 +701,7 @@ function generateCodeLegacy(
   try {
     for (const model of schema.models) {
       try {
-        generateModelCode(model, config, files, schema, cache, generatedPaths, errors, failFast, continueOnError)
+        generateModelCode(model, config, files, schema, cache, pathRegistry, errors, failFast, continueOnError)
       } catch (error) {
         const genError: GenerationError = {
           severity: ErrorSeverity.ERROR,
@@ -729,7 +731,7 @@ function generateCodeLegacy(
   
   // PHASE 3: Generate SDK clients (after all models are processed)
   try {
-    generateSDKClients(schema, files, cache, generatedPaths, errors, failFast, continueOnError, config)
+    generateSDKClients(schema, files, cache, pathRegistry, errors, failFast, continueOnError, config)
   } catch (error) {
     const genError: GenerationError = {
       severity: ErrorSeverity.ERROR,
@@ -931,7 +933,7 @@ function generateModelCode(
   files: GeneratedFiles,
   schema: ParsedSchema,
   cache: AnalysisCache,
-  generatedPaths: Set<string>,
+  pathRegistry: FilePathRegistry,
   errors: GenerationError[],
   failFast: boolean,
   continueOnError: boolean
@@ -1001,7 +1003,7 @@ function generateModelCode(
   
   // Generate Service
   const servicePath = `${modelKebab}.service.ts`
-  if (isPathAvailable(servicePath, generatedPaths, model.name, errors)) {
+  if (pathRegistry.tryRegister(servicePath, model.name, model.name, errors)) {
     const service = useEnhanced && analysis
       ? generateEnhancedService(model, schema)
       : generateService(model, schema)
@@ -1018,17 +1020,17 @@ function generateModelCode(
     const serviceRoutesPath = `${serviceAnnotation.name}.routes.ts`
     const scaffoldPath = `${serviceAnnotation.name}.service.scaffold.ts`
     
-    if (isPathAvailable(serviceControllerPath, generatedPaths, serviceAnnotation.name, errors)) {
+    if (pathRegistry.tryRegister(serviceControllerPath, serviceAnnotation.name, undefined, errors)) {
       const serviceController = generateServiceController(serviceAnnotation)
       files.controllers.set(serviceControllerPath, serviceController)
     }
     
-    if (isPathAvailable(serviceRoutesPath, generatedPaths, serviceAnnotation.name, errors)) {
+    if (pathRegistry.tryRegister(serviceRoutesPath, serviceAnnotation.name, undefined, errors)) {
       const serviceRoutes = generateServiceRoutes(serviceAnnotation)
       files.routes.set(serviceRoutesPath, serviceRoutes)
     }
     
-    if (isPathAvailable(scaffoldPath, generatedPaths, serviceAnnotation.name, errors)) {
+    if (pathRegistry.tryRegister(scaffoldPath, serviceAnnotation.name, undefined, errors)) {
       const scaffold = generateServiceScaffold(serviceAnnotation)
       files.services.set(scaffoldPath, scaffold)
     }
@@ -1039,7 +1041,7 @@ function generateModelCode(
   
   // Generate Controller (for standard CRUD models)
   const controllerPath = `${modelKebab}.controller.ts`
-  if (isPathAvailable(controllerPath, generatedPaths, model.name, errors)) {
+  if (pathRegistry.tryRegister(controllerPath, model.name, model.name, errors)) {
     const controller = useEnhanced && analysis
       ? generateBaseClassController(model, schema, framework, analysis)
       : generateController(model, framework)
@@ -1052,48 +1054,22 @@ function generateModelCode(
     ? generateEnhancedRoutes(model, schema, framework, analysis)
     : generateRoutes(model, framework)
     
-  if (routes && isPathAvailable(routesPath, generatedPaths, model.name, errors)) {
+  if (routes && pathRegistry.tryRegister(routesPath, model.name, model.name, errors)) {
     files.routes.set(routesPath, routes)
   }
 }
 
-/**
- * Check for duplicate file paths and prevent overwrites
- * Returns true if path is available (can proceed), false if duplicate exists
- * 
- * IMPORTANT: Returns true for success (path available), false for failure (duplicate)
- * This matches the natural flow: if (isPathAvailable()) { generate file }
- */
-function isPathAvailable(
-  path: string,
-  generatedPaths: Set<string>,
-  modelName: string,
-  errors: GenerationError[]
-): boolean {
-  if (generatedPaths.has(path)) {
-    const error: GenerationError = {
-      severity: ErrorSeverity.WARNING,
-      message: `Duplicate file path detected: ${path}`,
-      model: modelName,
-      phase: 'path-validation'
-    }
-    errors.push(error)
-    console.warn(`[ssot-codegen] ${error.message} (model: ${modelName}) - skipping to prevent overwrite`)
-    return false  // Path NOT available (duplicate found)
-  }
-  generatedPaths.add(path)
-  return true  // Path available (no duplicate)
-}
+// isPathAvailable() removed in v2.0 - replaced with FilePathRegistry.tryRegister()
 
 /**
  * Generate SDK clients for all models and services
- * v2.0: Now accepts unified AnalysisCache class instead of interface
+ * v2.0: Uses FilePathRegistry for cross-platform collision detection
  */
 function generateSDKClients(
   schema: ParsedSchema,
   files: GeneratedFiles,
   cache: AnalysisCache,
-  generatedPaths: Set<string>,
+  pathRegistry: FilePathRegistry,
   errors: GenerationError[],
   failFast: boolean,
   continueOnError: boolean,
@@ -1114,7 +1090,7 @@ function generateSDKClients(
       const modelNameLower = model.name.toLowerCase()
       const sdkPath = `models/${modelNameLower}.client.ts`
       
-      if (isPathAvailable(sdkPath, generatedPaths, model.name, errors)) {
+      if (pathRegistry.tryRegister(sdkPath, `${model.name}-sdk`, model.name, errors)) {
         files.sdk.set(sdkPath, modelClient)
         
         modelClients.push({
@@ -1147,7 +1123,7 @@ function generateSDKClients(
       const serviceNameLower = serviceAnnotation.name.toLowerCase()
       const sdkPath = `services/${serviceNameLower}.client.ts`
       
-      if (isPathAvailable(sdkPath, generatedPaths, serviceAnnotation.name, errors)) {
+      if (pathRegistry.tryRegister(sdkPath, `${serviceAnnotation.name}-sdk`, undefined, errors)) {
         files.sdk.set(sdkPath, serviceClient)
         
         // Transform service name to proper class name
