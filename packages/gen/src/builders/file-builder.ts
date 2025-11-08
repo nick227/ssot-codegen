@@ -3,7 +3,7 @@
  * Prevents invalid code from being added to generation output
  */
 
-import { ErrorSeverity, type GenerationError, type IGenerationContext } from '../pipeline/generation-types.js'
+import { ErrorSeverity, type IGenerationContext, type IFileBuilder } from '../pipeline/generation-types.js'
 
 /**
  * Validates generated TypeScript code for common syntax errors
@@ -74,7 +74,7 @@ export function validateGeneratedCode(
  * - Immutable output
  * - Clear/restore support for rollback
  */
-export class FileBuilder {
+export class FileBuilder implements IFileBuilder {
   private readonly files = new Map<string, string>()
   private readonly generatedPaths = new Set<string>()
   

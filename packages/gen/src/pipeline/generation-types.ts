@@ -118,16 +118,51 @@ export interface GenerationPhase {
 }
 
 /**
+ * Files builder interface
+ */
+export interface IFilesBuilder {
+  getDTOBuilder(modelName: string): IFileBuilder
+  getValidatorBuilder(modelName: string): IFileBuilder
+  getServicesBuilder(): IFileBuilder
+  getControllersBuilder(): IFileBuilder
+  getRoutesBuilder(): IFileBuilder
+  getSDKBuilder(): IFileBuilder
+  getRegistryBuilder(): IFileBuilder
+  getChecklistBuilder(): IFileBuilder
+  getPluginBuilder(pluginName: string): IFileBuilder
+  getCoreHooksBuilder(): IFileBuilder
+  getReactHooksBuilder(): IFileBuilder
+  getVueHooksBuilder(): IFileBuilder
+  getZustandHooksBuilder(): IFileBuilder
+  getVanillaHooksBuilder(): IFileBuilder
+  getAngularHooksBuilder(): IFileBuilder
+  setPluginOutputs(outputs: Map<string, unknown>): void
+}
+
+/**
+ * File builder interface
+ */
+export interface IFileBuilder {
+  addFile(path: string, content: string, modelName?: string): boolean
+  getFile(path: string): string | undefined
+  hasFile(path: string): boolean
+  getFileCount(): number
+  clear(): void
+}
+
+/**
  * Generation context interface
  */
 export interface IGenerationContext {
   readonly config: NormalizedConfig
   readonly schema: ParsedSchema
   readonly cache: IAnalysisCache
+  readonly filesBuilder: IFilesBuilder
   
   addError(error: GenerationError): void
   getErrors(): readonly GenerationError[]
   hasBlockingErrors(): boolean
+  hasCriticalErrors(): boolean
   
   createSnapshot(phaseName: string): void
   rollbackToSnapshot(phaseName: string): void

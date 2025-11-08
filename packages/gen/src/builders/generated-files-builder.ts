@@ -5,9 +5,7 @@
 
 import { FileBuilder } from './file-builder.js'
 import type { GeneratedFiles } from '../pipeline/types.js'
-import type { IGenerationContext } from '../pipeline/generation-types.js'
-import { toKebabCase } from '../utils/naming.js'
-import type { ParsedModel } from '../dmmf-parser.js'
+import type { IGenerationContext, IFilesBuilder } from '../pipeline/generation-types.js'
 
 /**
  * Builder for complete GeneratedFiles structure
@@ -19,7 +17,7 @@ import type { ParsedModel } from '../dmmf-parser.js'
  * - Immutable output
  * - Snapshot/restore for rollback
  */
-export class GeneratedFilesBuilder {
+export class GeneratedFilesBuilder implements IFilesBuilder {
   // Per-model file builders (contracts and validators organized by model)
   private readonly modelDTOs = new Map<string, FileBuilder>()
   private readonly modelValidators = new Map<string, FileBuilder>()
