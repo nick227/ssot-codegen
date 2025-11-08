@@ -38,7 +38,7 @@ import { escapeForCodeGen } from '../security/escaping.js'
  *  - Requires special handling by generators (complex types)
  */
 export function getDefaultValueString(field: ParsedField): string | undefined {
-  if (!field.hasDefaultValue || !field.default) return undefined
+  if (!field.hasDefaultValue || field.default === undefined) return undefined
   
   const def = field.default
   
