@@ -27,6 +27,7 @@ export interface ParsedField {
   hasDbDefault: boolean  // DB-managed default (autoincrement, uuid, etc)
   default?: any
   isPartOfCompositePrimaryKey: boolean
+  isSelfRelation: boolean  // Field references its own model
   relationName?: string
   relationFromFields?: string[]
   relationToFields?: string[]
@@ -35,7 +36,7 @@ export interface ParsedField {
 
 export interface ParsedModel {
   name: string
-  nameLower: string  // Cached toLowerCase() for performance (used 63× across codebase)
+  nameLower: string  // Lowercase name for case-insensitive lookups
   dbName?: string
   fields: ParsedField[]
   primaryKey?: {
@@ -51,6 +52,8 @@ export interface ParsedModel {
   createFields: ParsedField[]  // Fields for CreateDTO
   updateFields: ParsedField[]  // Fields for UpdateDTO
   readFields: ParsedField[]    // Fields for ReadDTO
+  reverseRelations: ParsedField[]  // Fields from other models that reference this model
+  hasSelfRelation: boolean  // Model has fields that reference itself
 }
 
 export interface ParsedEnum {
@@ -64,6 +67,7 @@ export interface ParsedSchema {
   enums: ParsedEnum[]
   modelMap: Map<string, ParsedModel>
   enumMap: Map<string, ParsedEnum>
+  reverseRelationMap: Map<string, ParsedField[]>  // modelName -> fields that reference it
 }
 
 /**
@@ -76,16 +80,20 @@ export function parseDMMF(dmmf: DMMF.Document): ParsedSchema {
   const models = parseModels(dmmf.datamodel.models, enumMap)
   const modelMap = new Map(models.map(m => [m.name, m]))
   
+  // Build reverse relation map
+  const reverseRelationMap = buildReverseRelationMap(models)
+  
   // Add derived properties
   for (const model of models) {
-    enhanceModel(model, modelMap)
+    enhanceModel(model, modelMap, reverseRelationMap)
   }
   
   return {
     models,
     enums,
     modelMap,
-    enumMap
+    enumMap,
+    reverseRelationMap
   }
 }
 
@@ -105,7 +113,7 @@ function parseEnums(enums: readonly DMMF.DatamodelEnum[]): ParsedEnum[] {
  */
 function parseModels(models: readonly DMMF.Model[], enumMap: Map<string, ParsedEnum>): ParsedModel[] {
   return models.map(model => {
-    const fields = parseFields(model.fields, enumMap)
+    const fields = parseFields(model.fields, enumMap, model.name)
     
     return {
       name: model.name,
@@ -117,13 +125,15 @@ function parseModels(models: readonly DMMF.Model[], enumMap: Map<string, ParsedE
         fields: model.primaryKey.fields as string[]
       } : undefined,
       uniqueFields: model.uniqueFields as string[][],
-      documentation: model.documentation,
+      documentation: sanitizeDocumentation(model.documentation),
       // These will be filled by enhanceModel
       scalarFields: [],
       relationFields: [],
       createFields: [],
       updateFields: [],
-      readFields: []
+      readFields: [],
+      reverseRelations: [],
+      hasSelfRelation: false
     }
   })
 }
@@ -131,12 +141,13 @@ function parseModels(models: readonly DMMF.Model[], enumMap: Map<string, ParsedE
 /**
  * Parse fields
  */
-function parseFields(fields: readonly DMMF.Field[], enumMap: Map<string, ParsedEnum>): ParsedField[] {
+function parseFields(fields: readonly DMMF.Field[], enumMap: Map<string, ParsedEnum>, modelName: string): ParsedField[] {
   return fields.map(field => {
     const isEnum = enumMap.has(field.type)
     const kind = isEnum ? 'enum' : determineFieldKind(field)
     const hasDbDefault = isDbManagedDefault(field.default)
     const isReadOnly = determineReadOnly(field)
+    const isSelfRelation = field.kind === 'object' && field.type === modelName
     
     return {
       name: field.name,
@@ -154,10 +165,11 @@ function parseFields(fields: readonly DMMF.Field[], enumMap: Map<string, ParsedE
       hasDbDefault,
       default: field.default,
       isPartOfCompositePrimaryKey: false,  // Set by enhanceModel
+      isSelfRelation,
       relationName: field.relationName,
       relationFromFields: field.relationFromFields as string[] | undefined,
       relationToFields: field.relationToFields as string[] | undefined,
-      documentation: field.documentation
+      documentation: sanitizeDocumentation(field.documentation)
     }
   })
 }
@@ -200,9 +212,53 @@ function determineReadOnly(field: DMMF.Field): boolean {
 }
 
 /**
+ * Sanitize documentation strings for safe code generation
+ */
+function sanitizeDocumentation(doc: string | undefined): string | undefined {
+  if (!doc) return undefined
+  
+  // Remove problematic characters that could break generated comments
+  return doc
+    .replace(/\*\//g, '* /')  // Prevent closing block comments
+    .replace(/\/\*/g, '/ *')  // Prevent opening block comments
+    .replace(/\r\n/g, '\n')   // Normalize line endings
+    .trim()
+}
+
+/**
+ * Build reverse relation map
+ */
+function buildReverseRelationMap(models: ParsedModel[]): Map<string, ParsedField[]> {
+  const map = new Map<string, ParsedField[]>()
+  
+  // Initialize map with empty arrays
+  for (const model of models) {
+    map.set(model.name, [])
+  }
+  
+  // Populate reverse relations
+  for (const model of models) {
+    for (const field of model.fields) {
+      if (field.kind === 'object') {
+        const targetRelations = map.get(field.type)
+        if (targetRelations) {
+          targetRelations.push(field)
+        }
+      }
+    }
+  }
+  
+  return map
+}
+
+/**
  * Enhance model with derived properties
  */
-function enhanceModel(model: ParsedModel, modelMap: Map<string, ParsedModel>): void {
+function enhanceModel(
+  model: ParsedModel, 
+  modelMap: Map<string, ParsedModel>,
+  reverseRelationMap: Map<string, ParsedField[]>
+): void {
   // Mark fields that are part of composite primary key
   if (model.primaryKey?.fields) {
     const compositePkFields = new Set(model.primaryKey.fields)
@@ -216,24 +272,39 @@ function enhanceModel(model: ParsedModel, modelMap: Map<string, ParsedModel>): v
   // Find ID field
   model.idField = model.fields.find(f => f.isId)
   
-  // Separate scalar and relation fields
-  model.scalarFields = model.fields.filter(f => f.kind !== 'object')
+  // Separate scalar and relation fields (exclude unsupported)
+  model.scalarFields = model.fields.filter(f => f.kind !== 'object' && f.kind !== 'unsupported')
   model.relationFields = model.fields.filter(f => f.kind === 'object')
   
-  // Fields for CreateDTO (exclude id, readonly, relations, system timestamps)
+  // Check for self-relations
+  model.hasSelfRelation = model.fields.some(f => f.isSelfRelation)
+  
+  // Add reverse relations
+  model.reverseRelations = reverseRelationMap.get(model.name) || []
+  
+  // Fields for CreateDTO (exclude id, readonly, relations, system timestamps, unsupported)
   model.createFields = model.fields.filter(f => 
     !f.isId && 
     !f.isReadOnly && 
     !f.isUpdatedAt &&
     f.kind !== 'object' &&
+    f.kind !== 'unsupported' &&
     // Exclude system-managed timestamp fields with @default
     !(f.hasDefaultValue && (f.name === 'createdAt' || f.name === 'updatedAt'))
   )
   
-  // Fields for UpdateDTO (same as create, all optional)
-  model.updateFields = model.createFields
+  // Fields for UpdateDTO (exclude @updatedAt, readonly, id, unsupported)
+  model.updateFields = model.fields.filter(f => 
+    !f.isId && 
+    !f.isReadOnly && 
+    !f.isUpdatedAt &&  // Exclude @updatedAt from updates
+    f.kind !== 'object' &&
+    f.kind !== 'unsupported' &&
+    // Exclude system-managed timestamp fields
+    !(f.hasDefaultValue && (f.name === 'createdAt' || f.name === 'updatedAt'))
+  )
   
-  // Fields for ReadDTO (all scalar fields)
+  // Fields for ReadDTO (all scalar fields, excluding unsupported)
   model.readFields = model.scalarFields
 }
 
@@ -278,9 +349,19 @@ export function getDefaultValueString(field: ParsedField): string | undefined {
   const def = field.default
   
   // Handle different default value types
-  if (typeof def === 'string') return `"${def}"`
+  if (typeof def === 'string') return `"${def.replace(/"/g, '\\"')}"`
   if (typeof def === 'number') return String(def)
   if (typeof def === 'boolean') return String(def)
+  
+  // Handle arrays
+  if (Array.isArray(def)) {
+    const items = def.map(item => {
+      if (typeof item === 'string') return `"${item.replace(/"/g, '\\"')}"`
+      if (typeof item === 'number' || typeof item === 'boolean') return String(item)
+      return JSON.stringify(item)
+    })
+    return `[${items.join(', ')}]`
+  }
   
   // Handle Prisma functions
   if (typeof def === 'object' && 'name' in def) {
@@ -289,7 +370,17 @@ export function getDefaultValueString(field: ParsedField): string | undefined {
       case 'autoincrement': return undefined // Handled by DB
       case 'uuid': return undefined // Handled by DB
       case 'cuid': return undefined // Handled by DB
+      case 'dbgenerated': return undefined // Handled by DB
       default: return undefined
+    }
+  }
+  
+  // Handle complex objects (JSON)
+  if (typeof def === 'object') {
+    try {
+      return JSON.stringify(def)
+    } catch {
+      return undefined
     }
   }
   
@@ -299,7 +390,7 @@ export function getDefaultValueString(field: ParsedField): string | undefined {
 /**
  * Validate parsed schema
  */
-export function validateSchema(schema: ParsedSchema): string[] {
+export function validateSchema(schema: ParsedSchema, throwOnError = false): string[] {
   const errors: string[] = []
   
   // Validate enums
@@ -318,6 +409,16 @@ export function validateSchema(schema: ParsedSchema): string[] {
       errors.push(`Model ${model.name} has no @id field or @@id composite key`)
     }
     
+    // Validate uniqueFields reference existing fields
+    for (const uniqueConstraint of model.uniqueFields) {
+      for (const fieldName of uniqueConstraint) {
+        const field = model.fields.find(f => f.name === fieldName)
+        if (!field) {
+          errors.push(`Model ${model.name} unique constraint references non-existent field: ${fieldName}`)
+        }
+      }
+    }
+    
     // Check relations
     for (const field of model.relationFields) {
       const target = schema.modelMap.get(field.type)
@@ -330,6 +431,29 @@ export function validateSchema(schema: ParsedSchema): string[] {
         if (!field.relationToFields || field.relationToFields.length === 0) {
           errors.push(`Relation ${model.name}.${field.name} has relationFromFields but missing relationToFields`)
         }
+        
+        // Validate relationFromFields exist in model
+        for (const fromField of field.relationFromFields) {
+          const exists = model.fields.some(f => f.name === fromField)
+          if (!exists) {
+            errors.push(`Relation ${model.name}.${field.name} references non-existent field in relationFromFields: ${fromField}`)
+          }
+        }
+        
+        // Validate relationToFields exist in target model
+        if (target && field.relationToFields) {
+          for (const toField of field.relationToFields) {
+            const exists = target.fields.some(f => f.name === toField)
+            if (!exists) {
+              errors.push(`Relation ${model.name}.${field.name} references non-existent field in relationToFields: ${toField}`)
+            }
+          }
+        }
+      }
+      
+      // Flag self-referencing relations (they need special handling)
+      if (field.isSelfRelation) {
+        errors.push(`INFO: Model ${model.name}.${field.name} is a self-referencing relation (requires special generator handling)`)
       }
     }
     
@@ -339,11 +463,27 @@ export function validateSchema(schema: ParsedSchema): string[] {
         errors.push(`Field ${model.name}.${field.name} references unknown enum ${field.type}`)
       }
     }
+    
+    // Warn about unsupported fields
+    const unsupportedFields = model.fields.filter(f => f.kind === 'unsupported')
+    if (unsupportedFields.length > 0) {
+      for (const field of unsupportedFields) {
+        errors.push(`WARNING: Field ${model.name}.${field.name} has unsupported type ${field.type}`)
+      }
+    }
   }
   
   // Check for circular relationship dependencies
   const circularErrors = detectCircularRelations(schema)
   errors.push(...circularErrors)
+  
+  if (throwOnError && errors.length > 0) {
+    // Filter out INFO and WARNING messages for throwing
+    const criticalErrors = errors.filter(e => !e.startsWith('INFO:') && !e.startsWith('WARNING:'))
+    if (criticalErrors.length > 0) {
+      throw new Error(`Schema validation failed:\n${criticalErrors.join('\n')}`)
+    }
+  }
   
   return errors
 }

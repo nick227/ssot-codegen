@@ -26,6 +26,7 @@ export function createMockField(overrides: Partial<ParsedField> = {}): ParsedFie
     hasDefaultValue,
     hasDbDefault: false,
     isPartOfCompositePrimaryKey: false,
+    isSelfRelation: false,
     ...overrides
   }
 }
@@ -41,12 +42,14 @@ export function createMockModel(overrides: Partial<ParsedModel> = {}): ParsedMod
   ]
   
   const idField = fields.find(f => f.isId)
-  const scalarFields = fields.filter(f => f.kind !== 'object')
+  const scalarFields = fields.filter(f => f.kind !== 'object' && f.kind !== 'unsupported')
   const relationFields = fields.filter(f => f.kind === 'object')
-  const createFields = fields.filter(f => !f.isId && !f.isReadOnly && !f.isUpdatedAt && f.kind !== 'object')
+  const createFields = fields.filter(f => !f.isId && !f.isReadOnly && !f.isUpdatedAt && f.kind !== 'object' && f.kind !== 'unsupported')
+  const hasSelfRelation = fields.some(f => f.isSelfRelation)
   
   return {
     name: 'TestModel',
+    nameLower: (overrides.name || 'TestModel').toLowerCase(),
     fields,
     primaryKey: { fields: ['id'] },
     uniqueFields: [],
@@ -56,6 +59,8 @@ export function createMockModel(overrides: Partial<ParsedModel> = {}): ParsedMod
     createFields,
     updateFields: createFields,
     readFields: scalarFields,
+    reverseRelations: [],
+    hasSelfRelation,
     ...overrides
   }
 }

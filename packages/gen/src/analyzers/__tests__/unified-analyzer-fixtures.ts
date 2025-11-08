@@ -28,6 +28,7 @@ export function createMockField(overrides: Partial<ParsedField> = {}): ParsedFie
     hasDefaultValue,
     hasDbDefault: false,
     isPartOfCompositePrimaryKey: false,
+    isSelfRelation: false,
     relationFromFields: undefined,
     relationToFields: undefined,
     relationName: undefined,
@@ -45,11 +46,13 @@ export function createMockModel(overrides: Partial<ParsedModel> = {}): ParsedMod
   ]
   
   const idField = fields.find(f => f.isId)
-  const scalarFields = fields.filter(f => f.kind !== 'object')
+  const scalarFields = fields.filter(f => f.kind !== 'object' && f.kind !== 'unsupported')
   const relationFields = fields.filter(f => f.kind === 'object')
+  const hasSelfRelation = fields.some(f => f.isSelfRelation)
   
   return {
     name: 'TestModel',
+    nameLower: (overrides.name || 'TestModel').toLowerCase(),
     fields,
     primaryKey: overrides.primaryKey || (idField ? { fields: [idField.name] } : undefined),
     uniqueFields: overrides.uniqueFields || [],
@@ -59,6 +62,8 @@ export function createMockModel(overrides: Partial<ParsedModel> = {}): ParsedMod
     createFields: scalarFields.filter(f => !f.isId && !f.isReadOnly && !f.isUpdatedAt),
     updateFields: scalarFields.filter(f => !f.isId && !f.isReadOnly && !f.isUpdatedAt),
     readFields: scalarFields,
+    reverseRelations: [],
+    hasSelfRelation,
     ...overrides
   } as ParsedModel
 }
@@ -68,11 +73,30 @@ export function createMockModel(overrides: Partial<ParsedModel> = {}): ParsedMod
  */
 export function createMockSchema(models: ParsedModel[]): ParsedSchema {
   const modelMap = new Map(models.map(m => [m.name, m]))
+  const reverseRelationMap = new Map<string, ParsedField[]>()
+  
+  // Build reverse relation map
+  for (const model of models) {
+    reverseRelationMap.set(model.name, [])
+  }
+  
+  for (const model of models) {
+    for (const field of model.fields) {
+      if (field.kind === 'object') {
+        const relations = reverseRelationMap.get(field.type)
+        if (relations) {
+          relations.push(field)
+        }
+      }
+    }
+  }
   
   return {
     models,
     modelMap,
-    enums: []
+    enums: [],
+    enumMap: new Map(),
+    reverseRelationMap
   } as ParsedSchema
 }
 

@@ -21,7 +21,8 @@ export class FieldBuilder {
     isUpdatedAt: false,
     hasDefaultValue: false,
     hasDbDefault: false,
-    isPartOfCompositePrimaryKey: false
+    isPartOfCompositePrimaryKey: false,
+    isSelfRelation: false
   }
 
   name(name: string): this {
@@ -180,14 +181,17 @@ export class ModelBuilder {
     }
 
     this.model.fields = this.fields
+    this.model.nameLower = this.model.name.toLowerCase()
     this.model.idField = this.fields.find(f => f.isId)
-    this.model.scalarFields = this.fields.filter(f => f.kind !== 'object')
+    this.model.scalarFields = this.fields.filter(f => f.kind !== 'object' && f.kind !== 'unsupported')
     this.model.relationFields = this.fields.filter(f => f.kind === 'object')
     this.model.createFields = this.fields.filter(
-      f => !f.isId && !f.isReadOnly && !f.isUpdatedAt && f.kind !== 'object'
+      f => !f.isId && !f.isReadOnly && !f.isUpdatedAt && f.kind !== 'object' && f.kind !== 'unsupported'
     )
     this.model.updateFields = this.model.createFields
     this.model.readFields = this.model.scalarFields
+    this.model.reverseRelations = []
+    this.model.hasSelfRelation = this.fields.some(f => f.isSelfRelation)
 
     if (this.model.idField) {
       this.model.primaryKey = { fields: [this.model.idField.name] }
