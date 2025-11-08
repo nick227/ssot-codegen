@@ -13,18 +13,24 @@ export interface ControllerConfig {
     take: number
     maxLimit?: number  // Maximum allowed page size
   }
+  bulkOperationLimits?: {
+    maxBatchSize?: number  // Maximum records in bulk operations (default: 100)
+  }
   enableBulkOperations?: boolean
   enableDomainMethods?: boolean
   enableTransactions?: boolean  // Wrap bulk operations in transactions
   sanitizeErrorMessages?: boolean  // Use generic error messages (default: true for production)
+  sanitizeValidationErrors?: boolean  // Sanitize Zod error details (default: false)
 }
 
 export const DEFAULT_CONTROLLER_CONFIG: ControllerConfig = {
   paginationDefaults: { skip: 0, take: 20, maxLimit: 100 },
+  bulkOperationLimits: { maxBatchSize: 100 },
   enableBulkOperations: true,
   enableDomainMethods: true,
   enableTransactions: false,  // Service layer responsibility
-  sanitizeErrorMessages: true
+  sanitizeErrorMessages: true,
+  sanitizeValidationErrors: false  // Show full errors in development
 }
 
 /**
@@ -87,7 +93,7 @@ function sanitizeLogContext(context: Record<string, unknown>): Record<string, un
 }
 
 /**
- * Standard error response handler
+ * Standard error response handler with enhanced logging
  */
 function handleError(
   error: unknown,
@@ -102,21 +108,29 @@ function handleError(
     return res.status(400).json({ error: 'Validation Error', details: error.errors })
   }
   
-  logger.error({ ...sanitized, error }, \`Error: \${context}\`)
+  // Include error type and stack trace for debugging
+  const errorInfo = error instanceof Error ? {
+    message: error.message,
+    type: error.constructor.name,
+    stack: error.stack
+  } : { error }
+  
+  logger.error({ ...sanitized, ...errorInfo }, \`Error: \${context}\`)
   return res.status(500).json({ error: 'Internal Server Error' })
 }`
 }
 
 /**
- * Generate bulk operation validators
+ * Generate bulk operation validators with size limits
  */
-export function generateBulkValidators(modelName: string): string {
+export function generateBulkValidators(modelName: string, maxBatchSize: number = 100): string {
   return `
 /**
- * Bulk create input schema
+ * Bulk create input schema with size limit
+ * Prevents resource exhaustion attacks by limiting batch size
  */
 const BulkCreate${modelName}Schema = z.object({
-  data: z.array(${modelName}CreateSchema)
+  data: z.array(${modelName}CreateSchema).min(1).max(${maxBatchSize})
 })
 
 /**
@@ -226,7 +240,7 @@ function sanitizeLogContext(context: Record<string, unknown>): Record<string, un
 }
 
 /**
- * Standard error response handler for Fastify
+ * Standard error response handler for Fastify with enhanced logging
  */
 function handleError(
   error: unknown,
@@ -241,7 +255,14 @@ function handleError(
     return reply.code(400).send({ error: 'Validation Error', details: error.errors })
   }
   
-  logger.error({ ...sanitized, error }, \`Error: \${context}\`)
+  // Include error type and stack trace for debugging
+  const errorInfo = error instanceof Error ? {
+    message: error.message,
+    type: error.constructor.name,
+    stack: error.stack
+  } : { error }
+  
+  logger.error({ ...sanitized, ...errorInfo }, \`Error: \${context}\`)
   return reply.code(500).send({ error: 'Internal Server Error' })
 }`
 }
