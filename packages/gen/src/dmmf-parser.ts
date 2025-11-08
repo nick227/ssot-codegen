@@ -187,9 +187,9 @@ export interface ParsedEnum {
 export interface ParsedSchema {
   readonly models: readonly ParsedModel[]  // Frozen to prevent mutations
   readonly enums: readonly ParsedEnum[]    // Frozen to prevent mutations
-  modelMap: Map<string, ParsedModel>
-  enumMap: Map<string, ParsedEnum>
-  reverseRelationMap: Map<string, readonly ParsedField[]>  // modelName -> frozen fields that reference it
+  modelMap: ReadonlyMap<string, ParsedModel>  // Read-only view to prevent mutations
+  enumMap: ReadonlyMap<string, ParsedEnum>    // Read-only view to prevent mutations
+  reverseRelationMap: ReadonlyMap<string, readonly ParsedField[]>  // Read-only view, frozen fields
 }
 
 // ============================================================================
@@ -336,6 +336,40 @@ function safeStringify(obj: unknown, maxLength = 500): string {
 }
 
 /**
+ * Deep freeze an object and all nested objects/arrays
+ * 
+ * Recursively freezes all properties to ensure complete immutability.
+ * Handles circular references by tracking visited objects.
+ * 
+ * @param obj - Object to freeze
+ * @param visited - Set of already-frozen objects (for circular reference handling)
+ * @returns The frozen object
+ */
+function deepFreeze<T>(obj: T, visited = new WeakSet()): T {
+  // Skip primitives and null
+  if (obj === null || typeof obj !== 'object') return obj
+  
+  // Avoid freezing the same object twice (handles circular refs)
+  if (visited.has(obj as any)) return obj
+  visited.add(obj as any)
+  
+  // Freeze the object itself
+  Object.freeze(obj)
+  
+  // Recursively freeze all properties
+  if (obj && typeof obj === 'object') {
+    Object.getOwnPropertyNames(obj).forEach(prop => {
+      const value = (obj as any)[prop]
+      if (value && typeof value === 'object') {
+        deepFreeze(value, visited)
+      }
+    })
+  }
+  
+  return obj
+}
+
+/**
  * Parse enums with type guards
  */
 function parseEnums(enums: readonly DMMF.DatamodelEnum[], logger: DMMFParserLogger): ParsedEnum[] {
@@ -347,11 +381,25 @@ function parseEnums(enums: readonly DMMF.DatamodelEnum[], logger: DMMFParserLogg
       }
       return true
     })
-    .map(e => ({
-      name: e.name,
-      values: Object.freeze(e.values.map(v => v.name)),
-      documentation: sanitizeDocumentation(e.documentation)
-    }))
+    .map(e => {
+      // Filter out any malformed value objects and extract names
+      // Guard against non-objects or objects missing 'name' property
+      const values = e.values
+        .filter(v => {
+          if (!v || typeof v !== 'object' || typeof (v as any).name !== 'string') {
+            logger.warn(`Skipping invalid enum value in ${e.name}: ${safeStringify(v)}`)
+            return false
+          }
+          return true
+        })
+        .map(v => v.name)
+      
+      return {
+        name: e.name,
+        values: Object.freeze(values),
+        documentation: sanitizeDocumentation(e.documentation)
+      }
+    })
 }
 
 /**
@@ -377,9 +425,10 @@ function parseModels(models: readonly DMMF.Model[], enumMap: Map<string, ParsedE
     
     return {
       name: model.name,
-      // Use toLocaleLowerCase('en-US') for consistent locale-insensitive casing
-      // Prevents issues with Turkish İ/i and other locale-specific edge cases
-      nameLower: model.name.toLocaleLowerCase('en-US'),
+      // Use toLowerCase() for consistent ASCII lowercasing
+      // Prisma model names are ASCII identifiers, so locale-insensitive casing is appropriate
+      // Note: This avoids toLocaleLowerCase() compatibility issues in some environments
+      nameLower: model.name.toLowerCase(),
       dbName: model.dbName || undefined,
       fields,
       primaryKey,
@@ -438,7 +487,7 @@ function parseFields(fields: readonly DMMF.Field[], enumMap: Map<string, ParsedE
     
     const kind = isEnum ? 'enum' : determineFieldKind(field)
     const hasDbDefault = isDbManagedDefault(field.default)
-    const isReadOnly = determineReadOnly(field, modelName)
+    const isReadOnly = determineReadOnly(field)
     const isSelfRelation = field.kind === 'object' && field.type === modelName
     
     // isNullable: Type system allows null (String? in schema)
@@ -452,7 +501,7 @@ function parseFields(fields: readonly DMMF.Field[], enumMap: Map<string, ParsedE
     // List fields:
     //   Optional if nullable OR has default OR is implicit relation list
     //   Note: In Prisma, lists can be required (isRequired: true) and non-nullable
-    //   but usually have defaults (empty array) or are relation lists
+    //   Required scalar/enum lists without defaults are NOT optional (rare but valid)
     // 
     // Scalar/enum fields:
     //   Optional if nullable OR has any default value (DB or client-managed)
@@ -464,17 +513,15 @@ function parseFields(fields: readonly DMMF.Field[], enumMap: Map<string, ParsedE
     //   and don't need to be specified when creating this model
     let isOptional: boolean
     if (field.isList) {
-      // List fields are usually optional, but check for edge cases:
-      // - Nullable lists are always optional
-      // - Lists with defaults are optional
-      // - Relation lists without FK ownership are optional (implicit)
-      // - Required non-nullable lists without defaults are NOT optional (rare edge case)
+      // List fields need explicit checks based on kind:
       if (field.kind === 'object') {
-        // Relation list - optional if nullable or implicit
+        // Relation list - optional if nullable or implicit (no FK ownership)
         const isImplicitRelation = !field.relationFromFields || field.relationFromFields.length === 0
         isOptional = isNullable || isImplicitRelation
       } else {
-        // Scalar/enum list - optional if nullable or has default
+        // Scalar/enum list - optional if nullable OR has default
+        // Required non-nullable scalar lists WITHOUT defaults are NOT optional
+        // Example: tags String[] (required, no default) - user must provide at least empty array
         isOptional = isNullable || field.hasDefaultValue
       }
     } else if (field.kind === 'object') {
@@ -492,9 +539,10 @@ function parseFields(fields: readonly DMMF.Field[], enumMap: Map<string, ParsedE
       isOptional = isNullable || field.hasDefaultValue
     }
     
-    // Shallow-copy and freeze default if it's an object to prevent external mutations
+    // Deep-copy and deep-freeze default if it's an object to prevent external mutations
+    // Deep freezing ensures nested objects/arrays are also immutable
     const safeDefault: PrismaDefaultValue | undefined = field.default && typeof field.default === 'object'
-      ? Object.freeze({ ...field.default as object }) as PrismaDefaultValue
+      ? deepFreeze({ ...field.default as object }) as PrismaDefaultValue
       : field.default
     
     return {
@@ -597,7 +645,7 @@ export function isClientManagedDefault(defaultValue: unknown): boolean {
  * Important: createdAt/updatedAt with client-managed defaults (now()) are NOT read-only
  * to allow user-provided values during creation. Only DB-managed defaults make them read-only.
  */
-function determineReadOnly(field: DMMF.Field, modelName: string): boolean {
+function determineReadOnly(field: DMMF.Field): boolean {
   // Explicitly marked as read-only
   if (field.isReadOnly) return true
   
@@ -742,9 +790,9 @@ function buildReverseRelationMap(models: ParsedModel[]): Map<string, readonly Pa
                 ...field,
                 relationFromFields: field.relationFromFields ? Object.freeze([...field.relationFromFields]) : undefined,
                 relationToFields: field.relationToFields ? Object.freeze([...field.relationToFields]) : undefined,
-                // Shallow-copy default object to prevent external mutations
+                // Deep-copy and deep-freeze default object to prevent external mutations
                 default: field.default && typeof field.default === 'object' 
-                  ? Object.freeze({ ...field.default as object }) as PrismaDefaultValue
+                  ? deepFreeze({ ...field.default as object }) as PrismaDefaultValue
                   : field.default
               })
               targetRelations.push(frozenField)
@@ -902,13 +950,17 @@ export function isNullable(field: ParsedField): boolean {
 
 /**
  * Escape string for safe embedding in generated TypeScript code
- * Handles backslashes, quotes, control chars, and script tags
+ * Handles backslashes, quotes, control chars, script tags, and backticks
+ * 
+ * Note: Includes backtick escaping for potential template literal usage.
+ * Currently only used for double-quoted strings, but future-proofed.
  */
 function escapeForCodeGen(str: string): string {
   return str
     .replace(/\\/g, '\\\\')           // Backslash (MUST be first)
     .replace(/"/g, '\\"')             // Double quote
     .replace(/'/g, "\\'")             // Single quote
+    .replace(/`/g, '\\`')             // Backtick (for template literals)
     .replace(/\n/g, '\\n')            // Newline
     .replace(/\r/g, '\\r')            // Carriage return
     .replace(/\t/g, '\\t')            // Tab
@@ -959,9 +1011,17 @@ export function getDefaultValueString(field: ParsedField): string | undefined {
   if (typeof def === 'string') {
     // Check if it's an enum value (enum fields have kind === 'enum')
     if (field.kind === 'enum') {
-      // Return qualified enum reference for generators to use
-      // Generators can import the enum type and reference it
-      return `${field.type}.${def}`
+      // Validate that enum value is a valid TypeScript identifier
+      // Valid identifiers: start with letter/underscore, continue with alphanumeric/underscore
+      const isValidIdentifier = /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(def)
+      
+      if (isValidIdentifier) {
+        // Return qualified enum reference for generators to use (dot notation)
+        return `${field.type}.${def}`
+      } else {
+        // Fallback to bracket notation for invalid identifiers (e.g., "123", "my-value")
+        return `${field.type}["${escapeForCodeGen(def)}"]`
+      }
     }
     return `"${escapeForCodeGen(def)}"`
   }
@@ -1214,25 +1274,33 @@ export function validateSchemaDetailed(schema: ParsedSchema, throwOnError = fals
  * - Parent -> Child <- Parent where lists are involved
  * 
  * Performance: Uses single global DFS instead of per-model restarts.
- * Deduplicates cycles to avoid reporting the same cycle multiple times.
+ * Deduplicates cycles by tracking visited nodes in current path.
  */
 function detectCircularRelations(schema: ParsedSchema): string[] {
   const errors: string[] = []
-  const visiting = new Set<string>()
   const visited = new Set<string>()
-  const seenCycles = new Set<string>()  // Deduplicate cycles
+  const recursionStack = new Set<string>()  // Track current path for cycle detection
+  const seenCycles = new Set<string>()  // Deduplicate reported cycles
   
   function visit(modelName: string, path: string[]): void {
-    if (visiting.has(modelName)) {
-      // Found a cycle - normalize the path for deduplication
-      const cycleStart = path.indexOf(modelName)
-      const cycle = [...path.slice(cycleStart), modelName].sort().join(' -> ')
+    if (recursionStack.has(modelName)) {
+      // Found a cycle - extract the cycle from the path
+      const cycleStartIndex = path.findIndex(p => p.startsWith(modelName + '.'))
+      const cyclePath = cycleStartIndex >= 0 
+        ? [...path.slice(cycleStartIndex), modelName]
+        : [...path, modelName]
       
-      if (!seenCycles.has(cycle)) {
-        seenCycles.add(cycle)
-        const displayPath = [...path.slice(cycleStart), modelName].join(' -> ')
+      // Create a normalized cycle key for deduplication
+      // Don't sort - preserve edge order for accurate cycle representation
+      const cycleKey = cyclePath.join(' -> ')
+      
+      // Also check reverse direction to avoid reporting A->B->A and B->A->B separately
+      const reversedCycle = [...cyclePath].reverse().join(' -> ')
+      
+      if (!seenCycles.has(cycleKey) && !seenCycles.has(reversedCycle)) {
+        seenCycles.add(cycleKey)
         errors.push(
-          `Circular relationship detected: ${displayPath}. ` +
+          `Circular relationship detected: ${cyclePath.join(' -> ')}. ` +
           `Make at least one relation nullable or remove relationFromFields to break the cycle.`
         )
       }
@@ -1244,7 +1312,7 @@ function detectCircularRelations(schema: ParsedSchema): string[] {
     const model = schema.modelMap.get(modelName)
     if (!model) return
     
-    visiting.add(modelName)
+    recursionStack.add(modelName)
     
     // Only check required relations that own the FK and create insertion dependencies
     // Skip if:
@@ -1258,12 +1326,12 @@ function detectCircularRelations(schema: ParsedSchema): string[] {
       const blocksInsertion = cannotBeNull && !field.isList && ownsFK
       
       if (blocksInsertion) {
-        // Use consistent path format: modelName.fieldName
+        // Build path with "ModelName.fieldName" format
         visit(field.type, [...path, `${modelName}.${field.name}`])
       }
     }
     
-    visiting.delete(modelName)
+    recursionStack.delete(modelName)
     visited.add(modelName)
   }
   
