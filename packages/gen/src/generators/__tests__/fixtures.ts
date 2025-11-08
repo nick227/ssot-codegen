@@ -8,17 +8,24 @@ import type { ParsedModel, ParsedField } from '../../dmmf-parser.js'
  * Create mock field with defaults
  */
 export function createMockField(overrides: Partial<ParsedField> = {}): ParsedField {
+  const isRequired = overrides.isRequired !== undefined ? overrides.isRequired : true
+  const hasDefaultValue = overrides.hasDefaultValue || false
+  
   return {
     name: 'testField',
     type: 'String',
     kind: 'scalar',
     isList: false,
-    isRequired: true,
+    isRequired,
+    isNullable: !isRequired,
+    isOptional: !isRequired || hasDefaultValue,
     isUnique: false,
     isId: false,
     isReadOnly: false,
     isUpdatedAt: false,
-    hasDefaultValue: false,
+    hasDefaultValue,
+    hasDbDefault: false,
+    isPartOfCompositePrimaryKey: false,
     ...overrides
   }
 }

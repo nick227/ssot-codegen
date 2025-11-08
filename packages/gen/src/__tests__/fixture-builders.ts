@@ -13,11 +13,15 @@ export class FieldBuilder {
     kind: 'scalar',
     isList: false,
     isRequired: true,
+    isNullable: false,
+    isOptional: false,
     isUnique: false,
     isId: false,
     isReadOnly: false,
     isUpdatedAt: false,
-    hasDefaultValue: false
+    hasDefaultValue: false,
+    hasDbDefault: false,
+    isPartOfCompositePrimaryKey: false
   }
 
   name(name: string): this {
@@ -57,11 +61,15 @@ export class FieldBuilder {
 
   optional(): this {
     this.field.isRequired = false
+    this.field.isNullable = true
+    this.field.isOptional = true
     return this
   }
 
   required(): this {
     this.field.isRequired = true
+    this.field.isNullable = false
+    this.field.isOptional = this.field.hasDefaultValue || false
     return this
   }
 
@@ -73,6 +81,14 @@ export class FieldBuilder {
   defaultValue(value: unknown): this {
     this.field.hasDefaultValue = true
     this.field.default = value
+    this.field.isOptional = true
+    
+    // Check if it's a DB-managed default
+    if (value && typeof value === 'object' && 'name' in value) {
+      const dbDefaults = ['autoincrement', 'uuid', 'cuid', 'now', 'dbgenerated']
+      this.field.hasDbDefault = dbDefaults.includes((value as any).name)
+    }
+    
     return this
   }
 
