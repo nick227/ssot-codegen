@@ -124,6 +124,22 @@ function validateHookFrameworks(frameworks: string[] | undefined): HookFramework
 }
 
 /**
+ * Check if errors contain critical issues that should prevent checklist generation
+ * 
+ * CRITICAL ERRORS: ERROR or FATAL severity (not VALIDATION - those already throw)
+ * - ERROR: model-level failures that affect functionality
+ * - FATAL: system-level failures that break entire generation
+ * - VALIDATION: code quality issues (already handled by blocking check)
+ * - WARNING: non-critical issues (don't block checklist)
+ */
+function hasCriticalErrors(errors: GenerationError[]): boolean {
+  return errors.some(e => 
+    e.severity === ErrorSeverity.ERROR || 
+    e.severity === ErrorSeverity.FATAL
+  )
+}
+
+/**
  * Basic validation for generated TypeScript code
  * Checks for common syntax errors that would prevent compilation
  * 
@@ -539,21 +555,21 @@ export function generateCode(
             const serviceRoutesPath = `${serviceAnnotation.name}.routes.ts`
             const scaffoldPath = `${serviceAnnotation.name}.service.scaffold.ts`
             
-            if (!checkPathDuplication(serviceControllerPath, generatedPaths, serviceAnnotation.name, errors)) {
+            if (isPathAvailable(serviceControllerPath, generatedPaths, serviceAnnotation.name, errors)) {
               const serviceController = generateServiceController(serviceAnnotation)
               if (validateGeneratedCode(serviceController, serviceControllerPath, errors)) {
                 files.controllers.set(serviceControllerPath, serviceController)
               }
             }
             
-            if (!checkPathDuplication(serviceRoutesPath, generatedPaths, serviceAnnotation.name, errors)) {
+            if (isPathAvailable(serviceRoutesPath, generatedPaths, serviceAnnotation.name, errors)) {
               const serviceRoutes = generateServiceRoutes(serviceAnnotation)
               if (validateGeneratedCode(serviceRoutes, serviceRoutesPath, errors)) {
                 files.routes.set(serviceRoutesPath, serviceRoutes)
               }
             }
             
-            if (!checkPathDuplication(scaffoldPath, generatedPaths, serviceAnnotation.name, errors)) {
+            if (isPathAvailable(scaffoldPath, generatedPaths, serviceAnnotation.name, errors)) {
               const scaffold = generateServiceScaffold(serviceAnnotation)
               if (validateGeneratedCode(scaffold, scaffoldPath, errors)) {
                 files.services.set(scaffoldPath, scaffold)
@@ -582,10 +598,17 @@ export function generateCode(
         generateSDKClients(schema, files, cache, generatedPaths, errors, failFast, continueOnError, config)
         
         // Validate analysis cache before generating hooks
-        if (useEnhanced && cache.modelAnalysis.size === 0 && schema.models.length > 0) {
+        // CRITICAL FIX: Check if cache has analysis for all non-junction models
+        const nonJunctionModels = schema.models.filter(m => {
+          const analysis = cache.modelAnalysis.get(m.name)
+          return !analysis?.isJunctionTable
+        })
+        const missingAnalysisCount = nonJunctionModels.length - cache.modelAnalysis.size
+        
+        if (useEnhanced && missingAnalysisCount > 0 && schema.models.length > 0) {
           const error: GenerationError = {
             severity: ErrorSeverity.WARNING,
-            message: 'Model analysis cache is empty, hooks may be missing advanced features',
+            message: `Model analysis incomplete: ${cache.modelAnalysis.size} of ${nonJunctionModels.length} models analyzed. Hooks may be missing advanced features.`,
             phase: 'hooks-validation'
           }
           errors.push(error)
@@ -610,8 +633,7 @@ export function generateCode(
       }
       
       // Generate System Checklist (only if no critical errors)
-      const hasCriticalErrors = errors.some(e => e.severity === ErrorSeverity.ERROR || e.severity === ErrorSeverity.FATAL)
-      if (!hasCriticalErrors && config.generateChecklist !== false) {
+      if (!hasCriticalErrors(errors) && config.generateChecklist !== false) {
         try {
           const checklist = generateChecklistSystem(schema, files, {
             projectName: config.projectName || 'Generated Project',
@@ -725,10 +747,17 @@ export function generateCode(
   // PHASE 4: Generate framework hooks
   try {
     // Validate analysis cache before generating hooks
-    if (useEnhanced && cache.modelAnalysis.size === 0 && schema.models.length > 0) {
+    // CRITICAL FIX: Check if cache has analysis for all non-junction models
+    const nonJunctionModels = schema.models.filter(m => {
+      const analysis = cache.modelAnalysis.get(m.name)
+      return !analysis?.isJunctionTable
+    })
+    const missingAnalysisCount = nonJunctionModels.length - cache.modelAnalysis.size
+    
+    if (useEnhanced && missingAnalysisCount > 0 && schema.models.length > 0) {
       const error: GenerationError = {
         severity: ErrorSeverity.WARNING,
-        message: 'Model analysis cache is empty, hooks may be missing advanced features',
+        message: `Model analysis incomplete: ${cache.modelAnalysis.size} of ${nonJunctionModels.length} models analyzed. Hooks may be missing advanced features.`,
         phase: 'hooks-validation'
       }
       errors.push(error)
@@ -811,8 +840,7 @@ export function generateCode(
   }
   
   // PHASE 6: Generate System Checklist (only if no critical errors)
-  const hasCriticalErrors = errors.some(e => e.severity === ErrorSeverity.ERROR || e.severity === ErrorSeverity.FATAL)
-  if (!hasCriticalErrors && config.generateChecklist !== false) {
+  if (!hasCriticalErrors(errors) && config.generateChecklist !== false) {
     try {
       // Collect plugin health checks
       const pluginHealthChecks = new Map<string, any>()
@@ -864,7 +892,7 @@ export function generateCode(
       errors.push(genError)
       console.warn(`[ssot-codegen] ${genError.message}:`, error)
     }
-  } else if (hasCriticalErrors) {
+  } else if (hasCriticalErrors(errors)) {
     console.warn('[ssot-codegen] Skipping checklist generation due to critical errors')
   }
   
@@ -971,7 +999,7 @@ function generateModelCode(
   
   // Generate Service
   const servicePath = `${modelKebab}.service.ts`
-  if (!checkPathDuplication(servicePath, generatedPaths, model.name, errors)) {
+  if (isPathAvailable(servicePath, generatedPaths, model.name, errors)) {
     const service = useEnhanced && analysis
       ? generateEnhancedService(model, schema)
       : generateService(model, schema)
@@ -988,21 +1016,17 @@ function generateModelCode(
     const serviceRoutesPath = `${serviceAnnotation.name}.routes.ts`
     const scaffoldPath = `${serviceAnnotation.name}.service.scaffold.ts`
     
-    const hasControllerDupe = checkPathDuplication(serviceControllerPath, generatedPaths, serviceAnnotation.name, errors)
-    const hasRoutesDupe = checkPathDuplication(serviceRoutesPath, generatedPaths, serviceAnnotation.name, errors)
-    const hasScaffoldDupe = checkPathDuplication(scaffoldPath, generatedPaths, serviceAnnotation.name, errors)
-    
-    if (!hasControllerDupe) {
+    if (isPathAvailable(serviceControllerPath, generatedPaths, serviceAnnotation.name, errors)) {
       const serviceController = generateServiceController(serviceAnnotation)
       files.controllers.set(serviceControllerPath, serviceController)
     }
     
-    if (!hasRoutesDupe) {
+    if (isPathAvailable(serviceRoutesPath, generatedPaths, serviceAnnotation.name, errors)) {
       const serviceRoutes = generateServiceRoutes(serviceAnnotation)
       files.routes.set(serviceRoutesPath, serviceRoutes)
     }
     
-    if (!hasScaffoldDupe) {
+    if (isPathAvailable(scaffoldPath, generatedPaths, serviceAnnotation.name, errors)) {
       const scaffold = generateServiceScaffold(serviceAnnotation)
       files.services.set(scaffoldPath, scaffold)
     }
@@ -1013,7 +1037,7 @@ function generateModelCode(
   
   // Generate Controller (for standard CRUD models)
   const controllerPath = `${modelKebab}.controller.ts`
-  if (!checkPathDuplication(controllerPath, generatedPaths, model.name, errors)) {
+  if (isPathAvailable(controllerPath, generatedPaths, model.name, errors)) {
     const controller = useEnhanced && analysis
       ? generateBaseClassController(model, schema, framework, analysis)
       : generateController(model, framework)
@@ -1026,16 +1050,19 @@ function generateModelCode(
     ? generateEnhancedRoutes(model, schema, framework, analysis)
     : generateRoutes(model, framework)
     
-  if (routes && !checkPathDuplication(routesPath, generatedPaths, model.name, errors)) {
+  if (routes && isPathAvailable(routesPath, generatedPaths, model.name, errors)) {
     files.routes.set(routesPath, routes)
   }
 }
 
 /**
  * Check for duplicate file paths and prevent overwrites
- * @returns true if duplicate was found (file should not be generated)
+ * Returns true if path is available (can proceed), false if duplicate exists
+ * 
+ * IMPORTANT: Returns true for success (path available), false for failure (duplicate)
+ * This matches the natural flow: if (isPathAvailable()) { generate file }
  */
-function checkPathDuplication(
+function isPathAvailable(
   path: string,
   generatedPaths: Set<string>,
   modelName: string,
@@ -1050,10 +1077,10 @@ function checkPathDuplication(
     }
     errors.push(error)
     console.warn(`[ssot-codegen] ${error.message} (model: ${modelName}) - skipping to prevent overwrite`)
-    return true  // Duplicate found
+    return false  // Path NOT available (duplicate found)
   }
   generatedPaths.add(path)
-  return false  // No duplicate
+  return true  // Path available (no duplicate)
 }
 
 /**
@@ -1081,13 +1108,14 @@ function generateSDKClients(
     
     try {
       const modelClient = generateModelSDK(model, schema)
-      const sdkPath = `models/${model.name.toLowerCase()}.client.ts`
+      const modelNameLower = model.name.toLowerCase()
+      const sdkPath = `models/${modelNameLower}.client.ts`
       
-      if (!checkPathDuplication(sdkPath, generatedPaths, model.name, errors)) {
+      if (isPathAvailable(sdkPath, generatedPaths, model.name, errors)) {
         files.sdk.set(sdkPath, modelClient)
         
         modelClients.push({
-          name: model.name.toLowerCase(),
+          name: modelNameLower,
           className: `${model.name}Client`
         })
       }
@@ -1112,16 +1140,18 @@ function generateSDKClients(
   for (const [modelName, serviceAnnotation] of cache.serviceAnnotations) {
     try {
       const serviceClient = generateServiceSDK(serviceAnnotation)
-      const sdkPath = `services/${serviceAnnotation.name}.client.ts`
+      // CONSISTENCY FIX: Use lowercase for service names to match model clients
+      const serviceNameLower = serviceAnnotation.name.toLowerCase()
+      const sdkPath = `services/${serviceNameLower}.client.ts`
       
-      if (!checkPathDuplication(sdkPath, generatedPaths, serviceAnnotation.name, errors)) {
+      if (isPathAvailable(sdkPath, generatedPaths, serviceAnnotation.name, errors)) {
         files.sdk.set(sdkPath, serviceClient)
         
         // Transform service name to proper class name
         const className = toServiceClassName(serviceAnnotation.name, errors)
         
         serviceClients.push({
-          name: serviceAnnotation.name,
+          name: serviceNameLower,  // Use lowercase for consistency with model clients
           className,
           annotation: serviceAnnotation
         })
