@@ -136,7 +136,7 @@ const BulkDelete${modelName}Schema = z.object({
 }
 
 /**
- * Generate pagination config access
+ * Generate pagination config access with proper type handling
  */
 export function generatePaginationHelper(config: ControllerConfig): string {
   const defaults = config.paginationDefaults || DEFAULT_CONTROLLER_CONFIG.paginationDefaults!
@@ -146,10 +146,15 @@ export function generatePaginationHelper(config: ControllerConfig): string {
   return `
 /**
  * Parse pagination from query params with defaults and limits
+ * Handles both string and string[] query param types
  */
 function parsePagination(query: Record<string, unknown>): { skip: number; take: number } {
-  const skipParam = query.skip ? parseInt(query.skip as string, 10) : ${skip}
-  const takeParam = query.take ? parseInt(query.take as string, 10) : ${take}
+  // Query params can be string or string[], take first value if array
+  const skipValue = Array.isArray(query.skip) ? query.skip[0] : query.skip
+  const takeValue = Array.isArray(query.take) ? query.take[0] : query.take
+  
+  const skipParam = skipValue ? parseInt(skipValue as string, 10) : ${skip}
+  const takeParam = takeValue ? parseInt(takeValue as string, 10) : ${take}
   
   return {
     skip: isNaN(skipParam) || skipParam < 0 ? ${skip} : skipParam,
@@ -249,15 +254,43 @@ export function hasSoftDelete(specialFields: Record<string, unknown> | undefined
 }
 
 /**
- * Generate count with filter support
+ * Generate type interfaces for controllers
  */
-export function generateCountMethodSignature(modelName: string): string {
-  return `
-/**
- * Count ${modelName} records with optional filtering
+export function generateTypeInterfaces(modelName: string): string {
+  return `/**
+ * Request type definitions for type safety
+ * NOTE: These are TypeScript compile-time types only. Runtime validation
+ * is performed by parseIdParam(), Zod schemas, and explicit checks.
  */
-export interface CountQuery {
+interface ${modelName}Params {
+  id: string
+}
+
+interface ${modelName}SlugParams {
+  slug: string
+}
+
+interface PaginationQuery {
+  skip?: string | string[]  // Query params can be string or array
+  take?: string | string[]
+}
+
+interface CountBody {
   where?: Record<string, unknown>
 }`
+}
+
+/**
+ * Generate where clause validator for count operations
+ */
+export function generateWhereValidator(modelName: string): string {
+  return `
+/**
+ * Count query schema with where clause validation
+ * Prevents arbitrary object injection by validating structure
+ */
+const Count${modelName}Schema = z.object({
+  where: z.record(z.unknown()).optional()
+})`
 }
 

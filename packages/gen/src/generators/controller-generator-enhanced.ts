@@ -10,6 +10,8 @@ import {
   DEFAULT_CONTROLLER_CONFIG,
   generateUnifiedHelpers,
   generateBulkValidators,
+  generateTypeInterfaces,
+  generateWhereValidator,
   hasSoftDelete
 } from './controller-helpers.js'
 
@@ -176,25 +178,11 @@ function generateExpressBaseMethods(
   modelCamel: string,
   config: ControllerConfig
 ): string {
-  return `/**
- * Request type definitions for type safety
- */
-interface ${model.name}Params {
-  id: string
-}
-
-interface ${model.name}SlugParams {
-  slug: string
-}
-
-interface PaginationQuery {
-  skip?: string
-  take?: string
-}
-
-interface CountBody {
-  where?: Record<string, unknown>
-}
+  const typeInterfaces = generateTypeInterfaces(model.name)
+  const whereValidator = generateWhereValidator(model.name)
+  
+  return `${typeInterfaces}
+${whereValidator}
 
 /**
  * List all ${model.name} records (simple pagination from query string)
@@ -355,8 +343,9 @@ export const count${model.name}s = async (
   res: Response
 ) => {
   try {
-    const where = (req.body && typeof req.body === 'object') ? req.body.where : undefined
-    const total = await ${modelCamel}Service.count(where)
+    // Validate where clause to prevent injection
+    const validated = req.body ? Count${model.name}Schema.parse(req.body) : { where: undefined }
+    const total = await ${modelCamel}Service.count(validated.where)
     
     return res.json({ total })
   } catch (error) {
@@ -404,7 +393,7 @@ export const get${model.name}BySlug = async (
     
     return res.json(item)
   } catch (error) {
-    return handleError(error, res, 'getting resource by slug', { operation: 'getBySlug', slug: req.params.slug })
+    return handleError(error, res, 'getting resource by slug', { operation: 'getBySlug', slug: cleanSlug })
   }
 }`)
   }
@@ -674,25 +663,11 @@ function generateFastifyBaseMethods(
   modelCamel: string,
   config: ControllerConfig
 ): string {
-  return `/**
- * Request type definitions for type safety
- */
-interface ${model.name}Params {
-  id: string
-}
-
-interface ${model.name}SlugParams {
-  slug: string
-}
-
-interface PaginationQuery {
-  skip?: string
-  take?: string
-}
-
-interface CountBody {
-  where?: Record<string, unknown>
-}
+  const typeInterfaces = generateTypeInterfaces(model.name)
+  const whereValidator = generateWhereValidator(model.name)
+  
+  return `${typeInterfaces}
+${whereValidator}
 
 /**
  * List all ${model.name} records
@@ -732,21 +707,22 @@ export const get${model.name} = async (req: FastifyRequest<{ Params: { id: strin
   try {
     const idResult = parseIdParam(req.params.id)
     
-    if (!idResult.valid) {
-      logger.warn({ idParam: req.params.id }, idResult.error)
-      return reply.code(400).send({ error: idResult.error })
+    if (!idResult.valid || idResult.id === undefined) {
+      logger.warn({ idParam: req.params.id }, idResult.error || 'Invalid ID')
+      return reply.code(400).send({ error: idResult.error || 'Invalid ID' })
     }
     
-    const item = await ${modelCamel}Service.findById(idResult.id!)
+    const parsedId = idResult.id
+    const item = await ${modelCamel}Service.findById(parsedId)
     
     if (!item) {
-      logger.info({ ${modelCamel}Id: idResult.id }, '${model.name} not found')
-      return reply.code(404).send({ error: '${model.name} not found' })
+      logger.info({ ${modelCamel}Id: parsedId }, 'Resource not found')
+      return reply.code(404).send({ error: 'Resource not found' })
     }
     
     return reply.send(item)
   } catch (error) {
-    return handleError(error, reply, 'getting ${model.name}', { ${modelCamel}Id: req.params.id })
+    return handleError(error, reply, 'getting resource', { operation: 'get', id: req.params.id })
   }
 }
 
@@ -755,12 +731,16 @@ export const get${model.name} = async (req: FastifyRequest<{ Params: { id: strin
  */
 export const create${model.name} = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
+    if (!req.body || typeof req.body !== 'object') {
+      return reply.code(400).send({ error: 'Request body required' })
+    }
+    
     const data = ${model.name}CreateSchema.parse(req.body)
     const item = await ${modelCamel}Service.create(data)
     
     return reply.code(201).send(item)
   } catch (error) {
-    return handleError(error, reply, 'creating ${model.name}', {})
+    return handleError(error, reply, 'creating resource', { operation: 'create' })
   }
 }
 
@@ -769,24 +749,29 @@ export const create${model.name} = async (req: FastifyRequest, reply: FastifyRep
  */
 export const update${model.name} = async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
   try {
-    const idResult = parseIdParam(req.params.id)
-    
-    if (!idResult.valid) {
-      logger.warn({ idParam: req.params.id }, idResult.error)
-      return reply.code(400).send({ error: idResult.error })
+    if (!req.body || typeof req.body !== 'object') {
+      return reply.code(400).send({ error: 'Request body required' })
     }
     
+    const idResult = parseIdParam(req.params.id)
+    
+    if (!idResult.valid || idResult.id === undefined) {
+      logger.warn({ idParam: req.params.id }, idResult.error || 'Invalid ID')
+      return reply.code(400).send({ error: idResult.error || 'Invalid ID' })
+    }
+    
+    const parsedId = idResult.id
     const data = ${model.name}UpdateSchema.parse(req.body)
-    const item = await ${modelCamel}Service.update(idResult.id!, data)
+    const item = await ${modelCamel}Service.update(parsedId, data)
     
     if (!item) {
-      logger.info({ ${modelCamel}Id: idResult.id }, '${model.name} not found for update')
-      return reply.code(404).send({ error: '${model.name} not found' })
+      logger.info({ ${modelCamel}Id: parsedId }, 'Resource not found for update')
+      return reply.code(404).send({ error: 'Resource not found' })
     }
     
     return reply.send(item)
   } catch (error) {
-    return handleError(error, reply, 'updating ${model.name}', { ${modelCamel}Id: req.params.id })
+    return handleError(error, reply, 'updating resource', { operation: 'update', id: req.params.id })
   }
 }
 
@@ -797,21 +782,22 @@ export const delete${model.name} = async (req: FastifyRequest<{ Params: { id: st
   try {
     const idResult = parseIdParam(req.params.id)
     
-    if (!idResult.valid) {
-      logger.warn({ idParam: req.params.id }, idResult.error)
-      return reply.code(400).send({ error: idResult.error })
+    if (!idResult.valid || idResult.id === undefined) {
+      logger.warn({ idParam: req.params.id }, idResult.error || 'Invalid ID')
+      return reply.code(400).send({ error: idResult.error || 'Invalid ID' })
     }
     
-    const deleted = await ${modelCamel}Service.delete(idResult.id!)
+    const parsedId = idResult.id
+    const deleted = await ${modelCamel}Service.delete(parsedId)
     
     if (!deleted) {
-      logger.info({ ${modelCamel}Id: idResult.id }, '${model.name} not found for delete')
-      return reply.code(404).send({ error: '${model.name} not found' })
+      logger.info({ ${modelCamel}Id: parsedId }, 'Resource not found for delete')
+      return reply.code(404).send({ error: 'Resource not found' })
     }
     
     return reply.code(204).send()
   } catch (error) {
-    return handleError(error, reply, 'deleting ${model.name}', { ${modelCamel}Id: req.params.id })
+    return handleError(error, reply, 'deleting resource', { operation: 'delete', id: req.params.id })
   }
 }
 
@@ -823,8 +809,9 @@ export const count${model.name}s = async (
   reply: FastifyReply
 ) => {
   try {
-    const where = (req.body && typeof req.body === 'object') ? req.body.where : undefined
-    const total = await ${modelCamel}Service.count(where)
+    // Validate where clause to prevent injection
+    const validated = req.body ? Count${model.name}Schema.parse(req.body) : { where: undefined }
+    const total = await ${modelCamel}Service.count(validated.where)
     
     return reply.send({ total })
   } catch (error) {
@@ -972,21 +959,22 @@ export const publish${model.name} = async (req: FastifyRequest<{ Params: { id: s
   try {
     const idResult = parseIdParam(req.params.id)
     
-    if (!idResult.valid) {
-      logger.warn({ idParam: req.params.id }, idResult.error)
-      return reply.code(400).send({ error: idResult.error })
+    if (!idResult.valid || idResult.id === undefined) {
+      logger.warn({ idParam: req.params.id }, idResult.error || 'Invalid ID')
+      return reply.code(400).send({ error: idResult.error || 'Invalid ID' })
     }
     
-    const item = await ${modelCamel}Service.publish(idResult.id!)
+    const parsedId = idResult.id
+    const item = await ${modelCamel}Service.publish(parsedId)
     
     if (!item) {
-      logger.info({ ${modelCamel}Id: idResult.id }, '${model.name} not found for publish')
-      return reply.code(404).send({ error: '${model.name} not found' })
+      logger.info({ ${modelCamel}Id: parsedId }, 'Resource not found for publish')
+      return reply.code(404).send({ error: 'Resource not found' })
     }
     
     return reply.send(item)
   } catch (error) {
-    return handleError(error, reply, 'publishing ${model.name}', { ${modelCamel}Id: req.params.id })
+    return handleError(error, reply, 'publishing resource', { operation: 'publish', id: req.params.id })
   }
 }
 
@@ -997,21 +985,22 @@ export const unpublish${model.name} = async (req: FastifyRequest<{ Params: { id:
   try {
     const idResult = parseIdParam(req.params.id)
     
-    if (!idResult.valid) {
-      logger.warn({ idParam: req.params.id }, idResult.error)
-      return reply.code(400).send({ error: idResult.error })
+    if (!idResult.valid || idResult.id === undefined) {
+      logger.warn({ idParam: req.params.id }, idResult.error || 'Invalid ID')
+      return reply.code(400).send({ error: idResult.error || 'Invalid ID' })
     }
     
-    const item = await ${modelCamel}Service.unpublish(idResult.id!)
+    const parsedId = idResult.id
+    const item = await ${modelCamel}Service.unpublish(parsedId)
     
     if (!item) {
-      logger.info({ ${modelCamel}Id: idResult.id }, '${model.name} not found for unpublish')
-      return reply.code(404).send({ error: '${model.name} not found' })
+      logger.info({ ${modelCamel}Id: parsedId }, 'Resource not found for unpublish')
+      return reply.code(404).send({ error: 'Resource not found' })
     }
     
     return reply.send(item)
   } catch (error) {
-    return handleError(error, reply, 'unpublishing ${model.name}', { ${modelCamel}Id: req.params.id })
+    return handleError(error, reply, 'unpublishing resource', { operation: 'unpublish', id: req.params.id })
   }
 }`)
   }
@@ -1025,16 +1014,17 @@ export const increment${model.name}Views = async (req: FastifyRequest<{ Params: 
   try {
     const idResult = parseIdParam(req.params.id)
     
-    if (!idResult.valid) {
-      logger.warn({ idParam: req.params.id }, idResult.error)
-      return reply.code(400).send({ error: idResult.error })
+    if (!idResult.valid || idResult.id === undefined) {
+      logger.warn({ idParam: req.params.id }, idResult.error || 'Invalid ID')
+      return reply.code(400).send({ error: idResult.error || 'Invalid ID' })
     }
     
-    await ${modelCamel}Service.incrementViews(idResult.id!)
+    const parsedId = idResult.id
+    await ${modelCamel}Service.incrementViews(parsedId)
     
     return reply.code(204).send()
   } catch (error) {
-    return handleError(error, reply, 'incrementing ${model.name} views', { ${modelCamel}Id: req.params.id })
+    return handleError(error, reply, 'incrementing views', { operation: 'incrementViews', id: req.params.id })
   }
 }`)
   }
@@ -1065,21 +1055,22 @@ export const approve${model.name} = async (req: FastifyRequest<{ Params: { id: s
   try {
     const idResult = parseIdParam(req.params.id)
     
-    if (!idResult.valid) {
-      logger.warn({ idParam: req.params.id }, idResult.error)
-      return reply.code(400).send({ error: idResult.error })
+    if (!idResult.valid || idResult.id === undefined) {
+      logger.warn({ idParam: req.params.id }, idResult.error || 'Invalid ID')
+      return reply.code(400).send({ error: idResult.error || 'Invalid ID' })
     }
     
-    const item = await ${modelCamel}Service.approve(idResult.id!)
+    const parsedId = idResult.id
+    const item = await ${modelCamel}Service.approve(parsedId)
     
     if (!item) {
-      logger.info({ ${modelCamel}Id: idResult.id }, '${model.name} not found for approval')
-      return reply.code(404).send({ error: '${model.name} not found' })
+      logger.info({ ${modelCamel}Id: parsedId }, 'Resource not found for approval')
+      return reply.code(404).send({ error: 'Resource not found' })
     }
     
     return reply.send(item)
   } catch (error) {
-    return handleError(error, reply, 'approving ${model.name}', { ${modelCamel}Id: req.params.id })
+    return handleError(error, reply, 'approving resource', { operation: 'approve', id: req.params.id })
   }
 }`)
   }
