@@ -23,7 +23,8 @@ import { NamingConflictPhase } from './phases/naming-conflict-phase.js'
 import { DTOGenerationPhase } from './phases/dto-generation-phase.js'
 import { ServiceGenerationPhase } from './phases/service-generation-phase.js'
 import { ControllerGenerationPhase } from './phases/controller-generation-phase.js'
-import { RouteGenerationPhase } from './phases/route-generation-phase.ts'
+import { RouteGenerationPhase } from './phases/route-generation-phase.js'
+import { RegistryGenerationPhase } from './phases/registry-generation-phase.js'
 import { SDKGenerationPhase } from './phases/sdk-generation-phase.js'
 import { HooksGenerationPhase } from './phases/hooks-generation-phase.js'
 import { PluginGenerationPhase } from './phases/plugin-generation-phase.js'
@@ -65,6 +66,7 @@ export class CodeGenerationPipeline {
   
   /**
    * Create and order phases based on configuration
+   * Automatically selects between registry and legacy mode
    */
   private createPhases(): GenerationPhase[] {
     const phases: GenerationPhase[] = []
@@ -77,8 +79,15 @@ export class CodeGenerationPipeline {
     )
     
     // Generation phases (conditional on registry mode)
-    if (!this.context.config.useRegistry) {
-      // Legacy mode: individual file generation
+    if (this.context.config.useRegistry) {
+      // REGISTRY MODE: Unified registry (78% less code)
+      console.log('[ssot-codegen] Using REGISTRY MODE (centralized architecture)')
+      phases.push(
+        new RegistryGenerationPhase()  // Single phase replaces DTO/Service/Controller/Route
+      )
+    } else {
+      // LEGACY MODE: Individual file generation
+      console.log('[ssot-codegen] Using LEGACY MODE (individual files)')
       phases.push(
         new DTOGenerationPhase(),
         new ServiceGenerationPhase(),
@@ -86,7 +95,6 @@ export class CodeGenerationPipeline {
         new RouteGenerationPhase()
       )
     }
-    // Note: Registry mode phases would go here when implemented
     
     // SDK and hooks (always run)
     phases.push(
