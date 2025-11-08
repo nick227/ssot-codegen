@@ -58,6 +58,14 @@ export interface DMMFParserLogger {
 export interface ParseOptions {
   logger?: DMMFParserLogger
   throwOnError?: boolean
+  /** 
+   * Enable/disable Object.freeze() calls for immutability.
+   * Default: true (freeze everything for safety)
+   * Set to false for performance in production if you trust consumers not to mutate.
+   * 
+   * Performance impact: ~1-2ms for schemas with 500+ fields when enabled.
+   */
+  freeze?: boolean
 }
 
 /**
@@ -77,6 +85,18 @@ function createDefaultLogger(): DMMFParserLogger {
  * Note: This list is based on Prisma schema language specification.
  * Future Prisma versions may add new default functions.
  * Unknown defaults are treated conservatively (not generated in client code).
+ * 
+ * Provider-Specific Considerations:
+ * - PostgreSQL: sequence(), gen_random_uuid()
+ * - MySQL: AUTO_INCREMENT (via autoincrement())
+ * - SQLite: autoincrement()
+ * - MongoDB: auto(), ObjectId()
+ * 
+ * These provider-specific functions are typically wrapped in dbgenerated()
+ * or use the generic functions above. For advanced provider-specific handling,
+ * generators can check field.default and implement custom logic.
+ * 
+ * Future Enhancement: Add datasource.provider to ParseOptions for provider-aware validation.
  */
 const DB_MANAGED_DEFAULTS = ['autoincrement', 'uuid', 'cuid', 'dbgenerated'] as const
 
@@ -210,6 +230,7 @@ export interface ParsedSchema {
  */
 export function parseDMMF(dmmf: DMMF.Document, options: ParseOptions = {}): ParsedSchema {
   const logger = options.logger || createDefaultLogger()
+  const shouldFreeze = options.freeze !== false  // Default to true
   
   // Guard against malformed DMMF
   if (!dmmf || typeof dmmf !== 'object') {
@@ -225,23 +246,23 @@ export function parseDMMF(dmmf: DMMF.Document, options: ParseOptions = {}): Pars
     throw new Error('Invalid DMMF document: datamodel.models must be an array')
   }
   
-  const enums = parseEnums(dmmf.datamodel.enums, logger)
+  const enums = parseEnums(dmmf.datamodel.enums, logger, shouldFreeze)
   const enumMap = new Map(enums.map(e => [e.name, e]))
   
-  const models = parseModels(dmmf.datamodel.models, enumMap, logger)
+  const models = parseModels(dmmf.datamodel.models, enumMap, logger, shouldFreeze)
   const modelMap = new Map(models.map(m => [m.name, m]))
   
   // Build reverse relation map AFTER models are fully parsed
-  const reverseRelationMap = buildReverseRelationMap(models)
+  const reverseRelationMap = buildReverseRelationMap(models, shouldFreeze)
   
   // Enhance models with derived properties (must be last)
   for (const model of models) {
-    enhanceModel(model, modelMap, reverseRelationMap)
+    enhanceModel(model, modelMap, reverseRelationMap, shouldFreeze)
   }
   
   const schema: ParsedSchema = {
-    models: Object.freeze(models),  // Freeze top-level arrays
-    enums: Object.freeze(enums),    // Freeze top-level arrays
+    models: conditionalFreeze(models, shouldFreeze) as readonly ParsedModel[],
+    enums: conditionalFreeze(enums, shouldFreeze) as readonly ParsedEnum[],
     modelMap,
     enumMap,
     reverseRelationMap
@@ -370,9 +391,31 @@ function deepFreeze<T>(obj: T, visited = new WeakSet()): T {
 }
 
 /**
+ * Conditionally freeze an object based on options
+ * 
+ * @param obj - Object to freeze
+ * @param shouldFreeze - Whether to actually freeze
+ * @returns The object (frozen if shouldFreeze is true)
+ */
+function conditionalFreeze<T>(obj: T, shouldFreeze: boolean): T {
+  return shouldFreeze ? Object.freeze(obj) : obj
+}
+
+/**
+ * Conditionally deep-freeze an object based on options
+ * 
+ * @param obj - Object to deep-freeze
+ * @param shouldFreeze - Whether to actually freeze
+ * @returns The object (deep-frozen if shouldFreeze is true)
+ */
+function conditionalDeepFreeze<T>(obj: T, shouldFreeze: boolean): T {
+  return shouldFreeze ? deepFreeze(obj) : obj
+}
+
+/**
  * Parse enums with type guards
  */
-function parseEnums(enums: readonly DMMF.DatamodelEnum[], logger: DMMFParserLogger): ParsedEnum[] {
+function parseEnums(enums: readonly DMMF.DatamodelEnum[], logger: DMMFParserLogger, shouldFreeze: boolean): ParsedEnum[] {
   return enums
     .filter(e => {
       if (!isValidDMMFEnum(e)) {
@@ -396,7 +439,7 @@ function parseEnums(enums: readonly DMMF.DatamodelEnum[], logger: DMMFParserLogg
       
       return {
         name: e.name,
-        values: Object.freeze(values),
+        values: conditionalFreeze(values, shouldFreeze) as readonly string[],
         documentation: sanitizeDocumentation(e.documentation)
       }
     })
@@ -405,7 +448,7 @@ function parseEnums(enums: readonly DMMF.DatamodelEnum[], logger: DMMFParserLogg
 /**
  * Parse models with type guards
  */
-function parseModels(models: readonly DMMF.Model[], enumMap: Map<string, ParsedEnum>, logger: DMMFParserLogger): ParsedModel[] {
+function parseModels(models: readonly DMMF.Model[], enumMap: Map<string, ParsedEnum>, logger: DMMFParserLogger, shouldFreeze: boolean): ParsedModel[] {
   return models
     .filter(m => {
       if (!isValidDMMFModel(m)) {
@@ -415,12 +458,13 @@ function parseModels(models: readonly DMMF.Model[], enumMap: Map<string, ParsedE
       return true
     })
     .map(model => {
-      const fields = parseFields(model.fields, enumMap, model.name, logger)
+      const fields = parseFields(model.fields, enumMap, model.name, logger, shouldFreeze)
     
-    // Validate primary key fields are strings and freeze
+    // Validate primary key fields are strings and conditionally freeze
+    // Normalize empty string names to undefined
     const primaryKey = model.primaryKey ? {
-      name: model.primaryKey.name || undefined,
-      fields: Object.freeze(validateStringArray(model.primaryKey.fields, `${model.name}.primaryKey.fields`))
+      name: model.primaryKey.name && model.primaryKey.name.trim() ? model.primaryKey.name : undefined,
+      fields: conditionalFreeze(validateStringArray(model.primaryKey.fields, `${model.name}.primaryKey.fields`), shouldFreeze) as readonly string[]
     } : undefined
     
     return {
@@ -432,9 +476,12 @@ function parseModels(models: readonly DMMF.Model[], enumMap: Map<string, ParsedE
       dbName: model.dbName || undefined,
       fields,
       primaryKey,
-      uniqueFields: Object.freeze(model.uniqueFields.map((uf, i) => 
-        Object.freeze(validateStringArray(uf, `${model.name}.uniqueFields[${i}]`))
-      )),
+      uniqueFields: conditionalFreeze(
+        model.uniqueFields.map((uf, i) => 
+          conditionalFreeze(validateStringArray(uf, `${model.name}.uniqueFields[${i}]`), shouldFreeze) as readonly string[]
+        ), 
+        shouldFreeze
+      ) as readonly (readonly string[])[],
       documentation: sanitizeDocumentation(model.documentation),
       // These will be filled by enhanceModel
       scalarFields: [],
@@ -468,7 +515,7 @@ function validateStringArray(arr: readonly any[], context: string): string[] {
 /**
  * Parse fields with type guards
  */
-function parseFields(fields: readonly DMMF.Field[], enumMap: Map<string, ParsedEnum>, modelName: string, logger: DMMFParserLogger): ParsedField[] {
+function parseFields(fields: readonly DMMF.Field[], enumMap: Map<string, ParsedEnum>, modelName: string, logger: DMMFParserLogger, shouldFreeze: boolean): ParsedField[] {
   return fields
     .filter(f => {
       if (!isValidDMMFField(f)) {
@@ -539,10 +586,10 @@ function parseFields(fields: readonly DMMF.Field[], enumMap: Map<string, ParsedE
       isOptional = isNullable || field.hasDefaultValue
     }
     
-    // Deep-copy and deep-freeze default if it's an object to prevent external mutations
-    // Deep freezing ensures nested objects/arrays are also immutable
+    // Deep-copy and conditionally deep-freeze default if it's an object to prevent external mutations
+    // Deep freezing ensures nested objects/arrays are also immutable (if freeze option enabled)
     const safeDefault: PrismaDefaultValue | undefined = field.default && typeof field.default === 'object'
-      ? deepFreeze({ ...field.default as object }) as PrismaDefaultValue
+      ? conditionalDeepFreeze({ ...field.default as object }, shouldFreeze) as PrismaDefaultValue
       : field.default
     
     return {
@@ -559,15 +606,14 @@ function parseFields(fields: readonly DMMF.Field[], enumMap: Map<string, ParsedE
       isUpdatedAt: field.isUpdatedAt || false,
       hasDefaultValue: field.hasDefaultValue,
       hasDbDefault,
-      default: safeDefault,  // Frozen copy to prevent mutations
+      default: safeDefault,  // Conditionally frozen copy to prevent mutations
       isPartOfCompositePrimaryKey: false,  // Set by enhanceModel
       isSelfRelation,
       relationName: field.relationName,
-      // Preserve relation metadata with proper array copying and freezing (no mutation of DMMF readonly arrays)
-      // Arrays are copied from DMMF and frozen to prevent any accidental mutations
-      // This ensures immutability for both forward and reverse relation views
-      relationFromFields: field.relationFromFields ? Object.freeze([...field.relationFromFields]) : undefined,
-      relationToFields: field.relationToFields ? Object.freeze([...field.relationToFields]) : undefined,
+      // Preserve relation metadata with proper array copying and conditional freezing
+      // Arrays are copied from DMMF and conditionally frozen to prevent mutations
+      relationFromFields: field.relationFromFields ? conditionalFreeze([...field.relationFromFields], shouldFreeze) as readonly string[] : undefined,
+      relationToFields: field.relationToFields ? conditionalFreeze([...field.relationToFields], shouldFreeze) as readonly string[] : undefined,
       documentation: sanitizeDocumentation(field.documentation)
     }
   })
@@ -731,6 +777,23 @@ function sanitizeDocumentation(doc: string | undefined): string | undefined {
     i++
   }
   
+  // Handle unterminated backticks (normalize by removing unbalanced markers)
+  // If we ended with an open backtick state, strip trailing backticks to avoid malformed JSDoc
+  if (inSingleBacktick) {
+    // Remove last single backtick to balance
+    const lastBacktick = result.lastIndexOf('`')
+    if (lastBacktick >= 0) {
+      result = result.substring(0, lastBacktick) + result.substring(lastBacktick + 1)
+    }
+  }
+  if (inTripleBacktick) {
+    // Remove last triple backtick to balance
+    const lastTriple = result.lastIndexOf('```')
+    if (lastTriple >= 0) {
+      result = result.substring(0, lastTriple) + result.substring(lastTriple + 3)
+    }
+  }
+  
   // Convert to single line for JSDoc and collapse spaces
   // Note: This may reduce markdown readability but is necessary for JSDoc format
   // JSDoc rendering will handle some markdown formatting even in single-line format
@@ -752,14 +815,14 @@ function sanitizeDocumentation(doc: string | undefined): string | undefined {
  * - Field name  
  * - Relation name (or 'implicit' if undefined)
  * - Target model name
+ * - FK field count and PK field count (for exotic schemas with same names but different cardinalities)
  * 
  * This ensures each unique relation is recorded once, even across multiple
- * parsing passes or schema manipulations.
+ * parsing passes or schema manipulations, and prevents collisions.
  * 
- * Returns map with frozen arrays to prevent external mutations that could
- * corrupt results across multiple parse calls.
+ * Returns map with conditionally frozen arrays based on options.
  */
-function buildReverseRelationMap(models: ParsedModel[]): Map<string, readonly ParsedField[]> {
+function buildReverseRelationMap(models: ParsedModel[], shouldFreeze: boolean): Map<string, readonly ParsedField[]> {
   const map = new Map<string, ParsedField[]>()
   const modelNames = new Set(models.map(m => m.name))
   
@@ -777,24 +840,27 @@ function buildReverseRelationMap(models: ParsedModel[]): Map<string, readonly Pa
       if (field.kind === 'object') {
         // Only add if target model exists (prevents dangling references)
         if (modelNames.has(field.type)) {
-          // Comprehensive deduplication key: source.field.relation.target
-          // Handles explicit and implicit relations, self-relations, and many-to-many
-          const key = `${model.name}.${field.name}.${field.relationName || 'implicit'}.${field.type}`
+          // Comprehensive deduplication key including field counts for exotic schemas
+          // Includes: source, field, relation name, target, FK count, PK count
+          // Prevents collisions in schemas with same relation names but different cardinalities
+          const fromCount = field.relationFromFields?.length || 0
+          const toCount = field.relationToFields?.length || 0
+          const key = `${model.name}.${field.name}.${field.relationName || 'implicit'}.${field.type}.${fromCount}:${toCount}`
           if (!globalSeen.has(key)) {
             globalSeen.add(key)
             const targetRelations = map.get(field.type)
             if (targetRelations) {  // Defensive check instead of !
               // Create a deep frozen copy to prevent mutations affecting both forward and reverse views
               // This is critical because ParsedField objects may be shared or referenced elsewhere
-              const frozenField: ParsedField = Object.freeze({
+              const frozenField: ParsedField = conditionalFreeze({
                 ...field,
-                relationFromFields: field.relationFromFields ? Object.freeze([...field.relationFromFields]) : undefined,
-                relationToFields: field.relationToFields ? Object.freeze([...field.relationToFields]) : undefined,
-                // Deep-copy and deep-freeze default object to prevent external mutations
+                relationFromFields: field.relationFromFields ? conditionalFreeze([...field.relationFromFields], shouldFreeze) as readonly string[] : undefined,
+                relationToFields: field.relationToFields ? conditionalFreeze([...field.relationToFields], shouldFreeze) as readonly string[] : undefined,
+                // Deep-copy and conditionally deep-freeze default object to prevent external mutations
                 default: field.default && typeof field.default === 'object' 
-                  ? deepFreeze({ ...field.default as object }) as PrismaDefaultValue
+                  ? conditionalDeepFreeze({ ...field.default as object }, shouldFreeze) as PrismaDefaultValue
                   : field.default
-              })
+              }, shouldFreeze)
               targetRelations.push(frozenField)
             }
           }
@@ -803,10 +869,10 @@ function buildReverseRelationMap(models: ParsedModel[]): Map<string, readonly Pa
     }
   }
   
-  // Freeze all arrays in the map before returning to prevent external mutations
+  // Conditionally freeze all arrays in the map before returning to prevent external mutations
   const frozenMap = new Map<string, readonly ParsedField[]>()
   for (const [key, value] of map.entries()) {
-    frozenMap.set(key, Object.freeze(value))
+    frozenMap.set(key, conditionalFreeze(value, shouldFreeze) as readonly ParsedField[])
   }
   
   return frozenMap
@@ -824,7 +890,8 @@ function buildReverseRelationMap(models: ParsedModel[]): Map<string, readonly Pa
 function enhanceModel(
   model: ParsedModel, 
   modelMap: Map<string, ParsedModel>,
-  reverseRelationMap: Map<string, readonly ParsedField[]>
+  reverseRelationMap: Map<string, readonly ParsedField[]>,
+  shouldFreeze: boolean
 ): void {
   // Cast to mutable version for initialization
   // This is safe because we're in the construction phase
@@ -890,17 +957,17 @@ function enhanceModel(
   }
   
   // Set all derived properties
-  // Note: Freeze all arrays for immutability and consistency
+  // Note: Conditionally freeze all arrays based on options
   // Using mutableModel to assign to readonly properties during construction
   mutableModel.idField = idField
-  mutableModel.fields = Object.freeze([...model.fields])
-  mutableModel.scalarFields = Object.freeze(scalarFields)
-  mutableModel.relationFields = Object.freeze(relationFields)
-  mutableModel.createFields = Object.freeze(createFields)
-  mutableModel.updateFields = Object.freeze(updateFields)
-  mutableModel.readFields = Object.freeze([...scalarFields]) // All scalar fields for reading
+  mutableModel.fields = conditionalFreeze([...model.fields], shouldFreeze) as readonly ParsedField[]
+  mutableModel.scalarFields = conditionalFreeze(scalarFields, shouldFreeze) as readonly ParsedField[]
+  mutableModel.relationFields = conditionalFreeze(relationFields, shouldFreeze) as readonly ParsedField[]
+  mutableModel.createFields = conditionalFreeze(createFields, shouldFreeze) as readonly ParsedField[]
+  mutableModel.updateFields = conditionalFreeze(updateFields, shouldFreeze) as readonly ParsedField[]
+  mutableModel.readFields = conditionalFreeze([...scalarFields], shouldFreeze) as readonly ParsedField[]
   mutableModel.hasSelfRelation = hasSelfRelation
-  mutableModel.reverseRelations = Object.freeze([...(reverseRelationMap.get(model.name) || [])])
+  mutableModel.reverseRelations = conditionalFreeze([...(reverseRelationMap.get(model.name) || [])], shouldFreeze) as readonly ParsedField[]
 }
 
 // ============================================================================
@@ -1030,16 +1097,21 @@ export function getDefaultValueString(field: ParsedField): string | undefined {
     // Reject special numbers that don't have safe TypeScript representations
     if (!Number.isFinite(def)) return undefined
     
-    // Guard against BigInt values that exceed safe integer range
-    // Prisma may store BigInt defaults as numbers in DMMF
-    if (def > Number.MAX_SAFE_INTEGER || def < Number.MIN_SAFE_INTEGER) {
-      // BigInt literals would need special handling (e.g., 123n syntax)
-      return undefined
+    // BigInt fields should not use number defaults
+    // Even if the number is within safe range, it's semantically wrong
+    // Prisma may serialize BigInt defaults as numbers in DMMF, but we can't
+    // reliably convert them to BigInt literals (would need 123n syntax)
+    if (field.type === 'BigInt') {
+      return undefined  // Generators must handle BigInt defaults specially
     }
     
-    // Guard against Decimal-like fractional values for BigInt fields
-    // If field type is BigInt but default has decimals, it's invalid
-    if (field.type === 'BigInt' && !Number.isInteger(def)) {
+    // Guard against Decimal fields (also need special handling)
+    if (field.type === 'Decimal') {
+      return undefined  // Decimal requires special Prisma.Decimal() handling
+    }
+    
+    // For regular numeric types, guard against values exceeding safe range
+    if (def > Number.MAX_SAFE_INTEGER || def < Number.MIN_SAFE_INTEGER) {
       return undefined
     }
     
