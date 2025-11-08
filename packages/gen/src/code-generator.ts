@@ -50,6 +50,8 @@ export interface CodeGeneratorConfig {
   autoOpenChecklist?: boolean  // Auto-open checklist in browser (default: false)
   schemaHash?: string  // Schema hash for version checking
   toolVersion?: string  // Tool version
+  hookFrameworks?: Array<'react' | 'vue' | 'angular' | 'zustand' | 'vanilla'>  // Framework hooks to generate
+  strictPluginValidation?: boolean  // Fail on plugin validation errors (default: false)
   
   // NEW: Feature plugins
   features?: {
@@ -85,6 +87,9 @@ export function generateCode(
   schema: ParsedSchema,
   config: CodeGeneratorConfig
 ): GeneratedFiles {
+  const framework = config.framework || 'express'
+  const useEnhanced = config.useEnhancedGenerators ?? true
+  
   const files: GeneratedFiles = {
     contracts: new Map(),
     validators: new Map(),
@@ -93,11 +98,15 @@ export function generateCode(
     routes: new Map(),
     sdk: new Map(),
     registry: undefined,
-    plugins: new Map(),  // NEW: Plugin files
+    plugins: new Map(),
+    pluginOutputs: new Map(),
     hooks: {
       core: new Map()
     }
   }
+  
+  const generatedPaths = new Set<string>()  // Track generated file paths to detect duplicates
+  let hasErrors = false
   
   // PHASE 1: Pre-analyze all models ONCE (O(n) instead of O(n×5))
   const cache: AnalysisCache = {
@@ -105,134 +114,211 @@ export function generateCode(
     serviceAnnotations: new Map()
   }
   
-  for (const model of schema.models) {
-    // UNIFIED ANALYSIS: Analyze relationships, special fields, and capabilities ONCE
-    if (config.useEnhancedGenerators ?? true) {
-      cache.modelAnalysis.set(model.name, analyzeModelUnified(model, schema))
+  try {
+    for (const model of schema.models) {
+      // UNIFIED ANALYSIS: Analyze relationships, special fields, and capabilities ONCE
+      if (useEnhanced) {
+        cache.modelAnalysis.set(model.name, analyzeModelUnified(model, schema))
+      }
+      
+      // Parse service annotations once
+      const serviceAnnotation = parseServiceAnnotation(model)
+      if (serviceAnnotation) {
+        cache.serviceAnnotations.set(model.name, serviceAnnotation)
+      }
     }
-    
-    // Parse service annotations once
-    const serviceAnnotation = parseServiceAnnotation(model)
-    if (serviceAnnotation) {
-      cache.serviceAnnotations.set(model.name, serviceAnnotation)
-    }
+  } catch (error) {
+    console.error('[ssot-codegen] Error during model analysis:', error)
+    hasErrors = true
+    throw error
   }
   
   // REGISTRY MODE: Generate unified registry instead of individual files
   if (config.useRegistry) {
-    files.registry = generateRegistrySystem(schema, cache.modelAnalysis)
-    
-    // Still generate DTOs and SDK in registry mode
-    for (const model of schema.models) {
-      const modelLower = model.nameLower  // Use cached lowercase name
-      const dtos = generateAllDTOs(model)
-      const dtoMap = new Map<string, string>()
-      dtoMap.set(`${modelLower}.create.dto.ts`, dtos.create)
-      dtoMap.set(`${modelLower}.update.dto.ts`, dtos.update)
-      dtoMap.set(`${modelLower}.read.dto.ts`, dtos.read)
-      dtoMap.set(`${modelLower}.query.dto.ts`, dtos.query)
-      files.contracts.set(model.name, dtoMap)
+    try {
+      files.registry = generateRegistrySystem(schema, cache.modelAnalysis)
+      
+      // Generate DTOs and validators in registry mode
+      for (const model of schema.models) {
+        const modelKebab = toKebabCase(model.name)
+        
+        try {
+          // Generate DTOs
+          const dtos = generateAllDTOs(model)
+          const dtoMap = new Map<string, string>()
+          dtoMap.set(`${modelKebab}.create.dto.ts`, dtos.create)
+          dtoMap.set(`${modelKebab}.update.dto.ts`, dtos.update)
+          dtoMap.set(`${modelKebab}.read.dto.ts`, dtos.read)
+          dtoMap.set(`${modelKebab}.query.dto.ts`, dtos.query)
+          files.contracts.set(model.name, dtoMap)
+          
+          // Generate validators (needed for request validation)
+          const validators = generateAllValidators(model)
+          const validatorMap = new Map<string, string>()
+          validatorMap.set(`${modelKebab}.create.zod.ts`, validators.create)
+          validatorMap.set(`${modelKebab}.update.zod.ts`, validators.update)
+          validatorMap.set(`${modelKebab}.query.zod.ts`, validators.query)
+          files.validators.set(model.name, validatorMap)
+        } catch (error) {
+          console.error(`[ssot-codegen] Error generating DTOs/validators for ${model.name}:`, error)
+          hasErrors = true
+        }
+      }
+      
+      // Generate SDK and hooks
+      try {
+        generateSDKClients(schema, files, cache, generatedPaths)
+        const hookFrameworks = config.hookFrameworks || ['react']
+        const hooks = generateAllHooks(schema, { frameworks: hookFrameworks }, cache.modelAnalysis)
+        files.hooks = hooks
+      } catch (error) {
+        console.error('[ssot-codegen] Error generating SDK/hooks:', error)
+        hasErrors = true
+      }
+      
+      // Generate System Checklist (only if no errors)
+      if (!hasErrors && config.generateChecklist !== false) {
+        try {
+          const checklist = generateChecklistSystem(schema, files, {
+            projectName: config.projectName || 'Generated Project',
+            useRegistry: true,
+            framework,
+            autoOpen: config.autoOpenChecklist || false,
+            includeEnvironmentChecks: true,
+            includeCodeValidation: true,
+            includeAPITesting: true,
+            includePerformanceMetrics: true
+          })
+          files.checklist = checklist
+        } catch (error) {
+          console.error('[ssot-codegen] Error generating checklist:', error)
+        }
+      }
+      
+      return files
+    } catch (error) {
+      console.error('[ssot-codegen] Error in registry mode generation:', error)
+      throw error
     }
-    
-    // Generate SDK and hooks
-    generateSDKClients(schema, files, cache)
-    const hooks = generateAllHooks(schema, { frameworks: ['react'] }, cache.modelAnalysis)  // Pass cached analysis
-    files.hooks = hooks
-    
-    // Generate System Checklist (REGISTRY MODE)
-    if (config.generateChecklist !== false) {
-      const checklist = generateChecklistSystem(schema, files, {
-        projectName: config.projectName || 'Generated Project',
-        useRegistry: true,
-        framework: config.framework || 'express',
-        autoOpen: config.autoOpenChecklist || false,
-        includeEnvironmentChecks: true,
-        includeCodeValidation: true,
-        includeAPITesting: true,
-        includePerformanceMetrics: true
-      })
-      files.checklist = checklist
-    }
-    
-    return files
   }
   
   // LEGACY MODE: Generate individual files for each model
   // PHASE 2: Generate code using cached analysis (O(n) with no repeated work)
-  for (const model of schema.models) {
-    generateModelCode(model, config, files, schema, cache)
+  try {
+    for (const model of schema.models) {
+      try {
+        generateModelCode(model, config, files, schema, cache, generatedPaths)
+      } catch (error) {
+        console.error(`[ssot-codegen] Error generating code for model ${model.name}:`, error)
+        hasErrors = true
+      }
+    }
+  } catch (error) {
+    console.error('[ssot-codegen] Error in model code generation phase:', error)
+    hasErrors = true
   }
   
   // PHASE 3: Generate SDK clients (after all models are processed)
-  generateSDKClients(schema, files, cache)
-  
-  // PHASE 4: Generate framework hooks (React by default)
-  const hooks = generateAllHooks(schema, { frameworks: ['react'] }, cache.modelAnalysis)  // Pass cached analysis
-  files.hooks = hooks
-  
-  // PHASE 5: Generate Feature Plugins (NEW!)
-  let pluginManager: PluginManager | undefined
-  if (config.features) {
-    pluginManager = new PluginManager({
-      schema,
-      projectName: config.projectName || 'Generated Project',
-      framework: config.framework || 'express',
-      outputDir: '',
-      features: config.features
-    })
-    
-    // Validate all plugins (synchronous)
-    const validations = pluginManager.validateAll()
-    const hasErrors = Array.from(validations.values()).some(v => !v.valid)
-    
-    if (hasErrors) {
-      console.warn('\n⚠️  Some plugins have validation errors. Check warnings above.')
-    }
-    
-    // Generate plugin code (synchronous for now)
-    const pluginOutputs = pluginManager.generateAll()
-    
-    // Add plugin files to generated files
-    for (const [pluginName, output] of pluginOutputs) {
-      files.plugins!.set(pluginName, output.files)
-    }
-    
-    // Store plugin outputs for env vars and package.json merging
-    ;(files as any).pluginOutputs = pluginOutputs
+  try {
+    generateSDKClients(schema, files, cache, generatedPaths)
+  } catch (error) {
+    console.error('[ssot-codegen] Error generating SDK clients:', error)
+    hasErrors = true
   }
   
-  // PHASE 6: Generate System Checklist
-  if (config.generateChecklist !== false) {  // Default: true
-    // Collect plugin health checks from the same plugin manager instance
-    const pluginHealthChecks = new Map<string, any>()
-    if (pluginManager) {
-      // Get health checks from all enabled plugins
-      for (const [pluginName, plugin] of pluginManager.getPlugins()) {
-        if (plugin.healthCheck) {
-          const healthCheck = plugin.healthCheck({
-            schema,
-            projectName: config.projectName || 'Generated Project',
-            framework: config.framework || 'express',
-            outputDir: '',
-            config: config.features || {}
-          })
-          pluginHealthChecks.set(pluginName, healthCheck)
+  // PHASE 4: Generate framework hooks
+  try {
+    const hookFrameworks = config.hookFrameworks || ['react']
+    const hooks = generateAllHooks(schema, { frameworks: hookFrameworks }, cache.modelAnalysis)
+    files.hooks = hooks
+  } catch (error) {
+    console.error('[ssot-codegen] Error generating hooks:', error)
+    hasErrors = true
+  }
+  
+  // PHASE 5: Generate Feature Plugins
+  let pluginManager: PluginManager | undefined
+  if (config.features) {
+    try {
+      pluginManager = new PluginManager({
+        schema,
+        projectName: config.projectName || 'Generated Project',
+        framework,
+        outputDir: '',
+        features: config.features
+      })
+      
+      // Validate all plugins
+      const validations = pluginManager.validateAll()
+      const pluginErrors = Array.from(validations.values()).some(v => !v.valid)
+      
+      if (pluginErrors) {
+        const message = '⚠️  Some plugins have validation errors. Check warnings above.'
+        if (config.strictPluginValidation) {
+          throw new Error(message)
         }
+        console.warn(`\n${message}`)
+        hasErrors = true
+      }
+      
+      // Generate plugin code
+      const pluginOutputs = pluginManager.generateAll()
+      
+      // Add plugin files to generated files
+      for (const [pluginName, output] of pluginOutputs) {
+        files.plugins!.set(pluginName, output.files)
+      }
+      
+      // Store plugin outputs for env vars and package.json merging
+      files.pluginOutputs = pluginOutputs
+    } catch (error) {
+      console.error('[ssot-codegen] Error generating plugins:', error)
+      hasErrors = true
+      if (config.strictPluginValidation) {
+        throw error
       }
     }
-    
-    const checklist = generateChecklistSystem(schema, files, {
-      projectName: config.projectName || 'Generated Project',
-      useRegistry: config.useRegistry || false,
-      framework: config.framework || 'express',
-      autoOpen: config.autoOpenChecklist || false,
-      includeEnvironmentChecks: true,
-      includeCodeValidation: true,
-      includeAPITesting: true,
-      includePerformanceMetrics: true,
-      pluginHealthChecks
-    })
-    files.checklist = checklist
+  }
+  
+  // PHASE 6: Generate System Checklist (only if no critical errors)
+  if (!hasErrors && config.generateChecklist !== false) {
+    try {
+      // Collect plugin health checks
+      const pluginHealthChecks = new Map<string, any>()
+      if (pluginManager) {
+        for (const [pluginName, plugin] of pluginManager.getPlugins()) {
+          if (plugin.healthCheck) {
+            try {
+              const healthCheck = plugin.healthCheck({
+                schema,
+                projectName: config.projectName || 'Generated Project',
+                framework,
+                outputDir: '',
+                config: config.features || {}
+              })
+              pluginHealthChecks.set(pluginName, healthCheck)
+            } catch (error) {
+              console.error(`[ssot-codegen] Error getting health check for plugin ${pluginName}:`, error)
+            }
+          }
+        }
+      }
+      
+      const checklist = generateChecklistSystem(schema, files, {
+        projectName: config.projectName || 'Generated Project',
+        useRegistry: config.useRegistry || false,
+        framework,
+        autoOpen: config.autoOpenChecklist || false,
+        includeEnvironmentChecks: true,
+        includeCodeValidation: true,
+        includeAPITesting: true,
+        includePerformanceMetrics: true,
+        pluginHealthChecks
+      })
+      files.checklist = checklist
+    } catch (error) {
+      console.error('[ssot-codegen] Error generating checklist:', error)
+    }
   }
   
   return files
@@ -247,25 +333,29 @@ function generateModelCode(
   config: CodeGeneratorConfig,
   files: GeneratedFiles,
   schema: ParsedSchema,
-  cache: AnalysisCache
+  cache: AnalysisCache,
+  generatedPaths: Set<string>
 ): void {
-  const modelLower = model.nameLower  // Use cached lowercase name
-  const modelKebab = toKebabCase(model.name)  // Use kebab-case for filenames
+  const modelKebab = toKebabCase(model.name)
   const useEnhanced = config.useEnhancedGenerators ?? true
+  const framework = config.framework || 'express'
   
-  // Get cached service annotation (already parsed in phase 1)
+  // Get cached service annotation and analysis
   const serviceAnnotation = cache.serviceAnnotations.get(model.name)
+  const analysis = useEnhanced ? cache.modelAnalysis.get(model.name) : undefined
   
-  // Get cached analysis (already computed in phase 1)
-  const analysis = cache.modelAnalysis.get(model.name)
+  // Validate that analysis exists when enhanced mode is enabled
+  if (useEnhanced && !analysis) {
+    console.warn(`[ssot-codegen] Missing analysis for model ${model.name}, skipping enhanced generation`)
+    return
+  }
   
-  // Check if this is a junction table FIRST (before generating anything beyond DTOs/validators)
+  // Check if this is a junction table (skip generating full CRUD for many-to-many join tables)
   const isJunction = useEnhanced && analysis?.isJunctionTable
   
   if (isJunction) {
-    // Note: Junction table warning is logged by the caller (index-new.ts) via logger
-    
-    // Generate DTOs (useful for type system even for junction tables)
+    // Junction tables only get DTOs and validators (no controllers/routes/services)
+    // This prevents creating redundant endpoints for tables that should be managed through their parent models
     const dtos = generateAllDTOs(model)
     const dtoMap = new Map<string, string>()
     dtoMap.set(`${modelKebab}.create.dto.ts`, dtos.create)
@@ -274,7 +364,6 @@ function generateModelCode(
     dtoMap.set(`${modelKebab}.query.dto.ts`, dtos.query)
     files.contracts.set(model.name, dtoMap)
     
-    // Generate Validators (useful for type system)
     const validators = generateAllValidators(model)
     const validatorMap = new Map<string, string>()
     validatorMap.set(`${modelKebab}.create.zod.ts`, validators.create)
@@ -282,11 +371,10 @@ function generateModelCode(
     validatorMap.set(`${modelKebab}.query.zod.ts`, validators.query)
     files.validators.set(model.name, validatorMap)
     
-    // Skip services, controllers, and routes for junction tables
     return
   }
   
-  // Generate DTOs (always needed for non-junction models)
+  // Generate DTOs
   const dtos = generateAllDTOs(model)
   const dtoMap = new Map<string, string>()
   dtoMap.set(`${modelKebab}.create.dto.ts`, dtos.create)
@@ -295,7 +383,7 @@ function generateModelCode(
   dtoMap.set(`${modelKebab}.query.dto.ts`, dtos.query)
   files.contracts.set(model.name, dtoMap)
   
-  // Generate Validators (always needed)
+  // Generate Validators
   const validators = generateAllValidators(model)
   const validatorMap = new Map<string, string>()
   validatorMap.set(`${modelKebab}.create.zod.ts`, validators.create)
@@ -303,46 +391,69 @@ function generateModelCode(
   validatorMap.set(`${modelKebab}.query.zod.ts`, validators.query)
   files.validators.set(model.name, validatorMap)
   
-  // Generate Service (enhanced or basic)
-  // Both now support soft-delete filtering and auto-includes
-  const service = useEnhanced 
+  // Generate Service
+  const servicePath = `${modelKebab}.service.ts`
+  checkPathDuplication(servicePath, generatedPaths, model.name)
+  const service = useEnhanced && analysis
     ? generateEnhancedService(model, schema)
     : generateService(model, schema)
-  files.services.set(`${modelKebab}.service.ts`, service)
+  files.services.set(servicePath, service)
   
   // If this model has @service annotation, generate service integration
   if (serviceAnnotation) {
     console.log(`[ssot-codegen] Generating service integration for: ${serviceAnnotation.name} (methods: ${serviceAnnotation.methods.join(', ')})`)
     
-    // Generate service integration controller
+    // Generate service integration files
+    const serviceControllerPath = `${serviceAnnotation.name}.controller.ts`
+    const serviceRoutesPath = `${serviceAnnotation.name}.routes.ts`
+    const scaffoldPath = `${serviceAnnotation.name}.service.scaffold.ts`
+    
+    checkPathDuplication(serviceControllerPath, generatedPaths, serviceAnnotation.name)
+    checkPathDuplication(serviceRoutesPath, generatedPaths, serviceAnnotation.name)
+    checkPathDuplication(scaffoldPath, generatedPaths, serviceAnnotation.name)
+    
     const serviceController = generateServiceController(serviceAnnotation)
-    files.controllers.set(`${serviceAnnotation.name}.controller.ts`, serviceController)
+    files.controllers.set(serviceControllerPath, serviceController)
     
-    // Generate service integration routes
     const serviceRoutes = generateServiceRoutes(serviceAnnotation)
-    files.routes.set(`${serviceAnnotation.name}.routes.ts`, serviceRoutes)
+    files.routes.set(serviceRoutesPath, serviceRoutes)
     
-    // Generate service scaffold
     const scaffold = generateServiceScaffold(serviceAnnotation)
-    files.services.set(`${serviceAnnotation.name}.service.scaffold.ts`, scaffold)
+    files.services.set(scaffoldPath, scaffold)
     
-    return  // Service integration replaces standard CRUD controller/routes
+    // NOTE: Still generate SDK for service-annotated models (needed for frontend integration)
+    // SDK generation happens in generateSDKClients phase
+    return
   }
   
-  // Generate Controller (base class for minimal boilerplate, enhanced for legacy, or basic)
-  const controller = useEnhanced
-    ? generateBaseClassController(model, schema, config.framework, analysis!)  // Pass cached analysis
-    : generateController(model, config.framework)
-  files.controllers.set(`${modelKebab}.controller.ts`, controller)
+  // Generate Controller
+  const controllerPath = `${modelKebab}.controller.ts`
+  checkPathDuplication(controllerPath, generatedPaths, model.name)
+  const controller = useEnhanced && analysis
+    ? generateBaseClassController(model, schema, framework, analysis)
+    : generateController(model, framework)
+  files.controllers.set(controllerPath, controller)
   
-  // Generate Routes (enhanced or basic)
-  const routes = useEnhanced
-    ? generateEnhancedRoutes(model, schema, config.framework, analysis!)  // Pass cached analysis
-    : generateRoutes(model, config.framework)
+  // Generate Routes
+  const routesPath = `${modelKebab}.routes.ts`
+  const routes = useEnhanced && analysis
+    ? generateEnhancedRoutes(model, schema, framework, analysis)
+    : generateRoutes(model, framework)
     
   if (routes) {
-    files.routes.set(`${modelKebab}.routes.ts`, routes)
+    checkPathDuplication(routesPath, generatedPaths, model.name)
+    files.routes.set(routesPath, routes)
   }
+}
+
+/**
+ * Check for duplicate file paths and warn if found
+ */
+function checkPathDuplication(path: string, generatedPaths: Set<string>, modelName: string): void {
+  if (generatedPaths.has(path)) {
+    console.warn(`[ssot-codegen] Duplicate file path detected: ${path} (model: ${modelName})`)
+  }
+  generatedPaths.add(path)
 }
 
 /**
@@ -351,61 +462,116 @@ function generateModelCode(
 function generateSDKClients(
   schema: ParsedSchema,
   files: GeneratedFiles,
-  cache: AnalysisCache
+  cache: AnalysisCache,
+  generatedPaths: Set<string>
 ): void {
   const modelClients: Array<{ name: string; className: string }> = []
   const serviceClients: Array<{ name: string; className: string; annotation: ServiceAnnotation }> = []
   
-  // Generate model clients (skip junction tables and service-annotated models)
+  // Generate model clients (skip junction tables, include service-annotated models for SDK)
   for (const model of schema.models) {
     const analysis = cache.modelAnalysis.get(model.name)
     const serviceAnnotation = cache.serviceAnnotations.get(model.name)
     
-    if (analysis?.isJunctionTable) continue  // Skip junction tables
-    if (serviceAnnotation) continue  // Skip service-annotated models (handled separately)
+    // Skip junction tables (they shouldn't have direct SDK access)
+    if (analysis?.isJunctionTable) continue
     
-    const modelClient = generateModelSDK(model, schema)
-    files.sdk.set(`models/${model.name.toLowerCase()}.client.ts`, modelClient)
-    
-    modelClients.push({
-      name: model.name.toLowerCase(),
-      className: `${model.name}Client`
-    })
+    try {
+      const modelClient = generateModelSDK(model, schema)
+      const sdkPath = `models/${model.name.toLowerCase()}.client.ts`
+      checkPathDuplication(sdkPath, generatedPaths, model.name)
+      files.sdk.set(sdkPath, modelClient)
+      
+      modelClients.push({
+        name: model.name.toLowerCase(),
+        className: `${model.name}Client`
+      })
+    } catch (error) {
+      console.error(`[ssot-codegen] Error generating SDK for model ${model.name}:`, error)
+    }
   }
   
   // Generate service integration clients
   for (const [modelName, serviceAnnotation] of cache.serviceAnnotations) {
-    const serviceClient = generateServiceSDK(serviceAnnotation)
-    files.sdk.set(`services/${serviceAnnotation.name}.client.ts`, serviceClient)
-    
-    const serviceName = serviceAnnotation.name.split('-').map((word, idx) => 
-      idx === 0 ? word.toLowerCase() : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-    ).join('')
-    const className = serviceName.charAt(0).toUpperCase() + serviceName.slice(1) + 'Client'
-    
-    serviceClients.push({
-      name: serviceAnnotation.name,
-      className,
-      annotation: serviceAnnotation
-    })
+    try {
+      const serviceClient = generateServiceSDK(serviceAnnotation)
+      const sdkPath = `services/${serviceAnnotation.name}.client.ts`
+      checkPathDuplication(sdkPath, generatedPaths, serviceAnnotation.name)
+      files.sdk.set(sdkPath, serviceClient)
+      
+      // Transform service name to proper class name
+      const className = toServiceClassName(serviceAnnotation.name)
+      
+      serviceClients.push({
+        name: serviceAnnotation.name,
+        className,
+        annotation: serviceAnnotation
+      })
+    } catch (error) {
+      console.error(`[ssot-codegen] Error generating SDK for service ${serviceAnnotation.name}:`, error)
+    }
   }
   
   // Generate main SDK factory with both model and service clients
-  const mainSDK = serviceClients.length > 0
-    ? generateMainSDKWithServices(modelClients, serviceClients)
-    : generateMainSDK(schema.models, schema)
-  files.sdk.set('index.ts', mainSDK)
+  try {
+    const mainSDK = serviceClients.length > 0
+      ? generateMainSDKWithServices(modelClients, serviceClients)
+      : generateMainSDK(schema.models, schema)
+    files.sdk.set('index.ts', mainSDK)
+  } catch (error) {
+    console.error('[ssot-codegen] Error generating main SDK:', error)
+  }
   
-  // Generate version file (schema hash and version will be added by manifest phase)
-  const versionFile = generateSDKVersion('placeholder', '0.4.0')
-  files.sdk.set('version.ts', versionFile)
+  // Generate version file
+  // NOTE: Placeholder values will be replaced by manifest phase during file writing
+  // If manifest phase doesn't run, these placeholders indicate missing version info
+  try {
+    const versionFile = generateSDKVersion('__SCHEMA_HASH_PLACEHOLDER__', '__VERSION_PLACEHOLDER__')
+    files.sdk.set('version.ts', versionFile)
+  } catch (error) {
+    console.error('[ssot-codegen] Error generating SDK version file:', error)
+  }
   
   // Generate SDK documentation files
-  files.sdk.set('README.md', generateSDKReadme(schema.models, schema))
-  files.sdk.set('API-REFERENCE.md', generateAPIReference(schema.models, schema))
-  files.sdk.set('ARCHITECTURE.md', generateSDKArchitecture())
-  files.sdk.set('quick-start.ts', generateQuickStart())
-  files.sdk.set('types.ts', generateSDKTypes(schema.models, schema))
+  try {
+    files.sdk.set('README.md', generateSDKReadme(schema.models, schema))
+    files.sdk.set('API-REFERENCE.md', generateAPIReference(schema.models, schema))
+    files.sdk.set('ARCHITECTURE.md', generateSDKArchitecture())
+    files.sdk.set('quick-start.ts', generateQuickStart())
+    files.sdk.set('types.ts', generateSDKTypes(schema.models, schema))
+  } catch (error) {
+    console.error('[ssot-codegen] Error generating SDK documentation:', error)
+  }
+}
+
+/**
+ * Convert service name to proper class name
+ * Handles kebab-case, snake_case, and validates format
+ */
+function toServiceClassName(serviceName: string): string {
+  // Validate service name format
+  if (!serviceName || typeof serviceName !== 'string') {
+    throw new Error(`Invalid service name: ${serviceName}`)
+  }
+  
+  // Handle kebab-case (e.g., 'image-optimizer' -> 'ImageOptimizerClient')
+  if (serviceName.includes('-')) {
+    return serviceName
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join('') + 'Client'
+  }
+  
+  // Handle snake_case (e.g., 'image_optimizer' -> 'ImageOptimizerClient')
+  if (serviceName.includes('_')) {
+    return serviceName
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join('') + 'Client'
+  }
+  
+  // Handle PascalCase or camelCase (e.g., 'ImageOptimizer' or 'imageOptimizer')
+  return serviceName.charAt(0).toUpperCase() + serviceName.slice(1) + 'Client'
 }
 
 /**
