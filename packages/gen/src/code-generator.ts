@@ -258,6 +258,11 @@ function detectNamingConflicts(
  * - FATAL errors: throw immediately (invalid schema, missing required config)
  * - ERROR: log and continue if continueOnError=true, otherwise throw
  * - WARNING: log and continue always
+ * 
+ * Cache management:
+ * - Analysis cache is created fresh for each call to generateCode()
+ * - Safe for watch mode / multiple invocations
+ * - No manual cache clearing needed
  */
 export function generateCode(
   schema: ParsedSchema,
@@ -408,6 +413,9 @@ export function generateCode(
     }
   }
   
+  // PHASE 1.6: Detect naming conflicts between models and service annotations
+  detectNamingConflicts(schema.models, cache.serviceAnnotations, errors)
+  
   // REGISTRY MODE: Generate unified registry instead of individual files
   if (config.useRegistry) {
     try {
@@ -416,24 +424,79 @@ export function generateCode(
       // Generate DTOs and validators in registry mode
       for (const model of schema.models) {
         const modelKebab = toKebabCase(model.name)
+        const serviceAnnotation = cache.serviceAnnotations.get(model.name)
         
         try {
           // Generate DTOs
           const dtos = generateAllDTOs(model)
           const dtoMap = new Map<string, string>()
-          dtoMap.set(`${modelKebab}.create.dto.ts`, dtos.create)
-          dtoMap.set(`${modelKebab}.update.dto.ts`, dtos.update)
-          dtoMap.set(`${modelKebab}.read.dto.ts`, dtos.read)
-          dtoMap.set(`${modelKebab}.query.dto.ts`, dtos.query)
-          files.contracts.set(model.name, dtoMap)
+          
+          // Validate DTOs before adding
+          if (validateGeneratedCode(dtos.create, `${modelKebab}.create.dto.ts`, errors)) {
+            dtoMap.set(`${modelKebab}.create.dto.ts`, dtos.create)
+          }
+          if (validateGeneratedCode(dtos.update, `${modelKebab}.update.dto.ts`, errors)) {
+            dtoMap.set(`${modelKebab}.update.dto.ts`, dtos.update)
+          }
+          if (validateGeneratedCode(dtos.read, `${modelKebab}.read.dto.ts`, errors)) {
+            dtoMap.set(`${modelKebab}.read.dto.ts`, dtos.read)
+          }
+          if (validateGeneratedCode(dtos.query, `${modelKebab}.query.dto.ts`, errors)) {
+            dtoMap.set(`${modelKebab}.query.dto.ts`, dtos.query)
+          }
+          
+          if (dtoMap.size > 0) {
+            files.contracts.set(model.name, dtoMap)
+          }
           
           // Generate validators (needed for request validation)
           const validators = generateAllValidators(model)
           const validatorMap = new Map<string, string>()
-          validatorMap.set(`${modelKebab}.create.zod.ts`, validators.create)
-          validatorMap.set(`${modelKebab}.update.zod.ts`, validators.update)
-          validatorMap.set(`${modelKebab}.query.zod.ts`, validators.query)
-          files.validators.set(model.name, validatorMap)
+          
+          // Validate validators before adding
+          if (validateGeneratedCode(validators.create, `${modelKebab}.create.zod.ts`, errors)) {
+            validatorMap.set(`${modelKebab}.create.zod.ts`, validators.create)
+          }
+          if (validateGeneratedCode(validators.update, `${modelKebab}.update.zod.ts`, errors)) {
+            validatorMap.set(`${modelKebab}.update.zod.ts`, validators.update)
+          }
+          if (validateGeneratedCode(validators.query, `${modelKebab}.query.zod.ts`, errors)) {
+            validatorMap.set(`${modelKebab}.query.zod.ts`, validators.query)
+          }
+          
+          if (validatorMap.size > 0) {
+            files.validators.set(model.name, validatorMap)
+          }
+          
+          // Handle service integration in registry mode
+          if (serviceAnnotation) {
+            console.log(`[ssot-codegen] [Registry] Generating service integration for: ${serviceAnnotation.name}`)
+            
+            const serviceControllerPath = `${serviceAnnotation.name}.controller.ts`
+            const serviceRoutesPath = `${serviceAnnotation.name}.routes.ts`
+            const scaffoldPath = `${serviceAnnotation.name}.service.scaffold.ts`
+            
+            if (!checkPathDuplication(serviceControllerPath, generatedPaths, serviceAnnotation.name, errors)) {
+              const serviceController = generateServiceController(serviceAnnotation)
+              if (validateGeneratedCode(serviceController, serviceControllerPath, errors)) {
+                files.controllers.set(serviceControllerPath, serviceController)
+              }
+            }
+            
+            if (!checkPathDuplication(serviceRoutesPath, generatedPaths, serviceAnnotation.name, errors)) {
+              const serviceRoutes = generateServiceRoutes(serviceAnnotation)
+              if (validateGeneratedCode(serviceRoutes, serviceRoutesPath, errors)) {
+                files.routes.set(serviceRoutesPath, serviceRoutes)
+              }
+            }
+            
+            if (!checkPathDuplication(scaffoldPath, generatedPaths, serviceAnnotation.name, errors)) {
+              const scaffold = generateServiceScaffold(serviceAnnotation)
+              if (validateGeneratedCode(scaffold, scaffoldPath, errors)) {
+                files.services.set(scaffoldPath, scaffold)
+              }
+            }
+          }
         } catch (error) {
           const genError: GenerationError = {
             severity: ErrorSeverity.ERROR,
@@ -454,6 +517,18 @@ export function generateCode(
       // Generate SDK and hooks
       try {
         generateSDKClients(schema, files, cache, generatedPaths, errors, failFast, continueOnError)
+        
+        // Validate analysis cache before generating hooks
+        if (useEnhanced && cache.modelAnalysis.size === 0 && schema.models.length > 0) {
+          const error: GenerationError = {
+            severity: ErrorSeverity.WARNING,
+            message: 'Model analysis cache is empty, hooks may be missing advanced features',
+            phase: 'hooks-validation'
+          }
+          errors.push(error)
+          console.warn(`[ssot-codegen] ${error.message}`)
+        }
+        
         const hooks = generateAllHooks(schema, { frameworks: hookFrameworks }, cache.modelAnalysis)
         files.hooks = hooks
       } catch (error) {
@@ -569,6 +644,17 @@ export function generateCode(
   
   // PHASE 4: Generate framework hooks
   try {
+    // Validate analysis cache before generating hooks
+    if (useEnhanced && cache.modelAnalysis.size === 0 && schema.models.length > 0) {
+      const error: GenerationError = {
+        severity: ErrorSeverity.WARNING,
+        message: 'Model analysis cache is empty, hooks may be missing advanced features',
+        phase: 'hooks-validation'
+      }
+      errors.push(error)
+      console.warn(`[ssot-codegen] ${error.message}`)
+    }
+    
     const hooks = generateAllHooks(schema, { frameworks: hookFrameworks }, cache.modelAnalysis)
     files.hooks = hooks
   } catch (error) {
@@ -1122,23 +1208,47 @@ function logGenerationSummary(errors: GenerationError[]): void {
 }
 
 /**
- * Get file count
+ * Get file count including all generated artifacts
  */
 export function countGeneratedFiles(files: GeneratedFiles): number {
   let count = 0
   
+  // Count DTOs and validators
   files.contracts.forEach(map => count += map.size)
   files.validators.forEach(map => count += map.size)
+  
+  // Count services, controllers, routes
   count += files.services.size
   count += files.controllers.size
   count += files.routes.size
+  
+  // Count SDK files
   count += files.sdk.size
+  
+  // Count hooks by framework
   count += files.hooks.core.size
   if (files.hooks.react) count += files.hooks.react.size
   if (files.hooks.vue) count += files.hooks.vue.size
   if (files.hooks.zustand) count += files.hooks.zustand.size
   if (files.hooks.vanilla) count += files.hooks.vanilla.size
   if (files.hooks.angular) count += files.hooks.angular.size
+  
+  // Count registry files
+  if (files.registry) {
+    count += files.registry.size
+  }
+  
+  // Count plugin files
+  if (files.plugins) {
+    files.plugins.forEach(pluginFiles => {
+      count += pluginFiles.size
+    })
+  }
+  
+  // Count checklist files
+  if (files.checklist) {
+    count += files.checklist.size
+  }
   
   return count
 }
