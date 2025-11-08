@@ -337,6 +337,32 @@ function detectNamingConflicts(
 }
 
 /**
+ * Normalize config with defaults
+ * v2.0: Centralized config normalization (done once at entry point)
+ */
+function normalizeConfig(config: CodeGeneratorConfig): CodeGeneratorConfig {
+  return {
+    // Apply defaults
+    framework: config.framework || 'express',
+    useEnhancedGenerators: config.useEnhancedGenerators ?? true,
+    continueOnError: config.continueOnError ?? true,
+    failFast: config.failFast ?? false,
+    useRegistry: config.useRegistry ?? false,
+    generateChecklist: config.generateChecklist ?? true,
+    autoOpenChecklist: config.autoOpenChecklist ?? false,
+    strictPluginValidation: config.strictPluginValidation ?? false,
+    usePipeline: config.usePipeline ?? false,
+    
+    // Pass through other config (already has defaults or is optional)
+    projectName: config.projectName,
+    schemaHash: config.schemaHash,
+    toolVersion: config.toolVersion,
+    hookFrameworks: config.hookFrameworks,
+    features: config.features
+  }
+}
+
+/**
  * Generate all code files from parsed schema
  * 
  * FEATURES:
@@ -367,18 +393,28 @@ function detectNamingConflicts(
  * - Analysis cache is created fresh for each call
  * - Safe for watch mode / multiple invocations
  * - No manual cache clearing needed
+ * 
+ * v2.0: Config normalized upfront for consistency
  */
 export function generateCode(
   schema: ParsedSchema,
   config: CodeGeneratorConfig
 ): GeneratedFiles {
-  // NEW: Use phase-based pipeline if enabled
-  if (config.usePipeline) {
-    return generateCodeWithPipeline(schema, config)
+  // v2.0: Normalize config ONCE at entry point (prevents inconsistent defaults)
+  const normalizedConfig = normalizeConfig(config)
+  
+  // Log framework default if not explicitly set
+  if (!config.framework) {
+    console.log('[ssot-codegen] No framework specified, using default: express')
+  }
+  
+  // Use phase-based pipeline if enabled
+  if (normalizedConfig.usePipeline) {
+    return generateCodeWithPipeline(schema, normalizedConfig)
   }
   
   // LEGACY: Use existing implementation (all bugs fixed, production-ready)
-  return generateCodeLegacy(schema, config)
+  return generateCodeLegacy(schema, normalizedConfig)
 }
 
 /**
@@ -417,15 +453,11 @@ function generateCodeLegacy(
   schema: ParsedSchema,
   config: CodeGeneratorConfig
 ): GeneratedFiles {
-  const framework = config.framework || 'express'
-  const useEnhanced = config.useEnhancedGenerators ?? true
-  const continueOnError = config.continueOnError ?? true
-  const failFast = config.failFast ?? false
-  
-  // Log framework default if not explicitly set
-  if (!config.framework) {
-    console.log('[ssot-codegen] No framework specified, using default: express')
-  }
+  // v2.0: Config already normalized, just extract values
+  const framework = config.framework!  // Non-null after normalization
+  const useEnhanced = config.useEnhancedGenerators!
+  const continueOnError = config.continueOnError!
+  const failFast = config.failFast!
   
   // Validate and normalize hook frameworks
   const hookFrameworks = validateHookFrameworks(config.hookFrameworks)
@@ -942,8 +974,9 @@ function generateModelCode(
   continueOnError: boolean
 ): void {
   const modelKebab = toKebabCase(model.name)
-  const useEnhanced = config.useEnhancedGenerators ?? true
-  const framework = config.framework || 'express'
+  // v2.0: Config already normalized, just extract values
+  const useEnhanced = config.useEnhancedGenerators!
+  const framework = config.framework!
   
   // Get cached service annotation and analysis
   const serviceAnnotation = cache.tryGetServiceAnnotation(model.name)
