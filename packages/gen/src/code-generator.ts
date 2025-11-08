@@ -36,6 +36,9 @@ import { analyzeModelUnified, type UnifiedModelAnalysis } from '@/analyzers/inde
 import { type ModelAnalysis } from '@/utils/relationship-analyzer.js'
 // v2.0: Unified analysis cache (shared with pipeline mode)
 import { AnalysisCache } from '@/cache/analysis-cache.js'
+// v2.0: Centralized validation (runs before analysis)
+import { ConfigValidator } from '@/validation/config-validator.js'
+import { SchemaValidator } from '@/validation/schema-validator.js'
 // Registry-based architecture (78% less code)
 import { generateRegistrySystem } from '@/generators/registry-generator.js'
 import { generateRegistryMode, RegistryModeGenerator } from '@/generators/registry-mode-generator.js'
@@ -236,54 +239,16 @@ function validateGeneratedCode(code: string, filename: string, errors: Generatio
 
 /**
  * Validate service annotation structure
+ * v2.0: Simplified - detailed validation moved to SchemaValidator
  */
 function validateServiceAnnotation(annotation: any, modelName: string, errors: GenerationError[]): annotation is ServiceAnnotation {
+  // Basic type check only (detailed validation done upfront)
   if (!annotation || typeof annotation !== 'object') {
-    const error: GenerationError = {
-      severity: ErrorSeverity.ERROR,
-      message: `Invalid service annotation structure for model ${modelName}`,
-      model: modelName,
-      phase: 'service-annotation-validation'
-    }
-    errors.push(error)
     return false
   }
   
-  // Validate required fields
-  if (!annotation.name || typeof annotation.name !== 'string') {
-    const error: GenerationError = {
-      severity: ErrorSeverity.ERROR,
-      message: `Service annotation missing 'name' field for model ${modelName}`,
-      model: modelName,
-      phase: 'service-annotation-validation'
-    }
-    errors.push(error)
+  if (!annotation.name || !Array.isArray(annotation.methods)) {
     return false
-  }
-  
-  if (!Array.isArray(annotation.methods)) {
-    const error: GenerationError = {
-      severity: ErrorSeverity.ERROR,
-      message: `Service annotation missing 'methods' array for model ${modelName}`,
-      model: modelName,
-      phase: 'service-annotation-validation'
-    }
-    errors.push(error)
-    return false
-  }
-  
-  // Validate method structure
-  for (const method of annotation.methods) {
-    if (!method.name || !method.httpMethod || !method.path) {
-      const error: GenerationError = {
-        severity: ErrorSeverity.ERROR,
-        message: `Invalid method structure in service annotation for model ${modelName}`,
-        model: modelName,
-        phase: 'service-annotation-validation'
-      }
-      errors.push(error)
-      return false
-    }
   }
   
   return true
@@ -400,12 +365,25 @@ export function generateCode(
   schema: ParsedSchema,
   config: CodeGeneratorConfig
 ): GeneratedFiles {
-  // v2.0: Normalize config ONCE at entry point (prevents inconsistent defaults)
+  // v2.0 PHASE 0: Validate config FIRST (fail fast on invalid config)
+  ConfigValidator.validate(config)
+  
+  // v2.0 PHASE 0.5: Normalize config ONCE at entry point (prevents inconsistent defaults)
   const normalizedConfig = normalizeConfig(config)
   
   // Log framework default if not explicitly set
   if (!config.framework) {
     console.log('[ssot-codegen] No framework specified, using default: express')
+  }
+  
+  // v2.0 PHASE 0.75: Validate schema structure BEFORE analysis (fail fast on invalid schema)
+  const schemaErrors = SchemaValidator.validate(schema)
+  if (schemaErrors.length > 0) {
+    console.error('\n❌ [ssot-codegen] Schema validation FAILED:')
+    schemaErrors.forEach(e => {
+      console.error(`   - ${e.message}${e.model ? ` (model: ${e.model})` : ''}`)
+    })
+    throw new Error(`Schema validation failed with ${schemaErrors.length} error(s)`)
   }
   
   // Use phase-based pipeline if enabled
@@ -491,22 +469,7 @@ function generateCodeLegacy(
   
   try {
     for (const model of schema.models) {
-      // Validate model has required properties
-      if (!model.name || !model.nameLower) {
-        const error: GenerationError = {
-          severity: ErrorSeverity.ERROR,
-          message: `Model missing required properties: ${JSON.stringify({ name: model.name, nameLower: model.nameLower })}`,
-          model: model.name || 'unknown',
-          phase: 'validation'
-        }
-        errors.push(error)
-        console.error(`[ssot-codegen] ${error.message}`)
-        
-        if (failFast || !continueOnError) {
-          throw new Error(error.message)
-        }
-        continue
-      }
+      // v2.0: Model structure already validated upfront (no need to check again)
       
       // UNIFIED ANALYSIS: Analyze relationships, special fields, and capabilities ONCE
       if (useEnhanced) {
