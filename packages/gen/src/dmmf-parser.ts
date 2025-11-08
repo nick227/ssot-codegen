@@ -12,6 +12,41 @@
 import type { DMMF } from '@prisma/generator-helper'
 
 /**
+ * Logger interface for configurable logging
+ */
+export interface DMMFParserLogger {
+  warn(message: string): void
+  error(message: string): void
+}
+
+/**
+ * Default console logger
+ */
+const defaultLogger: DMMFParserLogger = {
+  warn: (msg) => console.warn(msg),
+  error: (msg) => console.error(msg)
+}
+
+/**
+ * Global logger instance (can be overridden)
+ */
+let logger: DMMFParserLogger = defaultLogger
+
+/**
+ * Set custom logger
+ */
+export function setDMMFParserLogger(customLogger: DMMFParserLogger): void {
+  logger = customLogger
+}
+
+/**
+ * Reset to default logger
+ */
+export function resetDMMFParserLogger(): void {
+  logger = defaultLogger
+}
+
+/**
  * Prisma DB-managed default function names
  */
 const DB_MANAGED_DEFAULTS = ['autoincrement', 'uuid', 'cuid', 'now', 'dbgenerated'] as const
@@ -149,22 +184,59 @@ export function parseDMMF(dmmf: DMMF.Document): ParsedSchema {
 }
 
 /**
- * Parse enums
+ * Type guard for DMMF enum
  */
-function parseEnums(enums: readonly DMMF.DatamodelEnum[]): ParsedEnum[] {
-  return enums.map(e => ({
-    name: e.name,
-    values: e.values.map(v => v.name),  // Direct assignment (no spread needed)
-    documentation: e.documentation
-  }))
+function isValidDMMFEnum(e: any): e is DMMF.DatamodelEnum {
+  return e && typeof e.name === 'string' && Array.isArray(e.values)
 }
 
 /**
- * Parse models
+ * Type guard for DMMF model
+ */
+function isValidDMMFModel(m: any): m is DMMF.Model {
+  return m && typeof m.name === 'string' && Array.isArray(m.fields)
+}
+
+/**
+ * Type guard for DMMF field
+ */
+function isValidDMMFField(f: any): f is DMMF.Field {
+  return f && typeof f.name === 'string' && typeof f.type === 'string' && typeof f.kind === 'string'
+}
+
+/**
+ * Parse enums with type guards
+ */
+function parseEnums(enums: readonly DMMF.DatamodelEnum[]): ParsedEnum[] {
+  return enums
+    .filter(e => {
+      if (!isValidDMMFEnum(e)) {
+        logger.warn(`Skipping invalid DMMF enum: ${JSON.stringify(e)}`)
+        return false
+      }
+      return true
+    })
+    .map(e => ({
+      name: e.name,
+      values: e.values.map(v => v.name),  // Direct assignment (no spread needed)
+      documentation: e.documentation
+    }))
+}
+
+/**
+ * Parse models with type guards
  */
 function parseModels(models: readonly DMMF.Model[], enumMap: Map<string, ParsedEnum>): ParsedModel[] {
-  return models.map(model => {
-    const fields = parseFields(model.fields, enumMap, model.name)
+  return models
+    .filter(m => {
+      if (!isValidDMMFModel(m)) {
+        logger.warn(`Skipping invalid DMMF model: ${JSON.stringify(m)}`)
+        return false
+      }
+      return true
+    })
+    .map(model => {
+      const fields = parseFields(model.fields, enumMap, model.name)
     
     // Validate primary key fields are strings
     const primaryKey = model.primaryKey ? {
@@ -212,15 +284,23 @@ function validateStringArray(arr: readonly any[], context: string): string[] {
 }
 
 /**
- * Parse fields
+ * Parse fields with type guards
  */
 function parseFields(fields: readonly DMMF.Field[], enumMap: Map<string, ParsedEnum>, modelName: string): ParsedField[] {
-  return fields.map(field => {
-    const isEnum = enumMap.has(field.type)
+  return fields
+    .filter(f => {
+      if (!isValidDMMFField(f)) {
+        logger.warn(`Skipping invalid DMMF field in model ${modelName}: ${JSON.stringify(f)}`)
+        return false
+      }
+      return true
+    })
+    .map(field => {
+      const isEnum = enumMap.has(field.type)
     
     // Warn if enum type not found
     if (field.kind === 'enum' && !isEnum) {
-      console.warn(`Field ${modelName}.${field.name} references enum ${field.type} which was not found in parsed enums`)
+      logger.warn(`Field ${modelName}.${field.name} references enum ${field.type} which was not found in parsed enums`)
     }
     
     const kind = isEnum ? 'enum' : determineFieldKind(field)
@@ -304,18 +384,53 @@ function determineReadOnly(field: DMMF.Field): boolean {
 
 /**
  * Sanitize documentation strings for safe code generation in JSDoc comments
- * Note: This is for JSDoc /** comments *\/, not for string literals
+ * 
+ * Preserves code examples and markdown while preventing comment injection
+ * 
+ * @param doc - Documentation string to sanitize
+ * @returns Sanitized string safe for JSDoc, or undefined if empty
  */
 function sanitizeDocumentation(doc: string | undefined): string | undefined {
   if (!doc) return undefined
   
-  // Sanitize for JSDoc comments (block comments)
-  // We need to prevent closing the JSDoc comment early
-  return doc
-    .replace(/\r\n/g, '\n')     // Normalize line endings first
-    .replace(/\*\//g, '*\\/')   // Escape */ to prevent closing comment
-    .replace(/\/\*/g, '/\\*')   // Escape /* to prevent nested comments
-    .replace(/`/g, '\\`')       // Escape backticks for template strings
+  // Normalize line endings first
+  let sanitized = doc.replace(/\r\n/g, '\n')
+  
+  // Only escape */ that would actually close JSDoc (not in code blocks)
+  // Check if we're in a code block by looking for backticks
+  const hasCodeBlocks = /```[\s\S]*?```|`[^`]*`/.test(sanitized)
+  
+  if (hasCodeBlocks) {
+    // Preserve code blocks, only escape */ outside of them
+    const parts: string[] = []
+    let inCodeBlock = false
+    let current = ''
+    
+    for (let i = 0; i < sanitized.length; i++) {
+      const char = sanitized[i]
+      const next = sanitized[i + 1]
+      const prev = sanitized[i - 1]
+      
+      if (char === '`') {
+        inCodeBlock = !inCodeBlock
+        current += char
+      } else if (!inCodeBlock && char === '*' && next === '/') {
+        current += '*\\/'
+        i++ // Skip the /
+      } else {
+        current += char
+      }
+    }
+    sanitized = current
+  } else {
+    // No code blocks, simple escaping
+    sanitized = sanitized
+      .replace(/\*\//g, '*\\/')   // Escape */ to prevent closing comment
+      .replace(/\/\*/g, '/\\*')   // Escape /* to prevent nested comments
+  }
+  
+  // Convert to single line for JSDoc and collapse spaces
+  return sanitized
     .replace(/\n/g, ' ')        // Convert to single line for JSDoc
     .replace(/\s+/g, ' ')       // Collapse multiple spaces
     .trim()
@@ -323,22 +438,34 @@ function sanitizeDocumentation(doc: string | undefined): string | undefined {
 
 /**
  * Build reverse relation map
+ * Maps model names to fields from other models that reference them
+ * 
+ * Note: Deduplicates entries based on field name and source model
  */
 function buildReverseRelationMap(models: ParsedModel[]): Map<string, ParsedField[]> {
   const map = new Map<string, ParsedField[]>()
+  const modelNames = new Set(models.map(m => m.name))
   
-  // Initialize map with empty arrays
+  // Initialize map with empty arrays for all valid models
   for (const model of models) {
     map.set(model.name, [])
   }
   
-  // Populate reverse relations
+  // Populate reverse relations with deduplication
   for (const model of models) {
+    const seen = new Set<string>()
+    
     for (const field of model.fields) {
       if (field.kind === 'object') {
-        const targetRelations = map.get(field.type)
-        if (targetRelations) {
-          targetRelations.push(field)
+        // Only add if target model exists (prevents dangling references)
+        if (modelNames.has(field.type)) {
+          // Deduplicate based on source model + field name
+          const key = `${model.name}.${field.name}`
+          if (!seen.has(key)) {
+            seen.add(key)
+            const targetRelations = map.get(field.type)!
+            targetRelations.push(field)
+          }
         }
       }
     }
@@ -398,27 +525,30 @@ function enhanceModel(
     // Scalar field
     scalarFields.push(field)
     
-    // Check if field should be in CreateDTO
+    // Check if field should be in CreateDTO and UpdateDTO
+    // Note: Both have same criteria since:
+    // - @updatedAt is already excluded above (isReadOnly check covers it)
+    // - All other exclusions apply to both create and update
+    // If criteria diverge in future, this should be split
     const isDbManagedTimestamp = field.hasDbDefault && isSystemTimestamp(field.name)
-    if (!field.isId && !field.isReadOnly && !field.isUpdatedAt && !isDbManagedTimestamp) {
-      createFields.push(field)
-    }
+    const isIncludedInDTO = !field.isId && !field.isReadOnly && !field.isUpdatedAt && !isDbManagedTimestamp
     
-    // Check if field should be in UpdateDTO (same as create but excludes @updatedAt)
-    if (!field.isId && !field.isReadOnly && !field.isUpdatedAt && !isDbManagedTimestamp) {
+    if (isIncludedInDTO) {
+      createFields.push(field)
       updateFields.push(field)
     }
   }
   
   // Set all derived properties
+  // Note: Arrays are frozen to prevent accidental mutations
   model.idField = idField
-  model.scalarFields = scalarFields
-  model.relationFields = relationFields
-  model.createFields = createFields
-  model.updateFields = updateFields
-  model.readFields = scalarFields // All scalar fields for reading
+  model.scalarFields = Object.freeze(scalarFields) as ParsedField[]
+  model.relationFields = Object.freeze(relationFields) as ParsedField[]
+  model.createFields = Object.freeze(createFields) as ParsedField[]
+  model.updateFields = Object.freeze(updateFields) as ParsedField[]
+  model.readFields = Object.freeze(scalarFields) as ParsedField[] // All scalar fields for reading
   model.hasSelfRelation = hasSelfRelation
-  model.reverseRelations = reverseRelationMap.get(model.name) || []
+  model.reverseRelations = Object.freeze([...(reverseRelationMap.get(model.name) || [])]) as ParsedField[]
 }
 
 /**
