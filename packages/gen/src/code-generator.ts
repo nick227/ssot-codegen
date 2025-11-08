@@ -31,7 +31,7 @@ import { generateSDKReadme, generateAPIReference, generateSDKArchitecture, gener
 // Framework hooks generation (React, Vue, etc.)
 import { generateAllHooks } from '@/generators/hooks/index.js'
 // OPTIMIZATION: Pre-analysis utilities (UNIFIED - combines relationship + capability analysis)
-import { analyzeModelUnified, type UnifiedModelAnalysis } from '@/analyzers/unified-analyzer.js'
+import { analyzeModelUnified, type UnifiedModelAnalysis } from '@/analyzers/index.js'
 // Legacy import for backwards compatibility (will be removed)
 import { type ModelAnalysis } from '@/utils/relationship-analyzer.js'
 // Registry-based architecture (78% less code)
@@ -119,6 +119,135 @@ function validateHookFrameworks(frameworks: string[] | undefined): HookFramework
   }
   
   return frameworks as HookFramework[]
+}
+
+/**
+ * Basic validation for generated TypeScript code
+ * Checks for common syntax errors that would prevent compilation
+ */
+function validateGeneratedCode(code: string, filename: string, errors: GenerationError[]): boolean {
+  if (!code || code.trim().length === 0) {
+    const error: GenerationError = {
+      severity: ErrorSeverity.ERROR,
+      message: `Generated code is empty for file: ${filename}`,
+      phase: 'code-validation'
+    }
+    errors.push(error)
+    return false
+  }
+  
+  // Check for unmatched braces
+  const openBraces = (code.match(/{/g) || []).length
+  const closeBraces = (code.match(/}/g) || []).length
+  if (openBraces !== closeBraces) {
+    const error: GenerationError = {
+      severity: ErrorSeverity.ERROR,
+      message: `Unmatched braces in ${filename}: ${openBraces} open, ${closeBraces} close`,
+      phase: 'code-validation'
+    }
+    errors.push(error)
+    return false
+  }
+  
+  // Check for unmatched parentheses
+  const openParens = (code.match(/\(/g) || []).length
+  const closeParens = (code.match(/\)/g) || []).length
+  if (openParens !== closeParens) {
+    const error: GenerationError = {
+      severity: ErrorSeverity.ERROR,
+      message: `Unmatched parentheses in ${filename}: ${openParens} open, ${closeParens} close`,
+      phase: 'code-validation'
+    }
+    errors.push(error)
+    return false
+  }
+  
+  // Check for unmatched brackets
+  const openBrackets = (code.match(/\[/g) || []).length
+  const closeBrackets = (code.match(/]/g) || []).length
+  if (openBrackets !== closeBrackets) {
+    const error: GenerationError = {
+      severity: ErrorSeverity.ERROR,
+      message: `Unmatched brackets in ${filename}: ${openBrackets} open, ${closeBrackets} close`,
+      phase: 'code-validation'
+    }
+    errors.push(error)
+    return false
+  }
+  
+  // Check for common TypeScript syntax errors
+  const syntaxErrors: string[] = []
+  
+  // Unclosed template literals
+  const templateLiterals = code.match(/`[^`]*$/gm)
+  if (templateLiterals) {
+    syntaxErrors.push('Unclosed template literal')
+  }
+  
+  // Unclosed strings
+  const unclosedStrings = code.match(/"[^"]*$|'[^']*$/gm)
+  if (unclosedStrings) {
+    syntaxErrors.push('Unclosed string literal')
+  }
+  
+  if (syntaxErrors.length > 0) {
+    const error: GenerationError = {
+      severity: ErrorSeverity.ERROR,
+      message: `Syntax errors in ${filename}: ${syntaxErrors.join(', ')}`,
+      phase: 'code-validation'
+    }
+    errors.push(error)
+    return false
+  }
+  
+  return true
+}
+
+/**
+ * Detect naming conflicts between models and services
+ */
+function detectNamingConflicts(
+  models: ParsedModel[],
+  serviceAnnotations: Map<string, ServiceAnnotation>,
+  errors: GenerationError[]
+): void {
+  const fileNames = new Set<string>()
+  const conflicts: string[] = []
+  
+  // Collect all model-based filenames
+  for (const model of models) {
+    const modelKebab = toKebabCase(model.name)
+    const controllerFile = `${modelKebab}.controller.ts`
+    const routesFile = `${modelKebab}.routes.ts`
+    const serviceFile = `${modelKebab}.service.ts`
+    
+    fileNames.add(controllerFile)
+    fileNames.add(routesFile)
+    fileNames.add(serviceFile)
+  }
+  
+  // Check service annotations for conflicts
+  for (const [modelName, annotation] of serviceAnnotations) {
+    const serviceControllerFile = `${annotation.name}.controller.ts`
+    const serviceRoutesFile = `${annotation.name}.routes.ts`
+    
+    if (fileNames.has(serviceControllerFile)) {
+      conflicts.push(`${serviceControllerFile} (service: ${annotation.name} conflicts with model-based file)`)
+    }
+    if (fileNames.has(serviceRoutesFile)) {
+      conflicts.push(`${serviceRoutesFile} (service: ${annotation.name} conflicts with model-based file)`)
+    }
+  }
+  
+  if (conflicts.length > 0) {
+    const error: GenerationError = {
+      severity: ErrorSeverity.WARNING,
+      message: `Potential filename conflicts detected: ${conflicts.join(', ')}`,
+      phase: 'naming-validation'
+    }
+    errors.push(error)
+    console.warn(`[ssot-codegen] ${error.message}`)
+  }
 }
 
 /**

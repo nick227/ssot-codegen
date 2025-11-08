@@ -5,7 +5,19 @@
  */
 
 import type { ParsedModel, ParsedField } from '../../dmmf-parser.js'
-import type { FilterField } from '../field-analyzer.js'
+
+// ============================================================================
+// FILTER TYPES
+// ============================================================================
+
+export type FilterType = 'exact' | 'range' | 'boolean' | 'enum' | 'array'
+
+export interface FilterField {
+  name: string
+  type: FilterType
+  fieldType: string
+  isRequired: boolean
+}
 
 // ============================================================================
 // CONFIGURATION TYPES

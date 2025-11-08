@@ -6,13 +6,10 @@
  */
 
 import type { ParsedModel } from '../../dmmf-parser.js'
-import type { FilterField } from '../field-analyzer.js'
-import type { UnifiedAnalyzerConfig, FieldAnalysisResult, SpecialFields } from './types.js'
+import type { UnifiedAnalyzerConfig, FieldAnalysisResult, SpecialFields, FilterField, FilterType } from './types.js'
 import { FIELD_KIND_SCALAR, FIELD_KIND_ENUM, FIELD_KIND_OBJECT, SENSITIVE_FIELD_PATTERN } from './config.js'
 import { normalizeFieldName, isSensitiveField } from './utils.js'
 import { detectSpecialFields } from './special-fields-detector.js'
-
-type FilterType = 'exact' | 'range' | 'boolean' | 'enum' | 'array'
 
 const FILTERABLE_SCALAR_TYPES = new Set([
   'String', 'Int', 'BigInt', 'Float', 'Decimal', 

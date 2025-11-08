@@ -5,8 +5,7 @@
  */
 
 import type { ParsedModel, ParsedField } from '../../dmmf-parser.js'
-import type { FilterField } from '../field-analyzer.js'
-import type { UnifiedAnalyzerConfig, ModelCapabilities, SpecialFields, ForeignKeyInfo } from './types.js'
+import type { UnifiedAnalyzerConfig, ModelCapabilities, SpecialFields, ForeignKeyInfo, FilterField } from './types.js'
 import { FIELD_KIND_OBJECT, DEFAULT_PARENT_PATTERN } from './config.js'
 import { normalizeFieldName } from './utils.js'
 

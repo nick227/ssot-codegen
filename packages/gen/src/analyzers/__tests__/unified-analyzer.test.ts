@@ -15,7 +15,7 @@ import {
   generateIncludeObject,
   generateSummaryInclude,
   type UnifiedAnalyzerConfig 
-} from '../unified-analyzer.js'
+} from '../index.js'
 import type { ParsedSchema } from '../../dmmf-parser.js'
 import {
   createMockModel,

@@ -7,7 +7,7 @@
 
 import type { ParsedModel, ParsedSchema } from '../dmmf-parser.js'
 import { analyzeModel, generateSummaryInclude } from '@/utils/relationship-analyzer.js'
-import { analyzeModelUnified, generateIncludeObject } from '../analyzers/unified-analyzer.js'
+import { analyzeModelUnified, generateIncludeObject } from '../analyzers/index.js'
 import { generateEnhancedServiceMethods } from './service-method-generator.js'
 import { generateCRUDServiceMethods } from '@/templates/crud-service.template.js'
 import { toKebabCase, toCamelCase } from '@/utils/naming.js'

@@ -1,38 +1,25 @@
 /**
  * Schema Analyzers
- * Auto-detect capabilities from Prisma schema for zero-config generation
+ * 
+ * Unified analyzer for comprehensive model analysis with zero-config generation
+ * Combines relationship analysis, capability detection, and special field recognition
+ * in a single optimized pass.
  */
 
-export {
-  analyzeField,
-  getFilterableFields,
-  getSearchableFields,
-  getSortableFields,
-  type FieldCapabilities,
-  type FilterField,
-  type FilterType
-} from './field-analyzer.js'
-
-// ParsedModel versions (for use with our internal ParsedModel type)
-export {
-  getFilterableFields as getFilterableFieldsParsed,
-  getSearchableFields as getSearchableFieldsParsed,
-  getSortableFields as getSortableFieldsParsed
-} from './field-analyzer-parsed.js'
-
-export {
-  analyzeModelCapabilities,
-  getGenerationSummary,
-  type ModelCapabilities,
-  type ForeignKeyInfo
-} from './model-capabilities.js'
-
-// Unified analyzer (NEW - combines relationship + capability analysis)
+// Export everything from unified analyzer
 export {
   analyzeModelUnified,
+  generateIncludeObject,
   generateSummaryInclude,
+  normalizeFieldName,
+  isFieldUnique,
+  areFieldsUnique,
   type UnifiedModelAnalysis,
   type RelationshipInfo,
-  type SpecialFields
-} from './unified-analyzer.js'
-
+  type SpecialFields,
+  type ModelCapabilities,
+  type ForeignKeyInfo,
+  type FilterField,
+  type FilterType,
+  type UnifiedAnalyzerConfig
+} from './unified-analyzer/index.js'

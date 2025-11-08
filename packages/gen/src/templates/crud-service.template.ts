@@ -20,7 +20,7 @@
  */
 
 import type { ParsedModel, ParsedSchema } from '../dmmf-parser.js'
-import { analyzeModelUnified, generateIncludeObject } from '../analyzers/unified-analyzer.js'
+import { analyzeModelUnified, generateIncludeObject } from '../analyzers/index.js'
 
 export { generateServiceBarrel } from '@/generators/barrel-generator.js'
 

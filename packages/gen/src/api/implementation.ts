@@ -14,7 +14,7 @@ import { createLogger } from '@/utils/cli-logger.js'
 import { PhaseRunner } from '@/pipeline/phase-runner.js'
 import { createAllTypedPhases } from '@/pipeline/phases/index.typed.js'
 import { analyzeRelationshipsForSchema as analyzeRelationships } from '@/utils/relationship-analyzer.js'
-import { analyzeModelUnified } from '@/analyzers/unified-analyzer.js'
+import { analyzeModelUnified } from '@/analyzers/index.js'
 import type { GeneratorConfig } from '@/pipeline/types.js'
 import type { 
   GenerateOptions, 
