@@ -34,6 +34,8 @@ import { generateAllHooks } from '@/generators/hooks/index.js'
 import { analyzeModelUnified, type UnifiedModelAnalysis } from '@/analyzers/index.js'
 // Legacy import for backwards compatibility (will be removed)
 import { type ModelAnalysis } from '@/utils/relationship-analyzer.js'
+// v2.0: Unified analysis cache (shared with pipeline mode)
+import { AnalysisCache } from '@/cache/analysis-cache.js'
 // Registry-based architecture (78% less code)
 import { generateRegistrySystem } from '@/generators/registry-generator.js'
 import { generateRegistryMode, RegistryModeGenerator } from '@/generators/registry-mode-generator.js'
@@ -98,14 +100,8 @@ export interface GenerationError {
 import type { GeneratedFiles } from '@/pipeline/types.js'
 export type { GeneratedFiles } from '@/pipeline/types.js'
 
-/**
- * Analysis cache for optimization
- * OPTIMIZATION: Pre-analyze all models once instead of analyzing per-generator
- */
-interface AnalysisCache {
-  modelAnalysis: Map<string, UnifiedModelAnalysis>  // UPDATED: Now uses UnifiedModelAnalysis
-  serviceAnnotations: Map<string, ServiceAnnotation>
-}
+// Analysis cache moved to cache/analysis-cache.ts (v2.0)
+// Both legacy and pipeline modes now use the same AnalysisCache class for consistency
 
 /**
  * Validate hook framework names
@@ -458,10 +454,8 @@ function generateCodeLegacy(
   // PHASE 1: Pre-analyze all models ONCE (O(n) instead of O(n×5))
   // CRITICAL FIX: Analyze ALL models first, THEN filter for generation
   // This ensures cache consistency and proper junction table detection
-  const cache: AnalysisCache = {
-    modelAnalysis: new Map(),
-    serviceAnnotations: new Map()
-  }
+  // v2.0: Uses unified AnalysisCache class (shared with pipeline mode)
+  const cache = new AnalysisCache()
   
   try {
     for (const model of schema.models) {
@@ -485,7 +479,7 @@ function generateCodeLegacy(
       // UNIFIED ANALYSIS: Analyze relationships, special fields, and capabilities ONCE
       if (useEnhanced) {
         try {
-          cache.modelAnalysis.set(model.name, analyzeModelUnified(model, schema))
+          cache.setAnalysis(model.name, analyzeModelUnified(model, schema))
         } catch (error) {
           const genError: GenerationError = {
             severity: ErrorSeverity.ERROR,
@@ -509,7 +503,7 @@ function generateCodeLegacy(
         if (serviceAnnotation) {
           // Validate annotation structure before caching
           if (validateServiceAnnotation(serviceAnnotation, model.name, errors)) {
-            cache.serviceAnnotations.set(model.name, serviceAnnotation)
+            cache.setServiceAnnotation(model.name, serviceAnnotation)
           }
         }
       } catch (error) {
@@ -549,7 +543,7 @@ function generateCodeLegacy(
     
     // Skip junction tables (detected via analysis)
     if (useEnhanced) {
-      const analysis = cache.modelAnalysis.get(model.name)
+      const analysis = cache.tryGetAnalysis(model.name)
       if (analysis?.isJunctionTable) {
         console.log(`[ssot-codegen] Skipping junction table generation: ${model.name}`)
         return false
@@ -560,17 +554,19 @@ function generateCodeLegacy(
   })
   
   // PHASE 1.6: Detect naming conflicts between models and service annotations
-  detectNamingConflicts(schema.models, cache.serviceAnnotations, errors)
+  // v2.0: Convert cache to Map for backward compatibility with detectNamingConflicts
+  detectNamingConflicts(schema.models, new Map(cache.getAllServiceAnnotations()), errors)
   
   // REGISTRY MODE: Generate unified registry instead of individual files
   // v2.0: Uses shared RegistryModeGenerator for consistency with pipeline mode
   if (config.useRegistry) {
     try {
       // Use shared registry generator (eliminates duplicate code)
+      // v2.0: Convert cache to Maps for backward compatibility
       const registryResult = generateRegistryMode(
         schema,
-        cache.modelAnalysis,
-        cache.serviceAnnotations,
+        new Map(cache.getAllAnalyzedModels()),
+        new Map(cache.getAllServiceAnnotations()),
         {
           validateCode: true,
           skipJunctionTables: true,
@@ -610,22 +606,22 @@ function generateCodeLegacy(
         // Validate analysis cache before generating hooks
         // CRITICAL FIX: Check if cache has analysis for all non-junction models
         const nonJunctionModels = schema.models.filter(m => {
-          const analysis = cache.modelAnalysis.get(m.name)
+          const analysis = cache.tryGetAnalysis(m.name)
           return !analysis?.isJunctionTable
         })
-        const missingAnalysisCount = nonJunctionModels.length - cache.modelAnalysis.size
+        const missingAnalysisCount = nonJunctionModels.length - cache.getAnalysisCount()
         
         if (useEnhanced && missingAnalysisCount > 0 && schema.models.length > 0) {
           const error: GenerationError = {
             severity: ErrorSeverity.WARNING,
-            message: `Model analysis incomplete: ${cache.modelAnalysis.size} of ${nonJunctionModels.length} models analyzed. Hooks may be missing advanced features.`,
+            message: `Model analysis incomplete: ${cache.getAnalysisCount()} of ${nonJunctionModels.length} models analyzed. Hooks may be missing advanced features.`,
             phase: 'hooks-validation'
           }
           errors.push(error)
           console.warn(`[ssot-codegen] ${error.message}`)
         }
         
-        const hooks = generateAllHooks(schema, { frameworks: hookFrameworks }, cache.modelAnalysis)
+        const hooks = generateAllHooks(schema, { frameworks: hookFrameworks }, new Map(cache.getAllAnalyzedModels()))
         files.hooks = hooks
       } catch (error) {
         const genError: GenerationError = {
@@ -759,22 +755,22 @@ function generateCodeLegacy(
     // Validate analysis cache before generating hooks
     // CRITICAL FIX: Check if cache has analysis for all non-junction models
     const nonJunctionModels = schema.models.filter(m => {
-      const analysis = cache.modelAnalysis.get(m.name)
+      const analysis = cache.tryGetAnalysis(m.name)
       return !analysis?.isJunctionTable
     })
-    const missingAnalysisCount = nonJunctionModels.length - cache.modelAnalysis.size
+    const missingAnalysisCount = nonJunctionModels.length - cache.getAnalysisCount()
     
     if (useEnhanced && missingAnalysisCount > 0 && schema.models.length > 0) {
       const error: GenerationError = {
         severity: ErrorSeverity.WARNING,
-        message: `Model analysis incomplete: ${cache.modelAnalysis.size} of ${nonJunctionModels.length} models analyzed. Hooks may be missing advanced features.`,
+        message: `Model analysis incomplete: ${cache.getAnalysisCount()} of ${nonJunctionModels.length} models analyzed. Hooks may be missing advanced features.`,
         phase: 'hooks-validation'
       }
       errors.push(error)
       console.warn(`[ssot-codegen] ${error.message}`)
     }
     
-    const hooks = generateAllHooks(schema, { frameworks: hookFrameworks }, cache.modelAnalysis)
+    const hooks = generateAllHooks(schema, { frameworks: hookFrameworks }, new Map(cache.getAllAnalyzedModels()))
     files.hooks = hooks
   } catch (error) {
     const genError: GenerationError = {
@@ -950,8 +946,8 @@ function generateModelCode(
   const framework = config.framework || 'express'
   
   // Get cached service annotation and analysis
-  const serviceAnnotation = cache.serviceAnnotations.get(model.name)
-  const analysis = useEnhanced ? cache.modelAnalysis.get(model.name) : undefined
+  const serviceAnnotation = cache.tryGetServiceAnnotation(model.name)
+  const analysis = useEnhanced ? cache.tryGetAnalysis(model.name) : undefined
   
   // Validate that analysis exists when enhanced mode is enabled
   if (useEnhanced && !analysis) {
@@ -1095,6 +1091,7 @@ function isPathAvailable(
 
 /**
  * Generate SDK clients for all models and services
+ * v2.0: Now accepts unified AnalysisCache class instead of interface
  */
 function generateSDKClients(
   schema: ParsedSchema,
@@ -1111,7 +1108,7 @@ function generateSDKClients(
   
   // Generate model clients (skip junction tables, include service-annotated models for SDK)
   for (const model of schema.models) {
-    const analysis = cache.modelAnalysis.get(model.name)
+    const analysis = cache.tryGetAnalysis(model.name)
     
     // Skip junction tables (they shouldn't have direct SDK access)
     if (analysis?.isJunctionTable) continue
@@ -1147,7 +1144,7 @@ function generateSDKClients(
   }
   
   // Generate service integration clients
-  for (const [modelName, serviceAnnotation] of cache.serviceAnnotations) {
+  for (const [modelName, serviceAnnotation] of cache.getAllServiceAnnotations()) {
     try {
       const serviceClient = generateServiceSDK(serviceAnnotation)
       // CONSISTENCY FIX: Use lowercase for service names to match model clients
