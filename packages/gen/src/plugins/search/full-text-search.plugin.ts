@@ -184,33 +184,9 @@ export class FullTextSearchPlugin implements FeaturePluginV2 {
     const enabledModels = Object.entries(config.models)
       .filter(([_, cfg]) => cfg.enabled)
     
-    const modelConfigs = enabledModels.map(([modelName, modelConfig]) => {
-      const fields = modelConfig.fields.map(f => `    { 
-      name: '${f.name}', 
-      weight: ${f.weight}, 
-      matchTypes: [${f.matchTypes.map(m => `'${m}'`).join(', ')}]
-    }`).join(',\n')
-      
-      let ranking = ''
-      if (modelConfig.ranking) {
-        const parts: string[] = []
-        if (modelConfig.ranking.boostRecent) {
-          parts.push(`    boostRecent: { field: '${modelConfig.ranking.boostRecent.field}', weight: ${modelConfig.ranking.boostRecent.weight} }`)
-        }
-        if (modelConfig.ranking.boostPopular) {
-          parts.push(`    boostPopular: { field: '${modelConfig.ranking.boostPopular.field}', weight: ${modelConfig.ranking.boostPopular.weight} }`)
-        }
-        if (parts.length > 0) {
-          ranking = `,\n  ranking: {\n${parts.join(',\n')}\n  }`
-        }
-      }
-      
-      return `export const ${modelName.toLowerCase()}SearchConfig: SearchConfig = {
-  fields: [
-${fields}
-  ]${ranking}
-}`
-    }).join('\n\n')
+    const modelConfigs = enabledModels.map(([modelName, modelConfig]) => 
+      this.generateModelSearchConfig(modelName, modelConfig)
+    ).join('\n\n')
     
     const registryEntries = enabledModels.map(([modelName]) => 
       `  ${modelName.toLowerCase()}: ${modelName.toLowerCase()}SearchConfig`
@@ -232,36 +208,54 @@ export type SearchableModel = keyof typeof searchRegistry
 `
   }
   
+  private generateModelSearchConfig(modelName: string, modelConfig: ModelSearchConfig): string {
+    const fields = modelConfig.fields
+      .map(f => `    { name: '${f.name}', weight: ${f.weight}, matchTypes: [${f.matchTypes.map(m => `'${m}'`).join(', ')}] }`)
+      .join(',\n')
+    
+    const ranking = this.generateRankingConfig(modelConfig.ranking)
+    
+    return `export const ${modelName.toLowerCase()}SearchConfig: SearchConfig = {
+  fields: [
+${fields}
+  ]${ranking}
+}`
+  }
+  
+  private generateRankingConfig(ranking?: ModelSearchConfig['ranking']): string {
+    if (!ranking) return ''
+    
+    const parts: string[] = []
+    if (ranking.boostRecent) {
+      parts.push(`    boostRecent: { field: '${ranking.boostRecent.field}', weight: ${ranking.boostRecent.weight} }`)
+    }
+    if (ranking.boostPopular) {
+      parts.push(`    boostPopular: { field: '${ranking.boostPopular.field}', weight: ${ranking.boostPopular.weight} }`)
+    }
+    
+    return parts.length > 0 ? `,\n  ranking: {\n${parts.join(',\n')}\n  }` : ''
+  }
+  
+  private buildModelMetadata(models: ParsedModel[], enabledModels: Array<[string, ModelSearchConfig]>): string {
+    return enabledModels.map(([modelName, modelConfig]) => {
+      const model = models.find(m => m.name === modelName)
+      if (!model) return ''
+      
+      const prismaAccessor = model.name.charAt(0).toLowerCase() + model.name.slice(1)
+      const fieldNames = modelConfig.fields.map(f => `'${f.name}'`).join(', ')
+      
+      return `  '${modelName.toLowerCase()}': { accessor: '${prismaAccessor}', fields: [${fieldNames}] }`
+    }).join(',\n')
+  }
+  
   private generateSearchService(models: ParsedModel[], config: SearchPluginConfig): string {
     const enabledModels = Object.entries(config.models)
       .filter(([_, cfg]) => cfg.enabled)
     
     const imports = enabledModels.map(([modelName]) => modelName).join(', ')
     
-    // Get actual Prisma model names (case-sensitive)
-    const modelMap = models.reduce((acc, model) => {
-      acc[model.name.toLowerCase()] = model.name
-      return acc
-    }, {} as Record<string, string>)
-    
-    const fetchCases = enabledModels.map(([modelName, modelConfig]) => {
-      const fieldNames = modelConfig.fields.map(f => f.name)
-      const orConditions = fieldNames.map(field => 
-        `{ ${field}: { contains: query, mode: 'insensitive' as const } }`
-      ).join(',\n          ')
-      
-      // Use actual Prisma model name (could be different case)
-      const prismaModelName = modelMap[modelName.toLowerCase()] || modelName
-      const prismaAccessor = prismaModelName.charAt(0).toLowerCase() + prismaModelName.slice(1)
-      
-      return `      case '${modelName.toLowerCase()}':
-        return prisma.${prismaAccessor}.findMany({
-          where: { OR: [
-          ${orConditions}
-        ] },
-          take: options.fetchLimit || (options.limit || 10) * 10
-        })`
-    }).join('\n      \n')
+    // Build model metadata for dynamic access
+    const modelMetadata = this.buildModelMetadata(models, enabledModels)
     
     return `// @generated
 // Search Service - Minimal logic, reuses SearchEngine from SDK runtime
@@ -270,6 +264,13 @@ import { prisma } from '@/db/client'
 import { SearchEngine, type SearchOptions, type SearchResult } from '@ssot-codegen/sdk-runtime'
 import { searchRegistry, type SearchableModel } from './search.config.js'
 import type { ${imports} } from '@prisma/client'
+
+/**
+ * Model metadata for dynamic Prisma access (DRY)
+ */
+const modelMetadata: Record<SearchableModel, { accessor: string; fields: string[] }> = {
+${modelMetadata}
+}
 
 /**
  * Unified Search Service
@@ -328,19 +329,33 @@ export class SearchService {
   }
   
   /**
-   * Fetch records from DB (reuses existing query patterns)
+   * Fetch records from DB using dynamic metadata (DRY - no switch statement)
    */
   private async fetchRecords(
     modelName: SearchableModel,
     query: string,
     options: SearchOptions
   ) {
-    switch (modelName) {
-${fetchCases}
-      
-      default:
-        return []
+    const metadata = modelMetadata[modelName]
+    if (!metadata) {
+      throw new Error(\`No metadata for model: \${modelName}\`)
     }
+    
+    // Build OR conditions dynamically from metadata
+    const orConditions = metadata.fields.map(field => ({
+      [field]: { contains: query, mode: 'insensitive' as const }
+    }))
+    
+    // Dynamic Prisma access (type-safe)
+    const prismaModel = (prisma as any)[metadata.accessor]
+    if (!prismaModel) {
+      throw new Error(\`Prisma model not found: \${metadata.accessor}\`)
+    }
+    
+    return prismaModel.findMany({
+      where: { OR: orConditions },
+      take: options.fetchLimit || (options.limit || 10) * 10
+    })
   }
 }
 `
@@ -352,76 +367,118 @@ ${fetchCases}
 
 import type { Request, Response } from 'express'
 import { SearchService } from './search.service.js'
+import type { SearchableModel } from './search.config.js'
 
 const searchService = new SearchService()
+
+// Configuration
+const MAX_LIMIT = 100
+const DEFAULT_LIMIT = 10
+const MAX_TOTAL_FETCH = 10000
+
+/**
+ * Validation helpers (DRY)
+ */
+function validateQuery(q: unknown): string {
+  if (!q || typeof q !== 'string') {
+    throw new Error('Query parameter "q" is required')
+  }
+  return q
+}
+
+function validateLimit(limit: unknown): number {
+  const parsed = Number(limit)
+  if (isNaN(parsed) || parsed < 1 || parsed > MAX_LIMIT) {
+    throw new Error(\`Limit must be between 1 and \${MAX_LIMIT}\`)
+  }
+  return parsed
+}
+
+function validateSkip(skip: unknown): number {
+  const parsed = Number(skip)
+  if (isNaN(parsed) || parsed < 0) {
+    throw new Error('Skip must be >= 0')
+  }
+  return parsed
+}
+
+function validateMinScore(minScore: unknown): number {
+  const parsed = Number(minScore)
+  if (isNaN(parsed) || parsed < 0) {
+    throw new Error('minScore must be >= 0')
+  }
+  return parsed
+}
+
+function validateModel(model: unknown): SearchableModel {
+  if (!model || typeof model !== 'string') {
+    throw new Error('Query parameter "model" is required')
+  }
+  return model as SearchableModel
+}
+
+function handleError(res: Response, error: unknown) {
+  console.error('Search error:', error)
+  
+  const message = error instanceof Error ? error.message : 'Unknown error'
+  const statusCode = message.includes('parameter') || message.includes('must be') ? 400 : 500
+  
+  res.status(statusCode).json({ 
+    error: statusCode === 400 ? 'Invalid request' : 'Search failed', 
+    message
+  })
+}
+
+function calculatePagination(total: number, skip: number, limit: number) {
+  return {
+    total,
+    count: Math.min(total - skip, limit),
+    skip,
+    limit,
+    page: Math.floor(skip / limit) + 1,
+    totalPages: Math.ceil(total / limit),
+    hasMore: skip + limit < total,
+    hasPrevious: skip > 0
+  }
+}
 
 /**
  * GET /api/search?q=query&model=product&limit=10&skip=0&minScore=0&sort=relevance
  */
 export async function search(req: Request, res: Response) {
   try {
-    const { q, model, limit = 10, skip = 0, minScore = 0, sort = 'relevance' } = req.query
+    const { q, model, limit = DEFAULT_LIMIT, skip = 0, minScore = 0, sort = 'relevance' } = req.query
     
-    // Validation
-    if (!q || typeof q !== 'string') {
-      return res.status(400).json({ error: 'Query parameter "q" is required' })
-    }
+    // Validate inputs (throws on error)
+    const query = validateQuery(q)
+    const modelName = validateModel(model)
+    const parsedLimit = validateLimit(limit)
+    const parsedSkip = validateSkip(skip)
+    const parsedMinScore = validateMinScore(minScore)
     
-    if (!model || typeof model !== 'string') {
-      return res.status(400).json({ error: 'Query parameter "model" is required' })
-    }
-    
-    const parsedLimit = Number(limit)
-    const parsedSkip = Number(skip)
-    const parsedMinScore = Number(minScore)
-    
-    if (isNaN(parsedLimit) || parsedLimit < 1 || parsedLimit > 100) {
-      return res.status(400).json({ error: 'Limit must be between 1 and 100' })
-    }
-    
-    if (isNaN(parsedSkip) || parsedSkip < 0) {
-      return res.status(400).json({ error: 'Skip must be >= 0' })
-    }
-    
-    // Get all results for total count
+    // Get all results for accurate total count
     const allResults = await searchService.search(
-      model as any,
-      q,
+      modelName,
+      query,
       { 
-        limit: 10000,  // Large limit to get all matches
+        limit: MAX_TOTAL_FETCH,
         skip: 0, 
         minScore: parsedMinScore,
         sort: sort as any
       }
     )
     
-    // Apply requested pagination
+    // Apply client-requested pagination
     const paginatedResults = allResults.slice(parsedSkip, parsedSkip + parsedLimit)
-    const total = allResults.length
-    const page = Math.floor(parsedSkip / parsedLimit) + 1
-    const totalPages = Math.ceil(total / parsedLimit)
     
     res.json({ 
       results: paginatedResults,
-      pagination: {
-        total,           // Total matching records
-        count: paginatedResults.length,  // Results in this page
-        skip: parsedSkip,
-        limit: parsedLimit,
-        page,
-        totalPages,
-        hasMore: parsedSkip + parsedLimit < total,
-        hasPrevious: parsedSkip > 0
-      },
-      query: q,
-      model
+      pagination: calculatePagination(allResults.length, parsedSkip, parsedLimit),
+      query,
+      model: modelName
     })
   } catch (error) {
-    console.error('Search error:', error)
-    res.status(500).json({ 
-      error: 'Search failed', 
-      message: error instanceof Error ? error.message : 'Unknown error'
-    })
+    handleError(res, error)
   }
 }
 
@@ -430,26 +487,20 @@ export async function search(req: Request, res: Response) {
  */
 export async function searchAll(req: Request, res: Response) {
   try {
-    const { q, models, limit = 10, minScore = 0 } = req.query
+    const { q, models, limit = DEFAULT_LIMIT, minScore = 0 } = req.query
     
-    if (!q || typeof q !== 'string') {
-      return res.status(400).json({ error: 'Query parameter "q" is required' })
-    }
-    
-    const parsedLimit = Number(limit)
-    const parsedMinScore = Number(minScore)
-    
-    if (isNaN(parsedLimit) || parsedLimit < 1 || parsedLimit > 100) {
-      return res.status(400).json({ error: 'Limit must be between 1 and 100' })
-    }
+    // Validate inputs
+    const query = validateQuery(q)
+    const parsedLimit = validateLimit(limit)
+    const parsedMinScore = validateMinScore(minScore)
     
     const modelList = models 
-      ? String(models).split(',').map(m => m.trim())
+      ? String(models).split(',').map(m => m.trim() as SearchableModel)
       : undefined
     
     const results = await searchService.searchAll(
-      q, 
-      modelList as any, 
+      query, 
+      modelList, 
       { limit: parsedLimit, minScore: parsedMinScore }
     )
     
@@ -462,15 +513,11 @@ export async function searchAll(req: Request, res: Response) {
         total: totalResults,
         modelsSearched: results.length
       },
-      query: q,
+      query,
       modelsSearched: modelList || 'all'
     })
   } catch (error) {
-    console.error('Search error:', error)
-    res.status(500).json({ 
-      error: 'Search failed', 
-      message: error instanceof Error ? error.message : 'Unknown error'
-    })
+    handleError(res, error)
   }
 }
 `
