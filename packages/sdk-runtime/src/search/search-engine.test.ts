@@ -329,7 +329,8 @@ describe('SearchEngine', () => {
       const engine = new SearchEngine(config, undefined, { maxLimit: 50 })
       
       expect(() => engine.search(products, 'test', { limit: 0 })).toThrow('Limit must be between')
-      expect(() => engine.search(products, 'test', { limit: 100 })).toThrow('Limit must be between')
+      expect(() => engine.search(products, 'test', { limit: 51 })).toThrow('Limit must be between')
+      expect(() => engine.search(products, 'test', { limit: -1 })).toThrow('Limit must be between')
     })
     
     it('should throw error for negative skip', () => {

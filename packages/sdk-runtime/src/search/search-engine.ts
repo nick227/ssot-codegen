@@ -92,8 +92,8 @@ export class SearchEngine<T> {
     }
     
     // Validate options
-    const limit = options.limit || 10
-    const skip = options.skip || 0
+    const limit = options.limit ?? 10
+    const skip = options.skip ?? 0
     
     if (limit < 1 || limit > this.engineConfig.maxLimit) {
       throw new Error(`Limit must be between 1 and ${this.engineConfig.maxLimit}`)

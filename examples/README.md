@@ -125,6 +125,24 @@ pnpm gen --schema examples/ai-chat-example/schema.prisma
 pnpm gen --schema examples/ecommerce-example/schema.prisma
 ```
 
+### 🔍 Search Example
+**Purpose:** Full-text search with intelligent ranking  
+**Keys Required:** `DATABASE_URL`  
+**Features:** Multi-model search, configurable weights, smart ranking, fuzzy matching  
+**Best For:** Learning search plugin, adding search to any project
+
+```bash
+pnpm gen --schema examples/search-example/schema.prisma
+cd examples/search-example
+npm run seed  # Load sample data
+cd generated && npm run dev
+node ../test-search.js  # Test search API
+```
+
+**Search API:**
+- `GET /api/search?q=laptop&model=product&sort=popular`
+- `GET /api/search/all?q=gaming` (federated search)
+
 ---
 
 ## 🔑 Environment Variables
@@ -203,6 +221,7 @@ pnpm dev  # ✅ All providers work!
 | **Minimal** | ⭐ | 0 | Learning, testing |
 | **01-basic-blog** | ⭐⭐ | 0 | Registry pattern basics |
 | **blog-example** | ⭐⭐ | 0 | Full blog platform |
+| **search-example** | ⭐⭐ | 0 | Learning search plugin |
 | **02-enterprise-api** | ⭐⭐⭐⭐ | 0-1 | Enterprise features |
 | **03-multi-tenant** | ⭐⭐⭐⭐ | 0 | SaaS platforms |
 | **05-image-optimizer** | ⭐⭐⭐ | 0 (needs FFmpeg) | Image processing |
@@ -236,6 +255,9 @@ pnpm dev  # ✅ All providers work!
 
 ### I'm building an online store
 → Use **ecommerce-example**
+
+### I want to add intelligent search to my app
+→ Use **search-example** (demonstrates full-text search plugin)
 
 ---
 

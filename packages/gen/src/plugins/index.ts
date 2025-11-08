@@ -39,6 +39,9 @@ export * from './payments/paypal.plugin.js'
 export * from './email/sendgrid.plugin.js'
 export * from './email/mailgun.plugin.js'
 
+// Search
+export * from './search/full-text-search.plugin.js'
+
 // AI provider interface
 export * from './ai/ai-provider.interface.js'
 

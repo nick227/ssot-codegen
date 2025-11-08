@@ -189,6 +189,100 @@ pnpm test:generator     # Run generator tests
 pnpm examples:all       # Generate all examples
 ```
 
+## Plugins
+
+Extend your generated API with feature plugins. All plugins use **DRY architecture** - logic lives in SDK runtime, generated code is just configuration.
+
+### 🔍 Full-Text Search
+
+Add intelligent search with configurable ranking and scoring.
+
+```typescript
+// ssot.config.ts
+export default {
+  plugins: {
+    'full-text-search': {
+      enabled: true,
+      defaultWeights: {
+        startsWith: 15,    // Prefix matches scored highest
+        exactMatch: 20,
+        contains: 5
+      },
+      models: {
+        Product: {
+          enabled: true,
+          fields: [
+            { name: 'name', weight: 100, matchTypes: ['startsWith', 'exact', 'contains'] },
+            { name: 'description', weight: 50, matchTypes: ['contains', 'fuzzy'] }
+          ],
+          ranking: {
+            boostRecent: { field: 'createdAt', weight: 5 },
+            boostPopular: { field: 'viewCount', weight: 3 }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+**Generated API:**
+```
+GET /api/search?q=laptop&model=product&limit=10&sort=relevance
+GET /api/search/all?q=query&models=product,user
+```
+
+**Features:**
+- ✅ Multiple match types (exact, startsWith, contains, fuzzy, wordBoundary)
+- ✅ Configurable field weights and priorities
+- ✅ Smart ranking (boost recent, boost popular)
+- ✅ Federated search across models
+- ✅ Full pagination metadata
+- ✅ Type-safe configuration
+
+[See full documentation →](packages/gen/src/plugins/search/README.md)
+
+### 🔐 Authentication
+
+- **Google OAuth** - `google-auth` plugin
+- **JWT Service** - `jwt-service` plugin  
+- **API Key Manager** - `api-key-manager` plugin
+
+### 🤖 AI Integration
+
+- **OpenAI** - GPT-4, GPT-3.5, embeddings
+- **Claude** - Anthropic's Claude models
+- **Gemini** - Google's Gemini Pro
+- **Grok** - xAI's Grok models
+- **OpenRouter** - Access multiple AI providers
+- **LM Studio** - Local model hosting
+- **Ollama** - Local open-source models
+
+### 🗣️ Voice AI
+
+- **Deepgram** - Speech-to-text transcription
+- **ElevenLabs** - Text-to-speech synthesis
+
+### ☁️ Storage
+
+- **AWS S3** - Object storage
+- **Cloudflare R2** - S3-compatible storage
+- **Cloudinary** - Image/video management
+
+### 💳 Payments
+
+- **Stripe** - Payment processing
+- **PayPal** - Payment integration
+
+### 📧 Email
+
+- **SendGrid** - Transactional email
+- **Mailgun** - Email delivery
+
+### 📊 Monitoring
+
+- **Usage Tracker** - API usage analytics
+
 ## Configuration
 
 Create a `ssot.config.ts` in your project root for advanced options:

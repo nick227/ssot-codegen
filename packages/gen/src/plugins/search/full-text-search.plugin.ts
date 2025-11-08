@@ -484,9 +484,20 @@ import type { SearchResult as BaseSearchResult, SearchOptions as BaseSearchOptio
 
 export type { BaseSearchResult as SearchResult, BaseSearchOptions as SearchOptions }
 
+export interface PaginationMeta {
+  total: number         // Total matching records
+  count: number         // Results in current page
+  skip: number          // Number of records skipped
+  limit: number         // Max results per page
+  page: number          // Current page number (1-indexed)
+  totalPages: number    // Total number of pages
+  hasMore: boolean      // Whether there are more results
+  hasPrevious: boolean  // Whether there are previous results
+}
+
 export interface SearchResponse<T> {
   results: BaseSearchResult<T>[]
-  total: number
+  pagination: PaginationMeta
   query: string
   model: string
 }
@@ -496,6 +507,10 @@ export interface FederatedSearchResponse {
     model: string
     results: BaseSearchResult<any>[]
   }>
+  pagination: {
+    total: number
+    modelsSearched: number
+  }
   query: string
   modelsSearched: string | string[]
 }

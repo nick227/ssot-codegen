@@ -1,0 +1,124 @@
+// Search Example - Demonstrates full-text search plugin
+// This example shows how to add intelligent search to products, users, and posts
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator ssotCodegen {
+  provider = "node ../../packages/gen/dist/index.js"
+  output   = "./generated"
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(200)
+  slug        String   @unique @db.VarChar(200)
+  description String?  @db.Text
+  price       Decimal  @db.Decimal(10, 2)
+  category    String   @db.VarChar(100)
+  tags        String[] // Array of tags for search
+  inStock     Boolean  @default(true)
+  viewCount   Int      @default(0)
+  rating      Float?
+  
+  // Relationships
+  reviews     Review[]
+  images      ProductImage[]
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([category])
+  @@index([slug])
+  @@map("products")
+}
+
+model ProductImage {
+  id        Int     @id @default(autoincrement())
+  productId Int
+  url       String  @db.VarChar(500)
+  altText   String? @db.VarChar(200)
+  isPrimary Boolean @default(false)
+  
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@index([productId])
+  @@map("product_images")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique @db.VarChar(255)
+  name      String   @db.VarChar(100)
+  username  String?  @unique @db.VarChar(50)
+  bio       String?  @db.Text
+  role      UserRole @default(CUSTOMER)
+  
+  // Relationships
+  reviews   Review[]
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([email])
+  @@index([username])
+  @@map("users")
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  userId    Int
+  rating    Int      // 1-5
+  title     String   @db.VarChar(200)
+  content   String   @db.Text
+  helpful   Int      @default(0)
+  
+  // Relationships
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([productId, userId])
+  @@index([productId])
+  @@index([userId])
+  @@index([rating])
+  @@map("reviews")
+}
+
+model BlogPost {
+  id        Int      @id @default(autoincrement())
+  title     String   @db.VarChar(200)
+  slug      String   @unique @db.VarChar(200)
+  excerpt   String?  @db.VarChar(500)
+  content   String   @db.Text
+  published Boolean  @default(false)
+  tags      String[] // Array of tags
+  viewCount Int      @default(0)
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([published])
+  @@index([slug])
+  @@map("blog_posts")
+}
+
+enum UserRole {
+  ADMIN
+  CUSTOMER
+  GUEST
+}
+
