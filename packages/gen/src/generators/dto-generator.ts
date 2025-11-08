@@ -35,7 +35,8 @@ ${fields}
 
 /**
  * Generate Update DTO (all fields optional for PATCH operations)
- * For PUT operations requiring all fields, use CreateDTO or generate a separate DTO
+ * Note: This is for PATCH (partial updates). For PUT (full replacement),
+ * consider using a separate DTO that includes the ID and requires all fields.
  */
 export function generateUpdateDTO(model: ParsedModel): string {
   const imports = getTypeImports(model.updateFields)
@@ -58,13 +59,16 @@ ${fields}
 
 /**
  * Generate Read DTO (all scalar fields from DB)
- * Read DTOs return all fields - nullable fields use `| null`, not `?`
+ * Read DTOs return all fields from the database response:
+ * - Required fields: field: string
+ * - Nullable fields: field: string | null (always present in response, value can be null)
+ * Note: We don't use ? (optional) because DB queries always return all selected fields
  */
 export function generateReadDTO(model: ParsedModel): string {
   const imports = getTypeImports(model.readFields)
   const fields = model.readFields.map(field => {
-    // Read DTOs always have all fields present (no ? modifier)
-    // Nullability is handled by mapPrismaToTypeScript adding | null
+    // All fields present in DB response (no ? modifier)
+    // Nullable fields get | null union type from mapPrismaToTypeScript
     const type = mapPrismaToTypeScript(field)
     return `  ${field.name}: ${type}`
   }).join('\n')
@@ -86,6 +90,27 @@ ${fields}
 export function generateQueryDTO(model: ParsedModel): string {
   const modelKebab = toKebabCase(model.name)
   
+  // Determine cursor type for pagination (use ID field if available)
+  let cursorType = 'unknown'
+  if (model.idField) {
+    const idType = mapPrismaToTypeScript(model.idField)
+    cursorType = idType || 'unknown'
+  } else if (model.primaryKey && model.primaryKey.fields.length > 0) {
+    // For composite keys, build object type from key fields
+    const keyFields = model.primaryKey.fields
+      .map(fieldName => {
+        const field = model.fields.find(f => f.name === fieldName)
+        if (!field) return null
+        const fieldType = mapPrismaToTypeScript(field)
+        return fieldType ? `${fieldName}: ${fieldType}` : null
+      })
+      .filter((x): x is string => x !== null)
+    
+    if (keyFields.length > 0) {
+      cursorType = `{ ${keyFields.join('; ')} }`
+    }
+  }
+  
   // Generate where clause type
   const filterableFields = model.scalarFields.filter(f => 
     !f.isReadOnly && !f.isUpdatedAt
@@ -93,24 +118,72 @@ export function generateQueryDTO(model: ParsedModel): string {
   
   const whereFields = filterableFields.map(field => {
     const baseType = mapPrismaToTypeScript(field)
+    const isNullable = !field.isRequired
     
     if (field.type === 'String') {
-      return `    ${field.name}?: {
+      const nullOps = isNullable ? '\n      isNull?: boolean' : ''
+      return `    ${field.name}?: ${baseType} | {
       equals?: ${baseType}
       contains?: ${baseType}
       startsWith?: ${baseType}
       endsWith?: ${baseType}
+      in?: ${baseType}[]
+      notIn?: ${baseType}[]
+      not?: ${baseType}
+      mode?: 'default' | 'insensitive'${nullOps}
     }`
-    } else if (field.type === 'Int' || field.type === 'Float' || field.type === 'DateTime') {
-      return `    ${field.name}?: {
+    } else if (field.type === 'Int' || field.type === 'Float') {
+      const nullOps = isNullable ? '\n      isNull?: boolean' : ''
+      return `    ${field.name}?: ${baseType} | {
       equals?: ${baseType}
       gt?: ${baseType}
       gte?: ${baseType}
       lt?: ${baseType}
       lte?: ${baseType}
+      in?: ${baseType}[]
+      notIn?: ${baseType}[]
+      not?: ${baseType}${nullOps}
+    }`
+    } else if (field.type === 'DateTime') {
+      // DateTime accepts both Date objects and ISO 8601 strings
+      const dateType = 'Date | string'
+      const nullOps = isNullable ? '\n      isNull?: boolean' : ''
+      return `    ${field.name}?: ${dateType} | {
+      equals?: ${dateType}
+      gt?: ${dateType}
+      gte?: ${dateType}
+      lt?: ${dateType}
+      lte?: ${dateType}
+      in?: ${dateType}[]
+      notIn?: ${dateType}[]${nullOps}
+    }`
+    } else if (field.type === 'Boolean') {
+      // Booleans support both simple assignment and object filters
+      return `    ${field.name}?: ${baseType} | {
+      equals?: ${baseType}
+      not?: ${baseType}
+    }`
+    } else if (field.kind === 'enum') {
+      // Enums support both simple assignment and object filters
+      const nullOps = isNullable ? '\n      isNull?: boolean' : ''
+      return `    ${field.name}?: ${baseType} | {
+      equals?: ${baseType}
+      in?: ${baseType}[]
+      notIn?: ${baseType}[]
+      not?: ${baseType}${nullOps}
+    }`
+    } else if (field.isList) {
+      // Array fields support specific operators
+      return `    ${field.name}?: {
+      has?: ${baseType}
+      hasSome?: ${baseType}[]
+      hasEvery?: ${baseType}[]
+      isEmpty?: boolean
     }`
     } else {
-      return `    ${field.name}?: ${baseType}`
+      // Fallback for other types (Json, Bytes, etc.)
+      const nullOps = isNullable ? ' | { isNull?: boolean }' : ''
+      return `    ${field.name}?: ${baseType}${nullOps}`
     }
   }).join('\n')
   
@@ -124,35 +197,59 @@ export function generateQueryDTO(model: ParsedModel): string {
     ? `{\n${orderByFields.join('\n')}\n  }`
     : `Record<string, 'asc' | 'desc'>`
   
-  // Build include type
+  // Build include type (supports nested includes)
   const includeFields = model.relationFields
-    .map(f => `    ${f.name}?: boolean`)
+    .map(f => `    ${f.name}?: boolean | { include?: any; select?: any }`)
   const includeType = includeFields.length > 0
     ? `{\n${includeFields.join('\n')}\n  }`
-    : 'Record<string, boolean>'
+    : 'Record<string, boolean | { include?: any; select?: any }>'
   
-  // Build select type
-  const selectFields = model.fields
+  // Build select type (supports nested selects)
+  const selectScalarFields = model.scalarFields
     .map(f => `    ${f.name}?: boolean`)
-  const selectType = `{\n${selectFields.join('\n')}\n  }`
+  const selectRelationFields = model.relationFields
+    .map(f => `    ${f.name}?: boolean | { select?: any; include?: any }`)
+  const allSelectFields = [...selectScalarFields, ...selectRelationFields]
+  const selectType = allSelectFields.length > 0
+    ? `{\n${allSelectFields.join('\n')}\n  }`
+    : `Record<string, boolean>`
   
-  // Build where type - handle empty case
-  const whereType = whereFields.length > 0
-    ? `{\n${whereFields}\n  }`
-    : 'Record<string, any>'
+  // Build where type with logical operators
+  let whereType: string
+  if (whereFields.length > 0) {
+    whereType = `{\n${whereFields}\n    AND?: ${model.name}WhereInput[]\n    OR?: ${model.name}WhereInput[]\n    NOT?: ${model.name}WhereInput[]\n  }`
+  } else {
+    // Empty object is valid (matches all records)
+    whereType = '{}'
+  }
+  
+  // Define recursive where type
+  const whereTypeDef = `type ${model.name}WhereInput = ${whereType}`
+  
+  // Build distinct type from scalar field names  
+  const distinctFields = model.scalarFields
+    .filter(f => !f.isReadOnly && !f.isUpdatedAt)
+    .map(f => `'${f.name}'`)
+    .join(' | ')
+  
+  // Non-empty array type for distinct (prevents [])
+  const distinctArrayType = distinctFields ? `[${distinctFields}, ...${distinctFields}[]]` : 'never'
   
   return `// @generated
 // This file is automatically generated. Do not edit manually.
 
 import type { ${model.name}ReadDTO } from './${modelKebab}.read.dto.js'
 
+${whereTypeDef}
+
 export interface ${model.name}QueryDTO {
-  skip?: number
-  take?: number
+  skip?: number  // Offset pagination (should be >= 0)
+  take?: number  // Limit (should be > 0)
+  cursor?: ${cursorType}  // Cursor for cursor-based pagination
   orderBy?: ${orderByType}
-  where?: ${whereType}
+  where?: ${model.name}WhereInput
   include?: ${includeType}
-  select?: ${selectType}
+  select?: ${selectType}${distinctFields ? `\n  distinct?: ${distinctFields} | ${distinctArrayType}` : ''}
 }
 
 export interface ${model.name}ListResponse {
@@ -161,7 +258,7 @@ export interface ${model.name}ListResponse {
     total: number
     skip: number
     take: number
-    hasMore: boolean
+    hasMore: boolean  // Calculated as: skip + take < total
   }
 }
 `

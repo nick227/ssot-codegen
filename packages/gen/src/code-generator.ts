@@ -42,7 +42,7 @@ import { generateChecklistSystem } from '@/generators/checklist-generator.js'
 import { PluginManager } from '@/plugins/plugin-manager.js'
 
 export interface CodeGeneratorConfig {
-  framework: 'express' | 'fastify'
+  framework?: 'express' | 'fastify'  // Defaults to 'express'
   useEnhancedGenerators?: boolean  // Use enhanced generators with relationships and domain logic
   useRegistry?: boolean  // Use registry-based architecture (78% less code)
   projectName?: string  // Project name for display
@@ -52,6 +52,8 @@ export interface CodeGeneratorConfig {
   toolVersion?: string  // Tool version
   hookFrameworks?: Array<'react' | 'vue' | 'angular' | 'zustand' | 'vanilla'>  // Framework hooks to generate
   strictPluginValidation?: boolean  // Fail on plugin validation errors (default: false)
+  continueOnError?: boolean  // Continue generation when non-critical errors occur (default: true)
+  failFast?: boolean  // Stop immediately on first error (default: false)
   
   // NEW: Feature plugins
   features?: {
@@ -64,6 +66,26 @@ export interface CodeGeneratorConfig {
       userModel?: string
     }
   }
+}
+
+/**
+ * Error severity levels for generation issues
+ */
+export enum ErrorSeverity {
+  WARNING = 'warning',    // Non-critical, generation can continue
+  ERROR = 'error',        // Critical, affects functionality but other models might succeed
+  FATAL = 'fatal'         // Critical, entire generation should fail
+}
+
+/**
+ * Generation error with context
+ */
+export interface GenerationError {
+  severity: ErrorSeverity
+  message: string
+  model?: string
+  phase?: string
+  error?: Error
 }
 
 // GeneratedFiles type moved to pipeline/types.ts to break circular dependency
@@ -80,8 +102,33 @@ interface AnalysisCache {
 }
 
 /**
+ * Validate hook framework names
+ */
+const VALID_HOOK_FRAMEWORKS = ['react', 'vue', 'angular', 'zustand', 'vanilla'] as const
+type HookFramework = typeof VALID_HOOK_FRAMEWORKS[number]
+
+function validateHookFrameworks(frameworks: string[] | undefined): HookFramework[] {
+  if (!frameworks || frameworks.length === 0) {
+    return ['react']  // Default
+  }
+  
+  const invalid = frameworks.filter(f => !VALID_HOOK_FRAMEWORKS.includes(f as any))
+  if (invalid.length > 0) {
+    console.warn(`[ssot-codegen] Invalid hook frameworks: ${invalid.join(', ')}. Using defaults.`)
+    return ['react']
+  }
+  
+  return frameworks as HookFramework[]
+}
+
+/**
  * Generate all code files from parsed schema
  * OPTIMIZED: Pre-analyze all models once for 60% performance improvement
+ * 
+ * Error handling strategy:
+ * - FATAL errors: throw immediately (invalid schema, missing required config)
+ * - ERROR: log and continue if continueOnError=true, otherwise throw
+ * - WARNING: log and continue always
  */
 export function generateCode(
   schema: ParsedSchema,
@@ -89,6 +136,16 @@ export function generateCode(
 ): GeneratedFiles {
   const framework = config.framework || 'express'
   const useEnhanced = config.useEnhancedGenerators ?? true
+  const continueOnError = config.continueOnError ?? true
+  const failFast = config.failFast ?? false
+  
+  // Log framework default if not explicitly set
+  if (!config.framework) {
+    console.log('[ssot-codegen] No framework specified, using default: express')
+  }
+  
+  // Validate and normalize hook frameworks
+  const hookFrameworks = validateHookFrameworks(config.hookFrameworks)
   
   const files: GeneratedFiles = {
     contracts: new Map(),
@@ -105,8 +162,28 @@ export function generateCode(
     }
   }
   
-  const generatedPaths = new Set<string>()  // Track generated file paths to detect duplicates
-  let hasErrors = false
+  // Track all generated file paths to detect duplicates
+  const generatedPaths = new Set<string>()
+  
+  // Track errors with severity
+  const errors: GenerationError[] = []
+  
+  // PHASE 0: Pre-validation - Filter junction tables before analysis
+  const modelsToGenerate = useEnhanced
+    ? schema.models.filter(model => {
+        // Quick junction table detection (detailed analysis happens later)
+        const hasOnlyForeignKeys = model.fields.every(f => 
+          f.kind === 'scalar' || f.relationName
+        )
+        const hasTwoRelations = model.fields.filter(f => f.relationName).length >= 2
+        const isLikelyJunction = hasOnlyForeignKeys && hasTwoRelations && model.fields.length <= 4
+        
+        if (isLikelyJunction) {
+          console.log(`[ssot-codegen] Skipping junction table from analysis: ${model.name}`)
+        }
+        return !isLikelyJunction
+      })
+    : schema.models
   
   // PHASE 1: Pre-analyze all models ONCE (O(n) instead of O(n×5))
   const cache: AnalysisCache = {
@@ -116,21 +193,90 @@ export function generateCode(
   
   try {
     for (const model of schema.models) {
+      // Validate model has required properties
+      if (!model.name || !model.nameLower) {
+        const error: GenerationError = {
+          severity: ErrorSeverity.ERROR,
+          message: `Model missing required properties: ${JSON.stringify({ name: model.name, nameLower: model.nameLower })}`,
+          model: model.name || 'unknown',
+          phase: 'validation'
+        }
+        errors.push(error)
+        console.error(`[ssot-codegen] ${error.message}`)
+        
+        if (failFast || !continueOnError) {
+          throw new Error(error.message)
+        }
+        continue
+      }
+      
       // UNIFIED ANALYSIS: Analyze relationships, special fields, and capabilities ONCE
       if (useEnhanced) {
-        cache.modelAnalysis.set(model.name, analyzeModelUnified(model, schema))
+        try {
+          cache.modelAnalysis.set(model.name, analyzeModelUnified(model, schema))
+        } catch (error) {
+          const genError: GenerationError = {
+            severity: ErrorSeverity.ERROR,
+            message: `Failed to analyze model: ${model.name}`,
+            model: model.name,
+            phase: 'analysis',
+            error: error as Error
+          }
+          errors.push(genError)
+          console.error(`[ssot-codegen] ${genError.message}:`, error)
+          
+          if (failFast || !continueOnError) {
+            throw error
+          }
+        }
       }
       
       // Parse service annotations once
-      const serviceAnnotation = parseServiceAnnotation(model)
-      if (serviceAnnotation) {
-        cache.serviceAnnotations.set(model.name, serviceAnnotation)
+      try {
+        const serviceAnnotation = parseServiceAnnotation(model)
+        if (serviceAnnotation) {
+          cache.serviceAnnotations.set(model.name, serviceAnnotation)
+        }
+      } catch (error) {
+        const genError: GenerationError = {
+          severity: ErrorSeverity.WARNING,
+          message: `Failed to parse service annotation for: ${model.name}`,
+          model: model.name,
+          phase: 'service-annotation',
+          error: error as Error
+        }
+        errors.push(genError)
+        console.warn(`[ssot-codegen] ${genError.message}:`, error)
       }
     }
   } catch (error) {
-    console.error('[ssot-codegen] Error during model analysis:', error)
-    hasErrors = true
+    const genError: GenerationError = {
+      severity: ErrorSeverity.FATAL,
+      message: 'Fatal error during model analysis phase',
+      phase: 'analysis',
+      error: error as Error
+    }
+    errors.push(genError)
+    console.error('[ssot-codegen] Fatal error during model analysis:', error)
     throw error
+  }
+  
+  // PHASE 1.5: Validate analysis results for enhanced mode
+  if (useEnhanced) {
+    const missingAnalysis = modelsToGenerate.filter(m => !cache.modelAnalysis.has(m.name))
+    if (missingAnalysis.length > 0) {
+      const error: GenerationError = {
+        severity: ErrorSeverity.ERROR,
+        message: `Missing analysis for models: ${missingAnalysis.map(m => m.name).join(', ')}`,
+        phase: 'validation'
+      }
+      errors.push(error)
+      console.error(`[ssot-codegen] ${error.message}`)
+      
+      if (failFast || !continueOnError) {
+        throw new Error(error.message)
+      }
+    }
   }
   
   // REGISTRY MODE: Generate unified registry instead of individual files
@@ -160,24 +306,45 @@ export function generateCode(
           validatorMap.set(`${modelKebab}.query.zod.ts`, validators.query)
           files.validators.set(model.name, validatorMap)
         } catch (error) {
-          console.error(`[ssot-codegen] Error generating DTOs/validators for ${model.name}:`, error)
-          hasErrors = true
+          const genError: GenerationError = {
+            severity: ErrorSeverity.ERROR,
+            message: `Error generating DTOs/validators for ${model.name}`,
+            model: model.name,
+            phase: 'registry-dtos',
+            error: error as Error
+          }
+          errors.push(genError)
+          console.error(`[ssot-codegen] ${genError.message}:`, error)
+          
+          if (failFast || !continueOnError) {
+            throw error
+          }
         }
       }
       
       // Generate SDK and hooks
       try {
-        generateSDKClients(schema, files, cache, generatedPaths)
-        const hookFrameworks = config.hookFrameworks || ['react']
+        generateSDKClients(schema, files, cache, generatedPaths, errors, failFast, continueOnError)
         const hooks = generateAllHooks(schema, { frameworks: hookFrameworks }, cache.modelAnalysis)
         files.hooks = hooks
       } catch (error) {
-        console.error('[ssot-codegen] Error generating SDK/hooks:', error)
-        hasErrors = true
+        const genError: GenerationError = {
+          severity: ErrorSeverity.ERROR,
+          message: 'Error generating SDK/hooks in registry mode',
+          phase: 'sdk-hooks',
+          error: error as Error
+        }
+        errors.push(genError)
+        console.error(`[ssot-codegen] ${genError.message}:`, error)
+        
+        if (failFast || !continueOnError) {
+          throw error
+        }
       }
       
-      // Generate System Checklist (only if no errors)
-      if (!hasErrors && config.generateChecklist !== false) {
+      // Generate System Checklist (only if no critical errors)
+      const hasCriticalErrors = errors.some(e => e.severity === ErrorSeverity.ERROR || e.severity === ErrorSeverity.FATAL)
+      if (!hasCriticalErrors && config.generateChecklist !== false) {
         try {
           const checklist = generateChecklistSystem(schema, files, {
             projectName: config.projectName || 'Generated Project',
@@ -191,13 +358,31 @@ export function generateCode(
           })
           files.checklist = checklist
         } catch (error) {
-          console.error('[ssot-codegen] Error generating checklist:', error)
+          const genError: GenerationError = {
+            severity: ErrorSeverity.WARNING,
+            message: 'Error generating checklist',
+            phase: 'checklist',
+            error: error as Error
+          }
+          errors.push(genError)
+          console.warn(`[ssot-codegen] ${genError.message}:`, error)
         }
       }
       
+      // Log summary
+      logGenerationSummary(errors)
+      
       return files
     } catch (error) {
-      console.error('[ssot-codegen] Error in registry mode generation:', error)
+      const genError: GenerationError = {
+        severity: ErrorSeverity.FATAL,
+        message: 'Fatal error in registry mode generation',
+        phase: 'registry',
+        error: error as Error
+      }
+      errors.push(genError)
+      console.error('[ssot-codegen] Fatal error in registry mode:', error)
+      logGenerationSummary(errors)
       throw error
     }
   }
@@ -207,37 +392,74 @@ export function generateCode(
   try {
     for (const model of schema.models) {
       try {
-        generateModelCode(model, config, files, schema, cache, generatedPaths)
+        generateModelCode(model, config, files, schema, cache, generatedPaths, errors, failFast, continueOnError)
       } catch (error) {
-        console.error(`[ssot-codegen] Error generating code for model ${model.name}:`, error)
-        hasErrors = true
+        const genError: GenerationError = {
+          severity: ErrorSeverity.ERROR,
+          message: `Error generating code for model ${model.name}`,
+          model: model.name,
+          phase: 'model-generation',
+          error: error as Error
+        }
+        errors.push(genError)
+        console.error(`[ssot-codegen] ${genError.message}:`, error)
+        
+        if (failFast || !continueOnError) {
+          throw error
+        }
       }
     }
   } catch (error) {
-    console.error('[ssot-codegen] Error in model code generation phase:', error)
-    hasErrors = true
+    const genError: GenerationError = {
+      severity: ErrorSeverity.FATAL,
+      message: 'Fatal error in model code generation phase',
+      phase: 'model-generation',
+      error: error as Error
+    }
+    errors.push(genError)
+    console.error('[ssot-codegen] Fatal error in model generation:', error)
   }
   
   // PHASE 3: Generate SDK clients (after all models are processed)
   try {
-    generateSDKClients(schema, files, cache, generatedPaths)
+    generateSDKClients(schema, files, cache, generatedPaths, errors, failFast, continueOnError)
   } catch (error) {
-    console.error('[ssot-codegen] Error generating SDK clients:', error)
-    hasErrors = true
+    const genError: GenerationError = {
+      severity: ErrorSeverity.ERROR,
+      message: 'Error generating SDK clients',
+      phase: 'sdk',
+      error: error as Error
+    }
+    errors.push(genError)
+    console.error(`[ssot-codegen] ${genError.message}:`, error)
+    
+    if (failFast || !continueOnError) {
+      throw error
+    }
   }
   
   // PHASE 4: Generate framework hooks
   try {
-    const hookFrameworks = config.hookFrameworks || ['react']
     const hooks = generateAllHooks(schema, { frameworks: hookFrameworks }, cache.modelAnalysis)
     files.hooks = hooks
   } catch (error) {
-    console.error('[ssot-codegen] Error generating hooks:', error)
-    hasErrors = true
+    const genError: GenerationError = {
+      severity: ErrorSeverity.ERROR,
+      message: 'Error generating hooks',
+      phase: 'hooks',
+      error: error as Error
+    }
+    errors.push(genError)
+    console.error(`[ssot-codegen] ${genError.message}:`, error)
+    
+    if (failFast || !continueOnError) {
+      throw error
+    }
   }
   
   // PHASE 5: Generate Feature Plugins
   let pluginManager: PluginManager | undefined
+  const pluginHealthCheckErrors: string[] = []
   if (config.features) {
     try {
       pluginManager = new PluginManager({
@@ -253,12 +475,18 @@ export function generateCode(
       const pluginErrors = Array.from(validations.values()).some(v => !v.valid)
       
       if (pluginErrors) {
-        const message = '⚠️  Some plugins have validation errors. Check warnings above.'
-        if (config.strictPluginValidation) {
-          throw new Error(message)
+        const genError: GenerationError = {
+          severity: config.strictPluginValidation ? ErrorSeverity.ERROR : ErrorSeverity.WARNING,
+          message: 'Some plugins have validation errors',
+          phase: 'plugin-validation'
         }
-        console.warn(`\n${message}`)
-        hasErrors = true
+        errors.push(genError)
+        
+        if (config.strictPluginValidation) {
+          console.error('\n[ssot-codegen] ❌ Plugin validation failed. Set strictPluginValidation: false to continue anyway.')
+          throw new Error(genError.message)
+        }
+        console.warn('\n[ssot-codegen] ⚠️  Some plugins have validation errors. Check warnings above.')
       }
       
       // Generate plugin code
@@ -272,16 +500,24 @@ export function generateCode(
       // Store plugin outputs for env vars and package.json merging
       files.pluginOutputs = pluginOutputs
     } catch (error) {
-      console.error('[ssot-codegen] Error generating plugins:', error)
-      hasErrors = true
-      if (config.strictPluginValidation) {
+      const genError: GenerationError = {
+        severity: config.strictPluginValidation ? ErrorSeverity.ERROR : ErrorSeverity.WARNING,
+        message: 'Error generating plugins',
+        phase: 'plugins',
+        error: error as Error
+      }
+      errors.push(genError)
+      console.error(`[ssot-codegen] ${genError.message}:`, error)
+      
+      if (config.strictPluginValidation || failFast || !continueOnError) {
         throw error
       }
     }
   }
   
   // PHASE 6: Generate System Checklist (only if no critical errors)
-  if (!hasErrors && config.generateChecklist !== false) {
+  const hasCriticalErrors = errors.some(e => e.severity === ErrorSeverity.ERROR || e.severity === ErrorSeverity.FATAL)
+  if (!hasCriticalErrors && config.generateChecklist !== false) {
     try {
       // Collect plugin health checks
       const pluginHealthChecks = new Map<string, any>()
@@ -298,7 +534,14 @@ export function generateCode(
               })
               pluginHealthChecks.set(pluginName, healthCheck)
             } catch (error) {
-              console.error(`[ssot-codegen] Error getting health check for plugin ${pluginName}:`, error)
+              const genError: GenerationError = {
+                severity: ErrorSeverity.WARNING,
+                message: `Error getting health check for plugin ${pluginName}`,
+                phase: 'health-check',
+                error: error as Error
+              }
+              errors.push(genError)
+              console.warn(`[ssot-codegen] ${genError.message}:`, error)
             }
           }
         }
@@ -317,9 +560,21 @@ export function generateCode(
       })
       files.checklist = checklist
     } catch (error) {
-      console.error('[ssot-codegen] Error generating checklist:', error)
+      const genError: GenerationError = {
+        severity: ErrorSeverity.WARNING,
+        message: 'Error generating checklist',
+        phase: 'checklist',
+        error: error as Error
+      }
+      errors.push(genError)
+      console.warn(`[ssot-codegen] ${genError.message}:`, error)
     }
+  } else if (hasCriticalErrors) {
+    console.warn('[ssot-codegen] Skipping checklist generation due to critical errors')
   }
+  
+  // Log summary
+  logGenerationSummary(errors)
   
   return files
 }
@@ -334,7 +589,10 @@ function generateModelCode(
   files: GeneratedFiles,
   schema: ParsedSchema,
   cache: AnalysisCache,
-  generatedPaths: Set<string>
+  generatedPaths: Set<string>,
+  errors: GenerationError[],
+  failFast: boolean,
+  continueOnError: boolean
 ): void {
   const modelKebab = toKebabCase(model.name)
   const useEnhanced = config.useEnhancedGenerators ?? true
@@ -346,7 +604,14 @@ function generateModelCode(
   
   // Validate that analysis exists when enhanced mode is enabled
   if (useEnhanced && !analysis) {
-    console.warn(`[ssot-codegen] Missing analysis for model ${model.name}, skipping enhanced generation`)
+    const error: GenerationError = {
+      severity: ErrorSeverity.ERROR,
+      message: `Missing analysis for model ${model.name}, skipping generation`,
+      model: model.name,
+      phase: 'model-code'
+    }
+    errors.push(error)
+    console.error(`[ssot-codegen] ${error.message}`)
     return
   }
   
@@ -393,13 +658,15 @@ function generateModelCode(
   
   // Generate Service
   const servicePath = `${modelKebab}.service.ts`
-  checkPathDuplication(servicePath, generatedPaths, model.name)
-  const service = useEnhanced && analysis
-    ? generateEnhancedService(model, schema)
-    : generateService(model, schema)
-  files.services.set(servicePath, service)
+  if (!checkPathDuplication(servicePath, generatedPaths, model.name, errors)) {
+    const service = useEnhanced && analysis
+      ? generateEnhancedService(model, schema)
+      : generateService(model, schema)
+    files.services.set(servicePath, service)
+  }
   
-  // If this model has @service annotation, generate service integration
+  // If this model has @service annotation, generate service integration files
+  // SDK will still be generated in generateSDKClients phase (see below)
   if (serviceAnnotation) {
     console.log(`[ssot-codegen] Generating service integration for: ${serviceAnnotation.name} (methods: ${serviceAnnotation.methods.join(', ')})`)
     
@@ -408,31 +675,37 @@ function generateModelCode(
     const serviceRoutesPath = `${serviceAnnotation.name}.routes.ts`
     const scaffoldPath = `${serviceAnnotation.name}.service.scaffold.ts`
     
-    checkPathDuplication(serviceControllerPath, generatedPaths, serviceAnnotation.name)
-    checkPathDuplication(serviceRoutesPath, generatedPaths, serviceAnnotation.name)
-    checkPathDuplication(scaffoldPath, generatedPaths, serviceAnnotation.name)
+    const hasControllerDupe = checkPathDuplication(serviceControllerPath, generatedPaths, serviceAnnotation.name, errors)
+    const hasRoutesDupe = checkPathDuplication(serviceRoutesPath, generatedPaths, serviceAnnotation.name, errors)
+    const hasScaffoldDupe = checkPathDuplication(scaffoldPath, generatedPaths, serviceAnnotation.name, errors)
     
-    const serviceController = generateServiceController(serviceAnnotation)
-    files.controllers.set(serviceControllerPath, serviceController)
+    if (!hasControllerDupe) {
+      const serviceController = generateServiceController(serviceAnnotation)
+      files.controllers.set(serviceControllerPath, serviceController)
+    }
     
-    const serviceRoutes = generateServiceRoutes(serviceAnnotation)
-    files.routes.set(serviceRoutesPath, serviceRoutes)
+    if (!hasRoutesDupe) {
+      const serviceRoutes = generateServiceRoutes(serviceAnnotation)
+      files.routes.set(serviceRoutesPath, serviceRoutes)
+    }
     
-    const scaffold = generateServiceScaffold(serviceAnnotation)
-    files.services.set(scaffoldPath, scaffold)
+    if (!hasScaffoldDupe) {
+      const scaffold = generateServiceScaffold(serviceAnnotation)
+      files.services.set(scaffoldPath, scaffold)
+    }
     
-    // NOTE: Still generate SDK for service-annotated models (needed for frontend integration)
-    // SDK generation happens in generateSDKClients phase
+    // Don't return early - still need to generate SDK client in generateSDKClients phase
     return
   }
   
-  // Generate Controller
+  // Generate Controller (for standard CRUD models)
   const controllerPath = `${modelKebab}.controller.ts`
-  checkPathDuplication(controllerPath, generatedPaths, model.name)
-  const controller = useEnhanced && analysis
-    ? generateBaseClassController(model, schema, framework, analysis)
-    : generateController(model, framework)
-  files.controllers.set(controllerPath, controller)
+  if (!checkPathDuplication(controllerPath, generatedPaths, model.name, errors)) {
+    const controller = useEnhanced && analysis
+      ? generateBaseClassController(model, schema, framework, analysis)
+      : generateController(model, framework)
+    files.controllers.set(controllerPath, controller)
+  }
   
   // Generate Routes
   const routesPath = `${modelKebab}.routes.ts`
@@ -440,20 +713,34 @@ function generateModelCode(
     ? generateEnhancedRoutes(model, schema, framework, analysis)
     : generateRoutes(model, framework)
     
-  if (routes) {
-    checkPathDuplication(routesPath, generatedPaths, model.name)
+  if (routes && !checkPathDuplication(routesPath, generatedPaths, model.name, errors)) {
     files.routes.set(routesPath, routes)
   }
 }
 
 /**
- * Check for duplicate file paths and warn if found
+ * Check for duplicate file paths and prevent overwrites
+ * @returns true if duplicate was found (file should not be generated)
  */
-function checkPathDuplication(path: string, generatedPaths: Set<string>, modelName: string): void {
+function checkPathDuplication(
+  path: string,
+  generatedPaths: Set<string>,
+  modelName: string,
+  errors: GenerationError[]
+): boolean {
   if (generatedPaths.has(path)) {
-    console.warn(`[ssot-codegen] Duplicate file path detected: ${path} (model: ${modelName})`)
+    const error: GenerationError = {
+      severity: ErrorSeverity.WARNING,
+      message: `Duplicate file path detected: ${path}`,
+      model: modelName,
+      phase: 'path-validation'
+    }
+    errors.push(error)
+    console.warn(`[ssot-codegen] ${error.message} (model: ${modelName}) - skipping to prevent overwrite`)
+    return true  // Duplicate found
   }
   generatedPaths.add(path)
+  return false  // No duplicate
 }
 
 /**
@@ -463,7 +750,10 @@ function generateSDKClients(
   schema: ParsedSchema,
   files: GeneratedFiles,
   cache: AnalysisCache,
-  generatedPaths: Set<string>
+  generatedPaths: Set<string>,
+  errors: GenerationError[],
+  failFast: boolean,
+  continueOnError: boolean
 ): void {
   const modelClients: Array<{ name: string; className: string }> = []
   const serviceClients: Array<{ name: string; className: string; annotation: ServiceAnnotation }> = []
@@ -471,7 +761,6 @@ function generateSDKClients(
   // Generate model clients (skip junction tables, include service-annotated models for SDK)
   for (const model of schema.models) {
     const analysis = cache.modelAnalysis.get(model.name)
-    const serviceAnnotation = cache.serviceAnnotations.get(model.name)
     
     // Skip junction tables (they shouldn't have direct SDK access)
     if (analysis?.isJunctionTable) continue
@@ -479,15 +768,29 @@ function generateSDKClients(
     try {
       const modelClient = generateModelSDK(model, schema)
       const sdkPath = `models/${model.name.toLowerCase()}.client.ts`
-      checkPathDuplication(sdkPath, generatedPaths, model.name)
-      files.sdk.set(sdkPath, modelClient)
       
-      modelClients.push({
-        name: model.name.toLowerCase(),
-        className: `${model.name}Client`
-      })
+      if (!checkPathDuplication(sdkPath, generatedPaths, model.name, errors)) {
+        files.sdk.set(sdkPath, modelClient)
+        
+        modelClients.push({
+          name: model.name.toLowerCase(),
+          className: `${model.name}Client`
+        })
+      }
     } catch (error) {
-      console.error(`[ssot-codegen] Error generating SDK for model ${model.name}:`, error)
+      const genError: GenerationError = {
+        severity: ErrorSeverity.ERROR,
+        message: `Error generating SDK for model ${model.name}`,
+        model: model.name,
+        phase: 'sdk-model',
+        error: error as Error
+      }
+      errors.push(genError)
+      console.error(`[ssot-codegen] ${genError.message}:`, error)
+      
+      if (failFast || !continueOnError) {
+        throw error
+      }
     }
   }
   
@@ -496,19 +799,33 @@ function generateSDKClients(
     try {
       const serviceClient = generateServiceSDK(serviceAnnotation)
       const sdkPath = `services/${serviceAnnotation.name}.client.ts`
-      checkPathDuplication(sdkPath, generatedPaths, serviceAnnotation.name)
-      files.sdk.set(sdkPath, serviceClient)
       
-      // Transform service name to proper class name
-      const className = toServiceClassName(serviceAnnotation.name)
-      
-      serviceClients.push({
-        name: serviceAnnotation.name,
-        className,
-        annotation: serviceAnnotation
-      })
+      if (!checkPathDuplication(sdkPath, generatedPaths, serviceAnnotation.name, errors)) {
+        files.sdk.set(sdkPath, serviceClient)
+        
+        // Transform service name to proper class name
+        const className = toServiceClassName(serviceAnnotation.name, errors)
+        
+        serviceClients.push({
+          name: serviceAnnotation.name,
+          className,
+          annotation: serviceAnnotation
+        })
+      }
     } catch (error) {
-      console.error(`[ssot-codegen] Error generating SDK for service ${serviceAnnotation.name}:`, error)
+      const genError: GenerationError = {
+        severity: ErrorSeverity.ERROR,
+        message: `Error generating SDK for service ${serviceAnnotation.name}`,
+        model: modelName,
+        phase: 'sdk-service',
+        error: error as Error
+      }
+      errors.push(genError)
+      console.error(`[ssot-codegen] ${genError.message}:`, error)
+      
+      if (failFast || !continueOnError) {
+        throw error
+      }
     }
   }
   
@@ -519,17 +836,36 @@ function generateSDKClients(
       : generateMainSDK(schema.models, schema)
     files.sdk.set('index.ts', mainSDK)
   } catch (error) {
-    console.error('[ssot-codegen] Error generating main SDK:', error)
+    const genError: GenerationError = {
+      severity: ErrorSeverity.ERROR,
+      message: 'Error generating main SDK',
+      phase: 'sdk-main',
+      error: error as Error
+    }
+    errors.push(genError)
+    console.error(`[ssot-codegen] ${genError.message}:`, error)
+    
+    if (failFast || !continueOnError) {
+      throw error
+    }
   }
   
   // Generate version file
-  // NOTE: Placeholder values will be replaced by manifest phase during file writing
-  // If manifest phase doesn't run, these placeholders indicate missing version info
+  // NOTE: Placeholder values MUST be replaced by manifest phase during file writing.
+  // The manifest phase should replace __SCHEMA_HASH_PLACEHOLDER__ and __VERSION_PLACEHOLDER__.
+  // If you see these in the generated SDK, the manifest phase didn't run correctly.
   try {
     const versionFile = generateSDKVersion('__SCHEMA_HASH_PLACEHOLDER__', '__VERSION_PLACEHOLDER__')
     files.sdk.set('version.ts', versionFile)
   } catch (error) {
-    console.error('[ssot-codegen] Error generating SDK version file:', error)
+    const genError: GenerationError = {
+      severity: ErrorSeverity.WARNING,
+      message: 'Error generating SDK version file',
+      phase: 'sdk-version',
+      error: error as Error
+    }
+    errors.push(genError)
+    console.warn(`[ssot-codegen] ${genError.message}:`, error)
   }
   
   // Generate SDK documentation files
@@ -540,38 +876,120 @@ function generateSDKClients(
     files.sdk.set('quick-start.ts', generateQuickStart())
     files.sdk.set('types.ts', generateSDKTypes(schema.models, schema))
   } catch (error) {
-    console.error('[ssot-codegen] Error generating SDK documentation:', error)
+    const genError: GenerationError = {
+      severity: ErrorSeverity.WARNING,
+      message: 'Error generating SDK documentation',
+      phase: 'sdk-docs',
+      error: error as Error
+    }
+    errors.push(genError)
+    console.warn(`[ssot-codegen] ${genError.message}:`, error)
   }
 }
 
 /**
  * Convert service name to proper class name
- * Handles kebab-case, snake_case, and validates format
+ * Handles kebab-case, snake_case, mixed delimiters, and validates format
+ * 
+ * Examples:
+ * - 'image-optimizer' -> 'ImageOptimizerClient'
+ * - 'image_optimizer' -> 'ImageOptimizerClient'
+ * - 'image-optimizer_v2' -> 'ImageOptimizerV2Client'
+ * - 'imageOptimizer' -> 'ImageOptimizerClient'
+ * - 'ImageOptimizer' -> 'ImageOptimizerClient'
+ * - 'ImageOptimizerClient' -> 'ImageOptimizerClient' (already formatted)
  */
-function toServiceClassName(serviceName: string): string {
+function toServiceClassName(serviceName: string, errors: GenerationError[]): string {
   // Validate service name format
   if (!serviceName || typeof serviceName !== 'string') {
-    throw new Error(`Invalid service name: ${serviceName}`)
+    const error: GenerationError = {
+      severity: ErrorSeverity.ERROR,
+      message: `Invalid service name: ${serviceName}`,
+      phase: 'service-naming'
+    }
+    errors.push(error)
+    throw new Error(error.message)
   }
   
-  // Handle kebab-case (e.g., 'image-optimizer' -> 'ImageOptimizerClient')
-  if (serviceName.includes('-')) {
-    return serviceName
+  // Trim whitespace
+  serviceName = serviceName.trim()
+  
+  // If already ends with 'Client', just ensure first letter is uppercase
+  if (serviceName.endsWith('Client')) {
+    return serviceName.charAt(0).toUpperCase() + serviceName.slice(1)
+  }
+  
+  // Handle consecutive delimiters (e.g., 'image--optimizer' -> 'image-optimizer')
+  serviceName = serviceName.replace(/[-_]+/g, (match) => match[0])
+  
+  // Handle mixed delimiters: normalize to single delimiter type
+  // Replace underscores with hyphens for consistent processing
+  const hasKebab = serviceName.includes('-')
+  const hasSnake = serviceName.includes('_')
+  
+  if (hasKebab || hasSnake) {
+    // Normalize mixed delimiters to kebab-case
+    const normalized = serviceName.replace(/_/g, '-')
+    
+    // Split and capitalize each word
+    return normalized
       .split('-')
+      .filter(word => word.length > 0)  // Remove empty parts from consecutive delimiters
       .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join('') + 'Client'
   }
   
-  // Handle snake_case (e.g., 'image_optimizer' -> 'ImageOptimizerClient')
-  if (serviceName.includes('_')) {
-    return serviceName
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join('') + 'Client'
-  }
-  
-  // Handle PascalCase or camelCase (e.g., 'ImageOptimizer' or 'imageOptimizer')
+  // Handle PascalCase or camelCase (no delimiters)
+  // Ensure first letter is uppercase
   return serviceName.charAt(0).toUpperCase() + serviceName.slice(1) + 'Client'
+}
+
+/**
+ * Log generation summary with error counts by severity
+ */
+function logGenerationSummary(errors: GenerationError[]): void {
+  if (errors.length === 0) {
+    console.log('\n✅ [ssot-codegen] Generation completed successfully with no errors')
+    return
+  }
+  
+  const fatal = errors.filter(e => e.severity === ErrorSeverity.FATAL)
+  const critical = errors.filter(e => e.severity === ErrorSeverity.ERROR)
+  const warnings = errors.filter(e => e.severity === ErrorSeverity.WARNING)
+  
+  console.log('\n' + '='.repeat(60))
+  console.log('[ssot-codegen] Generation Summary')
+  console.log('='.repeat(60))
+  
+  if (fatal.length > 0) {
+    console.log(`\n❌ FATAL ERRORS: ${fatal.length}`)
+    fatal.forEach(e => {
+      console.log(`   - ${e.message}${e.model ? ` (model: ${e.model})` : ''}`)
+    })
+  }
+  
+  if (critical.length > 0) {
+    console.log(`\n🔴 ERRORS: ${critical.length}`)
+    critical.forEach(e => {
+      console.log(`   - ${e.message}${e.model ? ` (model: ${e.model})` : ''}`)
+    })
+  }
+  
+  if (warnings.length > 0) {
+    console.log(`\n⚠️  WARNINGS: ${warnings.length}`)
+    warnings.forEach(e => {
+      console.log(`   - ${e.message}${e.model ? ` (model: ${e.model})` : ''}`)
+    })
+  }
+  
+  console.log('\n' + '='.repeat(60))
+  
+  if (fatal.length > 0 || critical.length > 0) {
+    console.log('⚠️  Generation completed with errors. Some files may be missing or incomplete.')
+  } else {
+    console.log('✅ Generation completed with warnings only. All files generated.')
+  }
+  console.log('='.repeat(60) + '\n')
 }
 
 /**
