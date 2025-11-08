@@ -1,11 +1,11 @@
 /**
  * Registry Generation Phase - Generates unified registry architecture
  * Centralizes all CRUD operations in a single registry (78% less code)
+ * 
+ * v2.0: Uses shared RegistryModeGenerator for consistency with legacy mode
  */
 
-import { generateRegistrySystem } from '../../generators/registry-generator.js'
-import { generateServiceController, generateServiceRoutes, generateServiceScaffold } from '../../generators/service-integration.generator.js'
-import { DTOValidatorGenerator } from '../../builders/dto-validator-generator.js'
+import { generateRegistryMode, RegistryModeGenerator } from '../../generators/registry-mode-generator.js'
 import {
   ErrorSeverity,
   PhaseStatus,
@@ -47,83 +47,78 @@ export class RegistryGenerationPhase implements GenerationPhase {
   
   async execute(context: IGenerationContext): Promise<PhaseResult> {
     const errors: GenerationError[] = []
-    let dtoCount = 0
-    let serviceIntegrationCount = 0
     
     try {
-      // STEP 1: Generate unified registry system
+      // v2.0: Use shared RegistryModeGenerator (eliminates ~200 lines of duplicate code)
       console.log('[ssot-codegen] Generating unified registry system...')
-      const registry = generateRegistrySystem(context.schema, context.cache)
+      
+      const result = generateRegistryMode(
+        context.schema,
+        context.cache,
+        context.cache.serviceAnnotations,
+        {
+          validateCode: false,  // Builder handles validation
+          skipJunctionTables: true,
+          includeServiceIntegrations: true
+        }
+      )
       
       // Add registry files to builder
       const registryBuilder = context.filesBuilder.getRegistryBuilder()
-      for (const [filename, content] of registry) {
+      for (const [filename, content] of result.registry) {
         registryBuilder.addFile(filename, content)
       }
       
-      console.log(`[ssot-codegen] Generated registry with ${registry.size} file(s)`)
-      
-      // STEP 2: Generate DTOs and Validators for all models
-      // (Still needed for type system even in registry mode)
-      console.log('[ssot-codegen] Generating DTOs and validators for registry mode...')
-      
-      for (const model of context.schema.models) {
-        // Skip models with validation errors
-        if (this.hasValidationErrors(model, context)) {
-          continue
-        }
-        
-        try {
-          // Use shared DTO/Validator generator (eliminates duplication)
-          const success = DTOValidatorGenerator.generateForModel(
-            model,
-            context.filesBuilder
-          )
-          
-          if (success) {
-            dtoCount++
-          }
-        } catch (error) {
-          errors.push({
-            severity: ErrorSeverity.ERROR,
-            message: `Error generating DTOs/validators for ${model.name}`,
-            model: model.name,
-            phase: this.name,
-            error: error as Error
-          })
+      // Add DTOs to builder
+      const dtoBuilder = context.filesBuilder.getDTOBuilder()
+      for (const [modelName, dtoMap] of result.contracts) {
+        for (const [filename, content] of dtoMap) {
+          dtoBuilder.addFile(filename, content, modelName)
         }
       }
       
-      console.log(`[ssot-codegen] Generated DTOs/validators for ${dtoCount} models`)
-      
-      // STEP 3: Generate Service Integration files (for @service annotated models)
-      // Service integrations are NOT part of the registry (custom business logic)
-      const serviceAnnotations = context.cache.getAllServiceAnnotations()
-      
-      if (serviceAnnotations.length > 0) {
-        console.log(`[ssot-codegen] Generating ${serviceAnnotations.length} service integration(s)...`)
-        
-        for (const [modelName, annotation] of serviceAnnotations) {
-          try {
-            this.generateServiceIntegration(annotation, modelName, context, errors)
-            serviceIntegrationCount++
-          } catch (error) {
-            errors.push({
-              severity: ErrorSeverity.ERROR,
-              message: `Error generating service integration for ${annotation.name}`,
-              model: modelName,
-              phase: this.name,
-              error: error as Error
-            })
-          }
+      // Add validators to builder
+      const validatorBuilder = context.filesBuilder.getValidatorBuilder()
+      for (const [modelName, validatorMap] of result.validators) {
+        for (const [filename, content] of validatorMap) {
+          validatorBuilder.addFile(filename, content, modelName)
         }
       }
+      
+      // Add service integrations to builders
+      const controllerBuilder = context.filesBuilder.getControllerBuilder()
+      for (const [filename, content] of result.serviceControllers) {
+        controllerBuilder.addFile(filename, content)
+      }
+      
+      const routeBuilder = context.filesBuilder.getRouteBuilder()
+      for (const [filename, content] of result.serviceRoutes) {
+        routeBuilder.addFile(filename, content)
+      }
+      
+      const serviceBuilder = context.filesBuilder.getServiceBuilder()
+      for (const [filename, content] of result.serviceScaffolds) {
+        serviceBuilder.addFile(filename, content)
+      }
+      
+      // Convert generation errors to phase errors
+      for (const err of result.errors) {
+        errors.push({
+          severity: ErrorSeverity.ERROR,
+          message: err.message,
+          model: err.model,
+          phase: this.name,
+          error: err.error
+        })
+      }
+      
+      console.log(`[ssot-codegen] Registry mode: ${result.modelsProcessed} models, ${result.serviceIntegrations} service integration(s)`)
       
       // Summary
       console.log('[ssot-codegen] Registry generation summary:')
-      console.log(`  - Registry files: ${registry.size}`)
-      console.log(`  - DTOs/Validators: ${dtoCount} models`)
-      console.log(`  - Service integrations: ${serviceIntegrationCount}`)
+      console.log(`  - Registry files: ${result.registry.size}`)
+      console.log(`  - DTOs/Validators: ${result.modelsProcessed} models`)
+      console.log(`  - Service integrations: ${result.serviceIntegrations}`)
       
       const success = errors.filter(e => 
         e.severity === ErrorSeverity.ERROR || e.severity === ErrorSeverity.FATAL
@@ -134,9 +129,9 @@ export class RegistryGenerationPhase implements GenerationPhase {
         status: success ? PhaseStatus.COMPLETED : PhaseStatus.FAILED,
         errors,
         data: {
-          registryFiles: registry.size,
-          dtoCount,
-          serviceIntegrationCount
+          registryFiles: result.registry.size,
+          dtoCount: result.modelsProcessed,
+          serviceIntegrationCount: result.serviceIntegrations
         }
       }
     } catch (error) {
@@ -152,76 +147,6 @@ export class RegistryGenerationPhase implements GenerationPhase {
         status: PhaseStatus.FAILED,
         errors
       }
-    }
-  }
-  
-  /**
-   * Check if model has validation errors
-   */
-  private hasValidationErrors(model: any, context: IGenerationContext): boolean {
-    return context.getErrors().some(e =>
-      e.model === model.name &&
-      (e.severity === ErrorSeverity.ERROR || e.severity === ErrorSeverity.FATAL)
-    )
-  }
-  
-  /**
-   * Generate service integration files
-   * (Controllers, routes, and scaffolds for @service annotated models)
-   */
-  private generateServiceIntegration(
-    annotation: any,
-    modelName: string,
-    context: IGenerationContext,
-    errors: GenerationError[]
-  ): void {
-    const controllersBuilder = context.filesBuilder.getControllersBuilder()
-    const routesBuilder = context.filesBuilder.getRoutesBuilder()
-    const servicesBuilder = context.filesBuilder.getServicesBuilder()
-    
-    // Generate service controller
-    const controllerPath = `${annotation.name}.controller.ts`
-    try {
-      const controller = generateServiceController(annotation)
-      controllersBuilder.addFile(controllerPath, controller, annotation.name)
-    } catch (error) {
-      errors.push({
-        severity: ErrorSeverity.ERROR,
-        message: `Error generating service controller for ${annotation.name}`,
-        model: modelName,
-        phase: this.name,
-        error: error as Error
-      })
-    }
-    
-    // Generate service routes
-    const routesPath = `${annotation.name}.routes.ts`
-    try {
-      const routes = generateServiceRoutes(annotation)
-      routesBuilder.addFile(routesPath, routes, annotation.name)
-    } catch (error) {
-      errors.push({
-        severity: ErrorSeverity.ERROR,
-        message: `Error generating service routes for ${annotation.name}`,
-        model: modelName,
-        phase: this.name,
-        error: error as Error
-      })
-    }
-    
-    // Generate service scaffold
-    const scaffoldPath = `${annotation.name}.service.scaffold.ts`
-    try {
-      const scaffold = generateServiceScaffold(annotation)
-      servicesBuilder.addFile(scaffoldPath, scaffold, annotation.name)
-    } catch (error) {
-      errors.push({
-        severity: ErrorSeverity.ERROR,
-        message: `Error generating service scaffold for ${annotation.name}`,
-        model: modelName,
-        phase: this.name,
-        error: error as Error
-      })
     }
   }
   

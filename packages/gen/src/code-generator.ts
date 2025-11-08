@@ -36,6 +36,7 @@ import { analyzeModelUnified, type UnifiedModelAnalysis } from '@/analyzers/inde
 import { type ModelAnalysis } from '@/utils/relationship-analyzer.js'
 // Registry-based architecture (78% less code)
 import { generateRegistrySystem } from '@/generators/registry-generator.js'
+import { generateRegistryMode, RegistryModeGenerator } from '@/generators/registry-mode-generator.js'
 // System health check dashboard
 import { generateChecklistSystem } from '@/generators/checklist-generator.js'
 // Feature plugins system
@@ -562,102 +563,45 @@ function generateCodeLegacy(
   detectNamingConflicts(schema.models, cache.serviceAnnotations, errors)
   
   // REGISTRY MODE: Generate unified registry instead of individual files
+  // v2.0: Uses shared RegistryModeGenerator for consistency with pipeline mode
   if (config.useRegistry) {
     try {
-      files.registry = generateRegistrySystem(schema, cache.modelAnalysis)
-      
-      // Generate DTOs and validators in registry mode
-      for (const model of schema.models) {
-        const modelKebab = toKebabCase(model.name)
-        const serviceAnnotation = cache.serviceAnnotations.get(model.name)
-        
-        try {
-          // Generate DTOs
-          const dtos = generateAllDTOs(model)
-          const dtoMap = new Map<string, string>()
-          
-          // Validate DTOs before adding
-          if (validateGeneratedCode(dtos.create, `${modelKebab}.create.dto.ts`, errors)) {
-            dtoMap.set(`${modelKebab}.create.dto.ts`, dtos.create)
+      // Use shared registry generator (eliminates duplicate code)
+      const registryResult = generateRegistryMode(
+        schema,
+        cache.modelAnalysis,
+        cache.serviceAnnotations,
+        {
+          validateCode: true,
+          skipJunctionTables: true,
+          includeServiceIntegrations: true
+        },
+        // Code validator that also tracks paths and adds to errors
+        (code: string, filename: string) => {
+          const valid = validateGeneratedCode(code, filename, errors)
+          if (valid && !filename.includes('.dto.') && !filename.includes('.zod.')) {
+            // Track paths for non-DTO/validator files
+            generatedPaths.add(filename)
           }
-          if (validateGeneratedCode(dtos.update, `${modelKebab}.update.dto.ts`, errors)) {
-            dtoMap.set(`${modelKebab}.update.dto.ts`, dtos.update)
-          }
-          if (validateGeneratedCode(dtos.read, `${modelKebab}.read.dto.ts`, errors)) {
-            dtoMap.set(`${modelKebab}.read.dto.ts`, dtos.read)
-          }
-          if (validateGeneratedCode(dtos.query, `${modelKebab}.query.dto.ts`, errors)) {
-            dtoMap.set(`${modelKebab}.query.dto.ts`, dtos.query)
-          }
-          
-          if (dtoMap.size > 0) {
-            files.contracts.set(model.name, dtoMap)
-          }
-          
-          // Generate validators (needed for request validation)
-          const validators = generateAllValidators(model)
-          const validatorMap = new Map<string, string>()
-          
-          // Validate validators before adding
-          if (validateGeneratedCode(validators.create, `${modelKebab}.create.zod.ts`, errors)) {
-            validatorMap.set(`${modelKebab}.create.zod.ts`, validators.create)
-          }
-          if (validateGeneratedCode(validators.update, `${modelKebab}.update.zod.ts`, errors)) {
-            validatorMap.set(`${modelKebab}.update.zod.ts`, validators.update)
-          }
-          if (validateGeneratedCode(validators.query, `${modelKebab}.query.zod.ts`, errors)) {
-            validatorMap.set(`${modelKebab}.query.zod.ts`, validators.query)
-          }
-          
-          if (validatorMap.size > 0) {
-            files.validators.set(model.name, validatorMap)
-          }
-          
-          // Handle service integration in registry mode
-          if (serviceAnnotation) {
-            console.log(`[ssot-codegen] [Registry] Generating service integration for: ${serviceAnnotation.name}`)
-            
-            const serviceControllerPath = `${serviceAnnotation.name}.controller.ts`
-            const serviceRoutesPath = `${serviceAnnotation.name}.routes.ts`
-            const scaffoldPath = `${serviceAnnotation.name}.service.scaffold.ts`
-            
-            if (isPathAvailable(serviceControllerPath, generatedPaths, serviceAnnotation.name, errors)) {
-              const serviceController = generateServiceController(serviceAnnotation)
-              if (validateGeneratedCode(serviceController, serviceControllerPath, errors)) {
-                files.controllers.set(serviceControllerPath, serviceController)
-              }
-            }
-            
-            if (isPathAvailable(serviceRoutesPath, generatedPaths, serviceAnnotation.name, errors)) {
-              const serviceRoutes = generateServiceRoutes(serviceAnnotation)
-              if (validateGeneratedCode(serviceRoutes, serviceRoutesPath, errors)) {
-                files.routes.set(serviceRoutesPath, serviceRoutes)
-              }
-            }
-            
-            if (isPathAvailable(scaffoldPath, generatedPaths, serviceAnnotation.name, errors)) {
-              const scaffold = generateServiceScaffold(serviceAnnotation)
-              if (validateGeneratedCode(scaffold, scaffoldPath, errors)) {
-                files.services.set(scaffoldPath, scaffold)
-              }
-            }
-          }
-        } catch (error) {
-          const genError: GenerationError = {
-            severity: ErrorSeverity.ERROR,
-            message: `Error generating DTOs/validators for ${model.name}`,
-            model: model.name,
-            phase: 'registry-dtos',
-            error: error as Error
-          }
-          errors.push(genError)
-          console.error(`[ssot-codegen] ${genError.message}:`, error)
-          
-          if (failFast || !continueOnError) {
-            throw error
-          }
+          return valid
         }
+      )
+      
+      // Merge result into files
+      RegistryModeGenerator.mergeIntoGeneratedFiles(registryResult, files)
+      
+      // Convert registry generation errors to GenerationError format
+      for (const err of registryResult.errors) {
+        errors.push({
+          severity: ErrorSeverity.ERROR,
+          message: err.message,
+          model: err.model,
+          phase: 'registry',
+          error: err.error
+        })
       }
+      
+      console.log(`[ssot-codegen] Registry mode: ${registryResult.modelsProcessed} models, ${registryResult.serviceIntegrations} service integration(s)`)
       
       // Generate SDK and hooks
       try {
