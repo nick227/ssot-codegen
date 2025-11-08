@@ -160,27 +160,27 @@ export interface ParsedModel {
   name: string
   nameLower: string  // Lowercase name for case-insensitive lookups
   dbName?: string
-  fields: ParsedField[]
+  readonly fields: readonly ParsedField[]  // Frozen to prevent accidental mutations
   primaryKey?: {
     name?: string
-    fields: string[]
+    readonly fields: readonly string[]  // Frozen to prevent accidental mutations
   }
-  uniqueFields: string[][]
+  readonly uniqueFields: readonly (readonly string[])[]  // Frozen to prevent accidental mutations
   documentation?: string
   // Derived properties
   idField?: ParsedField
-  scalarFields: ParsedField[]
-  relationFields: ParsedField[]
-  createFields: ParsedField[]  // Fields for CreateDTO
-  updateFields: ParsedField[]  // Fields for UpdateDTO
-  readFields: ParsedField[]    // Fields for ReadDTO
-  reverseRelations: ParsedField[]  // Fields from other models that reference this model
+  readonly scalarFields: readonly ParsedField[]  // Frozen to prevent accidental mutations
+  readonly relationFields: readonly ParsedField[]  // Frozen to prevent accidental mutations
+  readonly createFields: readonly ParsedField[]  // Fields for CreateDTO, frozen
+  readonly updateFields: readonly ParsedField[]  // Fields for UpdateDTO, frozen
+  readonly readFields: readonly ParsedField[]    // Fields for ReadDTO, frozen
+  readonly reverseRelations: readonly ParsedField[]  // Fields from other models that reference this model, frozen
   hasSelfRelation: boolean  // Model has fields that reference itself
 }
 
 export interface ParsedEnum {
   name: string
-  values: string[]
+  readonly values: readonly string[]  // Frozen to prevent accidental mutations
   documentation?: string
 }
 
@@ -338,7 +338,7 @@ function parseEnums(enums: readonly DMMF.DatamodelEnum[], logger: DMMFParserLogg
     })
     .map(e => ({
       name: e.name,
-      values: e.values.map(v => v.name),
+      values: Object.freeze(e.values.map(v => v.name)),
       documentation: sanitizeDocumentation(e.documentation)
     }))
 }
@@ -358,10 +358,10 @@ function parseModels(models: readonly DMMF.Model[], enumMap: Map<string, ParsedE
     .map(model => {
       const fields = parseFields(model.fields, enumMap, model.name, logger)
     
-    // Validate primary key fields are strings
+    // Validate primary key fields are strings and freeze
     const primaryKey = model.primaryKey ? {
       name: model.primaryKey.name || undefined,
-      fields: validateStringArray(model.primaryKey.fields, `${model.name}.primaryKey.fields`)
+      fields: Object.freeze(validateStringArray(model.primaryKey.fields, `${model.name}.primaryKey.fields`))
     } : undefined
     
     return {
@@ -372,9 +372,9 @@ function parseModels(models: readonly DMMF.Model[], enumMap: Map<string, ParsedE
       dbName: model.dbName || undefined,
       fields,
       primaryKey,
-      uniqueFields: model.uniqueFields.map((uf, i) => 
-        validateStringArray(uf, `${model.name}.uniqueFields[${i}]`)
-      ),
+      uniqueFields: Object.freeze(model.uniqueFields.map((uf, i) => 
+        Object.freeze(validateStringArray(uf, `${model.name}.uniqueFields[${i}]`))
+      )),
       documentation: sanitizeDocumentation(model.documentation),
       // These will be filled by enhanceModel
       scalarFields: [],
@@ -546,10 +546,12 @@ function isDbManagedDefault(defaultValue: unknown): boolean {
  * - Should be in create DTOs as optional fields
  * - getDefaultValueString() returns TypeScript code for these
  * 
+ * Exported for use by generators that need to distinguish client-managed defaults
+ * 
  * @param defaultValue - The default value from DMMF field
  * @returns true if client-managed, false otherwise
  */
-function isClientManagedDefault(defaultValue: unknown): boolean {
+export function isClientManagedDefault(defaultValue: unknown): boolean {
   if (!defaultValue || typeof defaultValue !== 'object') return false
   
   const def = defaultValue as Record<string, unknown>
@@ -718,12 +720,21 @@ function buildReverseRelationMap(models: ParsedModel[]): Map<string, ParsedField
  * Enhance model with derived properties
  * 
  * Optimized single-pass categorization of fields
+ * 
+ * Note: This function mutates the model in-place during initial parsing.
+ * The readonly properties in ParsedModel interface are for consumers,
+ * not for the initial construction phase.
  */
 function enhanceModel(
   model: ParsedModel, 
   modelMap: Map<string, ParsedModel>,
   reverseRelationMap: Map<string, ParsedField[]>
 ): void {
+  // Cast to mutable version for initialization
+  // This is safe because we're in the construction phase
+  const mutableModel = model as {
+    -readonly [K in keyof ParsedModel]: ParsedModel[K]
+  }
   // Mark fields that are part of composite primary key
   if (model.primaryKey?.fields) {
     const compositePkFields = new Set(model.primaryKey.fields)
@@ -742,8 +753,9 @@ function enhanceModel(
   let idField: ParsedField | undefined
   let hasSelfRelation = false
   
-  const isSystemTimestamp = (name: string) => 
-    SYSTEM_TIMESTAMP_FIELDS.includes(name as any)
+  // Type-safe check for system timestamp fields
+  const isSystemTimestamp = (name: string): boolean => 
+    (SYSTEM_TIMESTAMP_FIELDS as readonly string[]).includes(name)
   
   for (const field of model.fields) {
     // Track ID field
@@ -783,15 +795,16 @@ function enhanceModel(
   
   // Set all derived properties
   // Note: Freeze all arrays for immutability and consistency
-  model.idField = idField
-  model.fields = Object.freeze([...model.fields]) as ParsedField[]
-  model.scalarFields = Object.freeze(scalarFields) as ParsedField[]
-  model.relationFields = Object.freeze(relationFields) as ParsedField[]
-  model.createFields = Object.freeze(createFields) as ParsedField[]
-  model.updateFields = Object.freeze(updateFields) as ParsedField[]
-  model.readFields = Object.freeze([...scalarFields]) as ParsedField[] // All scalar fields for reading
-  model.hasSelfRelation = hasSelfRelation
-  model.reverseRelations = Object.freeze([...(reverseRelationMap.get(model.name) || [])]) as ParsedField[]
+  // Using mutableModel to assign to readonly properties during construction
+  mutableModel.idField = idField
+  mutableModel.fields = Object.freeze([...model.fields])
+  mutableModel.scalarFields = Object.freeze(scalarFields)
+  mutableModel.relationFields = Object.freeze(relationFields)
+  mutableModel.createFields = Object.freeze(createFields)
+  mutableModel.updateFields = Object.freeze(updateFields)
+  mutableModel.readFields = Object.freeze([...scalarFields]) // All scalar fields for reading
+  mutableModel.hasSelfRelation = hasSelfRelation
+  mutableModel.reverseRelations = Object.freeze([...(reverseRelationMap.get(model.name) || [])])
 }
 
 // ============================================================================
@@ -1014,6 +1027,16 @@ export function validateSchemaDetailed(schema: ParsedSchema, throwOnError = fals
       if (field.relationFromFields && field.relationFromFields.length > 0) {
         if (!field.relationToFields || field.relationToFields.length === 0) {
           errors.push(`Relation ${model.name}.${field.name} has relationFromFields but missing relationToFields`)
+        } else {
+          // Validate relationFromFields and relationToFields have matching counts
+          // Each FK field must map to exactly one PK field (1:1 correspondence)
+          if (field.relationFromFields.length !== field.relationToFields.length) {
+            errors.push(
+              `Relation ${model.name}.${field.name} has mismatched field counts: ` +
+              `${field.relationFromFields.length} from-fields vs ${field.relationToFields.length} to-fields. ` +
+              `Each foreign key field must map to exactly one primary key field.`
+            )
+          }
         }
         
         // Validate relationFromFields exist in model
