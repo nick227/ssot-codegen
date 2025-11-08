@@ -11,26 +11,69 @@
 
 import type { DMMF } from '@prisma/generator-helper'
 
+/**
+ * Prisma DB-managed default function names
+ */
+const DB_MANAGED_DEFAULTS = ['autoincrement', 'uuid', 'cuid', 'now', 'dbgenerated'] as const
+type DbManagedDefault = typeof DB_MANAGED_DEFAULTS[number]
+
+/**
+ * System-managed timestamp field names
+ */
+const SYSTEM_TIMESTAMP_FIELDS = ['createdAt', 'updatedAt'] as const
+
+/**
+ * Prisma default value types
+ * Flexible to accommodate DMMF readonly types
+ */
+export type PrismaDefaultValue = 
+  | string 
+  | number 
+  | boolean 
+  | { name: string; args?: readonly any[] | any[] }
+  | null
+  | undefined
+
+/**
+ * Parsed field from Prisma schema
+ * 
+ * Note: isNullable vs isOptional distinction
+ * - isNullable: Type allows null (String? → can store null in DB)
+ * - isOptional: Can be omitted in create operations (has default OR is nullable)
+ */
 export interface ParsedField {
+  // Core field metadata
   name: string
   type: string
   kind: 'scalar' | 'object' | 'enum' | 'unsupported'
   isList: boolean
+  
+  // Type constraints
   isRequired: boolean
   isNullable: boolean  // Field type allows null (String? in schema)
-  isOptional: boolean  // Field can be omitted (field? in schema)
+  isOptional: boolean  // Field can be omitted in create operations
   isUnique: boolean
+  
+  // Special field types
   isId: boolean
   isReadOnly: boolean
   isUpdatedAt: boolean
+  
+  // Default values
   hasDefaultValue: boolean
   hasDbDefault: boolean  // DB-managed default (autoincrement, uuid, etc)
-  default?: any
+  default?: any  // DMMF uses complex readonly types, use any for flexibility
+  
+  // Composite key metadata (for generator use)
   isPartOfCompositePrimaryKey: boolean
+  
+  // Relationship metadata
   isSelfRelation: boolean  // Field references its own model
   relationName?: string
   relationFromFields?: string[]
   relationToFields?: string[]
+  
+  // Documentation
   documentation?: string
 }
 
@@ -72,6 +115,14 @@ export interface ParsedSchema {
 
 /**
  * Parse DMMF into our format
+ * 
+ * IMPORTANT: Parse order dependency
+ * 1. Parse enums (independent)
+ * 2. Parse models (depends on enumMap)
+ * 3. Build reverse relation map (depends on parsed models)
+ * 4. Enhance models (depends on models, modelMap, reverseRelationMap)
+ * 
+ * This order ensures all dependencies are satisfied before enhancement.
  */
 export function parseDMMF(dmmf: DMMF.Document): ParsedSchema {
   const enums = parseEnums(dmmf.datamodel.enums)
@@ -80,10 +131,10 @@ export function parseDMMF(dmmf: DMMF.Document): ParsedSchema {
   const models = parseModels(dmmf.datamodel.models, enumMap)
   const modelMap = new Map(models.map(m => [m.name, m]))
   
-  // Build reverse relation map
+  // Build reverse relation map AFTER models are fully parsed
   const reverseRelationMap = buildReverseRelationMap(models)
   
-  // Add derived properties
+  // Enhance models with derived properties (must be last)
   for (const model of models) {
     enhanceModel(model, modelMap, reverseRelationMap)
   }
@@ -229,8 +280,7 @@ function isDbManagedDefault(defaultValue: any): boolean {
   if (!defaultValue || typeof defaultValue !== 'object') return false
   if (!('name' in defaultValue)) return false
   
-  const dbManagedDefaults = ['autoincrement', 'uuid', 'cuid', 'now', 'dbgenerated']
-  return dbManagedDefaults.includes(defaultValue.name)
+  return DB_MANAGED_DEFAULTS.includes(defaultValue.name as any)
 }
 
 /**
@@ -253,18 +303,19 @@ function determineReadOnly(field: DMMF.Field): boolean {
 }
 
 /**
- * Sanitize documentation strings for safe code generation
+ * Sanitize documentation strings for safe code generation in JSDoc comments
+ * Note: This is for JSDoc /** comments *\/, not for string literals
  */
 function sanitizeDocumentation(doc: string | undefined): string | undefined {
   if (!doc) return undefined
   
-  // Remove problematic characters that could break generated comments
+  // Sanitize for JSDoc comments (block comments)
+  // We need to prevent closing the JSDoc comment early
   return doc
-    .replace(/\*\//g, '* /')    // Prevent closing block comments
-    .replace(/\/\*/g, '/ *')    // Prevent opening block comments
-    .replace(/\/\//g, '/ /')    // Escape single-line comment markers
-    .replace(/`/g, '\\`')       // Escape backticks
-    .replace(/\r\n/g, '\n')     // Normalize line endings
+    .replace(/\r\n/g, '\n')     // Normalize line endings first
+    .replace(/\*\//g, '*\\/')   // Escape */ to prevent closing comment
+    .replace(/\/\*/g, '/\\*')   // Escape /* to prevent nested comments
+    .replace(/`/g, '\\`')       // Escape backticks for template strings
     .replace(/\n/g, ' ')        // Convert to single line for JSDoc
     .replace(/\s+/g, ' ')       // Collapse multiple spaces
     .trim()
@@ -298,6 +349,8 @@ function buildReverseRelationMap(models: ParsedModel[]): Map<string, ParsedField
 
 /**
  * Enhance model with derived properties
+ * 
+ * Optimized single-pass categorization of fields
  */
 function enhanceModel(
   model: ParsedModel, 
@@ -314,47 +367,64 @@ function enhanceModel(
     }
   }
   
-  // Find ID field
-  model.idField = model.fields.find(f => f.isId)
+  // Single-pass field categorization (performance optimization)
+  const scalarFields: ParsedField[] = []
+  const relationFields: ParsedField[] = []
+  const createFields: ParsedField[] = []
+  const updateFields: ParsedField[] = []
+  let idField: ParsedField | undefined
+  let hasSelfRelation = false
   
-  // Separate scalar and relation fields (exclude unsupported)
-  model.scalarFields = model.fields.filter(f => f.kind !== 'object' && f.kind !== 'unsupported')
-  model.relationFields = model.fields.filter(f => f.kind === 'object')
+  const isSystemTimestamp = (name: string) => 
+    SYSTEM_TIMESTAMP_FIELDS.includes(name as any)
   
-  // Check for self-relations
-  model.hasSelfRelation = model.fields.some(f => f.isSelfRelation)
+  for (const field of model.fields) {
+    // Track ID field
+    if (field.isId) idField = field
+    
+    // Track self-relations
+    if (field.isSelfRelation) hasSelfRelation = true
+    
+    // Categorize by kind
+    if (field.kind === 'object') {
+      relationFields.push(field)
+      continue
+    }
+    
+    if (field.kind === 'unsupported') {
+      continue // Skip unsupported fields entirely
+    }
+    
+    // Scalar field
+    scalarFields.push(field)
+    
+    // Check if field should be in CreateDTO
+    const isDbManagedTimestamp = field.hasDbDefault && isSystemTimestamp(field.name)
+    if (!field.isId && !field.isReadOnly && !field.isUpdatedAt && !isDbManagedTimestamp) {
+      createFields.push(field)
+    }
+    
+    // Check if field should be in UpdateDTO (same as create but excludes @updatedAt)
+    if (!field.isId && !field.isReadOnly && !field.isUpdatedAt && !isDbManagedTimestamp) {
+      updateFields.push(field)
+    }
+  }
   
-  // Add reverse relations
+  // Set all derived properties
+  model.idField = idField
+  model.scalarFields = scalarFields
+  model.relationFields = relationFields
+  model.createFields = createFields
+  model.updateFields = updateFields
+  model.readFields = scalarFields // All scalar fields for reading
+  model.hasSelfRelation = hasSelfRelation
   model.reverseRelations = reverseRelationMap.get(model.name) || []
-  
-  // Fields for CreateDTO (exclude id, readonly, relations, system timestamps, unsupported)
-  model.createFields = model.fields.filter(f => 
-    !f.isId && 
-    !f.isReadOnly && 
-    !f.isUpdatedAt &&
-    f.kind !== 'object' &&
-    f.kind !== 'unsupported' &&
-    // Exclude timestamp fields with @default(now()) - these are DB-managed
-    !(f.hasDbDefault && (f.name === 'createdAt' || f.name === 'updatedAt'))
-  )
-  
-  // Fields for UpdateDTO (exclude @updatedAt, readonly, id, unsupported)
-  model.updateFields = model.fields.filter(f => 
-    !f.isId && 
-    !f.isReadOnly && 
-    !f.isUpdatedAt &&  // Exclude @updatedAt from updates
-    f.kind !== 'object' &&
-    f.kind !== 'unsupported' &&
-    // Exclude timestamp fields with @default(now()) - these are DB-managed
-    !(f.hasDbDefault && (f.name === 'createdAt' || f.name === 'updatedAt'))
-  )
-  
-  // Fields for ReadDTO (all scalar fields, excluding unsupported)
-  model.readFields = model.scalarFields
 }
 
 /**
  * Get field by name
+ * @returns Field if found, undefined if not found
+ * @throws Never - Use optional chaining when calling (field?.name)
  */
 export function getField(model: ParsedModel, fieldName: string): ParsedField | undefined {
   return model.fields.find(f => f.name === fieldName)
@@ -362,6 +432,13 @@ export function getField(model: ParsedModel, fieldName: string): ParsedField | u
 
 /**
  * Get relation target model
+ * @param field - Field to get target for
+ * @param modelMap - Map of all models
+ * @returns Target model if field is a relation and target exists, undefined otherwise
+ * 
+ * Returns undefined when:
+ * - field.kind is not 'object' (not a relation)
+ * - Target model doesn't exist in modelMap
  */
 export function getRelationTarget(
   field: ParsedField,
@@ -386,29 +463,28 @@ export function isNullable(field: ParsedField): boolean {
 }
 
 /**
- * Get default value as string
+ * Get default value as string for TypeScript code generation
+ * 
+ * Note: Prisma doesn't support array defaults for scalar fields.
+ * Array defaults exist only for composite types which aren't generated here.
+ * 
+ * @returns TypeScript code string for the default value, or undefined if:
+ *  - No default value
+ *  - DB-managed default (handled by database)
+ *  - Cannot be represented in TypeScript
  */
 export function getDefaultValueString(field: ParsedField): string | undefined {
   if (!field.hasDefaultValue || !field.default) return undefined
   
   const def = field.default
   
-  // Handle different default value types
+  // Primitive values
   if (typeof def === 'string') return `"${def.replace(/"/g, '\\"')}"`
   if (typeof def === 'number') return String(def)
   if (typeof def === 'boolean') return String(def)
+  if (def === null) return 'null'
   
-  // Handle arrays
-  if (Array.isArray(def)) {
-    const items = def.map(item => {
-      if (typeof item === 'string') return `"${item.replace(/"/g, '\\"')}"`
-      if (typeof item === 'number' || typeof item === 'boolean') return String(item)
-      return JSON.stringify(item)
-    })
-    return `[${items.join(', ')}]`
-  }
-  
-  // Handle Prisma functions
+  // Prisma function defaults (DB-managed)
   if (typeof def === 'object' && 'name' in def) {
     switch (def.name) {
       case 'now': return 'new Date()'
@@ -420,22 +496,43 @@ export function getDefaultValueString(field: ParsedField): string | undefined {
     }
   }
   
-  // Handle complex objects (JSON)
-  if (typeof def === 'object') {
-    try {
-      return JSON.stringify(def)
-    } catch {
-      return undefined
-    }
-  }
-  
+  // Complex objects or unexpected types
   return undefined
 }
 
 /**
+ * Validation result structure
+ */
+export interface SchemaValidationResult {
+  errors: string[]
+  warnings: string[]
+  infos: string[]
+  all: string[]  // All messages with prefixes
+  isValid: boolean
+}
+
+/**
  * Validate parsed schema
+ * 
+ * @param schema - Parsed schema to validate
+ * @param throwOnError - If true, throws on validation errors
+ * @returns Array of all validation messages (errors, warnings, infos) with prefixes
+ * 
+ * Note: Use validateSchemaDetailed() to get structured results
  */
 export function validateSchema(schema: ParsedSchema, throwOnError = false): string[] {
+  const result = validateSchemaDetailed(schema, throwOnError)
+  return result.all
+}
+
+/**
+ * Validate parsed schema with detailed results
+ * 
+ * @param schema - Parsed schema to validate
+ * @param throwOnError - If true, throws on validation errors
+ * @returns Structured validation results
+ */
+export function validateSchemaDetailed(schema: ParsedSchema, throwOnError = false): SchemaValidationResult {
   const errors: string[] = []
   const warnings: string[] = []
   const infos: string[] = []
@@ -529,18 +626,26 @@ export function validateSchema(schema: ParsedSchema, throwOnError = false): stri
   const circularErrors = detectCircularRelations(schema)
   errors.push(...circularErrors)
   
-  // Combine all messages with prefixes
+  // Combine all messages with consistent prefixes
   const allMessages = [
-    ...errors,
+    ...errors.map(e => `ERROR: ${e}`),
     ...warnings.map(w => `WARNING: ${w}`),
     ...infos.map(i => `INFO: ${i}`)
   ]
+  
+  const result: SchemaValidationResult = {
+    errors,
+    warnings,
+    infos,
+    all: allMessages,
+    isValid: errors.length === 0
+  }
   
   if (throwOnError && errors.length > 0) {
     throw new Error(`Schema validation failed:\n${errors.join('\n')}`)
   }
   
-  return allMessages
+  return result
 }
 
 /**
