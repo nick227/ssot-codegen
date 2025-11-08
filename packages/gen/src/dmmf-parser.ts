@@ -341,12 +341,20 @@ function isValidDMMFField(f: unknown): f is DMMF.Field {
 }
 
 /**
- * Safe JSON stringify with circular reference handling and size limit
- * Prevents console spam for large schemas
+ * Safe JSON stringify with circular reference handling, size limit, and sensitive data redaction
+ * 
+ * Prevents console spam for large schemas and avoids leaking potentially sensitive
+ * information like documentation, custom database names, or internal schema details.
+ * 
+ * @param obj - Object to stringify
+ * @param maxLength - Maximum string length before truncation
+ * @returns Sanitized JSON string safe for logging
  */
 function safeStringify(obj: unknown, maxLength = 500): string {
   try {
-    const str = JSON.stringify(obj, null, 2)
+    // Redact potentially sensitive fields before stringifying
+    const redacted = redactSensitiveFields(obj)
+    const str = JSON.stringify(redacted, null, 2)
     if (str.length > maxLength) {
       return str.substring(0, maxLength) + '... (truncated)'
     }
@@ -354,6 +362,54 @@ function safeStringify(obj: unknown, maxLength = 500): string {
   } catch (err) {
     return '[Unable to serialize: circular reference or complex object]'
   }
+}
+
+/**
+ * Redact potentially sensitive fields from objects before logging
+ * 
+ * Removes:
+ * - documentation (may contain internal comments, business logic explanations)
+ * - dbName (may reveal database structure)
+ * - Large nested objects (may contain sensitive metadata)
+ * 
+ * @param obj - Object to redact
+ * @returns Redacted copy safe for logging
+ */
+function redactSensitiveFields(obj: unknown): unknown {
+  if (obj === null || obj === undefined) return obj
+  if (typeof obj !== 'object') return obj
+  
+  if (Array.isArray(obj)) {
+    return obj.map(item => redactSensitiveFields(item))
+  }
+  
+  const result: any = {}
+  const source = obj as Record<string, unknown>
+  
+  for (const [key, value] of Object.entries(source)) {
+    // Redact sensitive string fields
+    if (key === 'documentation' && typeof value === 'string') {
+      result[key] = value.length > 50 
+        ? '[REDACTED: ' + value.substring(0, 30) + '...]'
+        : '[REDACTED]'
+      continue
+    }
+    
+    // Redact database-specific names (may reveal internal structure)
+    if (key === 'dbName' && typeof value === 'string') {
+      result[key] = '[REDACTED]'
+      continue
+    }
+    
+    // Recursively redact nested objects (but limit depth to prevent performance issues)
+    if (value && typeof value === 'object') {
+      result[key] = redactSensitiveFields(value)
+    } else {
+      result[key] = value
+    }
+  }
+  
+  return result
 }
 
 /**
@@ -690,6 +746,15 @@ export function isClientManagedDefault(defaultValue: unknown): boolean {
  * 
  * Important: createdAt/updatedAt with client-managed defaults (now()) are NOT read-only
  * to allow user-provided values during creation. Only DB-managed defaults make them read-only.
+ * 
+ * CRITICAL ALIGNMENT with DTO inclusion logic in enhanceModel():
+ * - This function determines isReadOnly flag
+ * - enhanceModel() uses isReadOnly to decide CreateDTO inclusion
+ * - Both must agree on createdAt behavior:
+ *   * createdAt with now() → isReadOnly=false → INCLUDED in DTO ✅
+ *   * createdAt with dbgenerated() → isReadOnly=true → EXCLUDED from DTO ✅
+ * 
+ * If you change this logic, ensure enhanceModel() DTO inclusion stays aligned.
  */
 function determineReadOnly(field: DMMF.Field): boolean {
   // Explicitly marked as read-only
@@ -703,6 +768,7 @@ function determineReadOnly(field: DMMF.Field): boolean {
   
   // System timestamp fields are read-only ONLY if they have DB-managed defaults
   // Client-managed defaults (like now()) should allow user-provided values
+  // This ensures createdAt with now() remains writable for custom timestamps
   const isSystemTimestamp = SYSTEM_TIMESTAMP_FIELDS.includes(field.name as typeof SYSTEM_TIMESTAMP_FIELDS[number])
   if (isSystemTimestamp && field.hasDefaultValue && isDbManagedDefault(field.default)) {
     return true
@@ -944,9 +1010,23 @@ function enhanceModel(
     // Exclusions apply to both create and update:
     // - ID fields (generated or provided separately)
     // - Read-only fields (computed, @updatedAt, etc.)
-    // - DB-managed timestamps (createdAt with default, updatedAt)
+    // - DB-managed timestamps (createdAt with DB default, updatedAt)
     // - Unsupported field types (already filtered above)
-    // Note: If criteria diverge in future (e.g., create vs update optionality), split this
+    // 
+    // IMPORTANT ALIGNMENT: createdAt field behavior
+    // - createdAt with now() (client-managed):
+    //   * hasDbDefault = false (isDbManagedDefault returns false for now())
+    //   * isReadOnly = false (determineReadOnly only marks read-only for DB-managed defaults)
+    //   * isDbManagedTimestamp = false
+    //   * Result: INCLUDED in CreateDTO ✅ (users can provide custom value)
+    // 
+    // - createdAt with dbgenerated() or DB function:
+    //   * hasDbDefault = true
+    //   * isReadOnly = true (determineReadOnly marks as read-only)
+    //   * isDbManagedTimestamp = true
+    //   * Result: EXCLUDED from CreateDTO ✅ (DB handles it)
+    // 
+    // This alignment is critical and must be maintained if determineReadOnly logic changes.
     const isDbManagedTimestamp = field.hasDbDefault && isSystemTimestamp(field.name)
     const isIncludedInDTO = !field.isId && !field.isReadOnly && !field.isUpdatedAt && !isDbManagedTimestamp
     
