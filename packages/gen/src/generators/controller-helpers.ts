@@ -194,16 +194,53 @@ function handleError(
 }
 
 /**
- * Generate bulk operation validators with size limits
+ * Simple pluralization helper (handles common cases)
+ */
+export function pluralize(modelName: string): string {
+  // Handle common irregular plurals
+  const irregulars: Record<string, string> = {
+    'Person': 'People',
+    'Child': 'Children',
+    'Foot': 'Feet',
+    'Tooth': 'Teeth',
+    'Mouse': 'Mice',
+    'Goose': 'Geese'
+  }
+  
+  if (irregulars[modelName]) {
+    return irregulars[modelName]
+  }
+  
+  // Handle words ending in 'y' preceded by consonant
+  if (/[^aeiou]y$/i.test(modelName)) {
+    return modelName.slice(0, -1) + 'ies'  // Category → Categories
+  }
+  
+  // Handle words ending in 's', 'x', 'z', 'ch', 'sh'
+  if (/(?:s|x|z|ch|sh)$/i.test(modelName)) {
+    return modelName + 'es'  // Box → Boxes, Class → Classes
+  }
+  
+  // Default: add 's'
+  return modelName + 's'
+}
+
+/**
+ * Generate bulk operation validators with size limits and hard caps
  */
 export function generateBulkValidators(modelName: string, maxBatchSize: number = 100): string {
+  // Hard limit: never allow more than 1000 regardless of config
+  const ABSOLUTE_MAX = 1000
+  const effectiveMax = Math.min(maxBatchSize, ABSOLUTE_MAX)
+  
   return `
 /**
  * Bulk create input schema with size limit
  * Prevents resource exhaustion attacks by limiting batch size
+ * Hard limit: ${ABSOLUTE_MAX} records (cannot be overridden)
  */
 const BulkCreate${modelName}Schema = z.object({
-  data: z.array(${modelName}CreateSchema).min(1).max(${maxBatchSize})
+  data: z.array(${modelName}CreateSchema).min(1).max(${effectiveMax})
 })
 
 /**

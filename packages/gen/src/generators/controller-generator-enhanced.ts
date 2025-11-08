@@ -427,9 +427,9 @@ export const get${model.name}BySlug = async (
   req: Request<${model.name}SlugParams>,
   res: Response
 ) => {
+  const { slug } = req.params  // Declare outside try for catch scope access
+  
   try {
-    const { slug } = req.params
-    
     if (!slug || typeof slug !== 'string' || slug.trim() === '') {
       logger.warn({ slug }, 'Invalid or missing slug parameter')
       return res.status(400).json({ error: 'Slug parameter is required' })
@@ -445,7 +445,8 @@ export const get${model.name}BySlug = async (
     
     return res.json(item)
   } catch (error) {
-    return handleError(error, res, 'getting resource by slug', { operation: 'getBySlug', slug: cleanSlug })
+    // slug is accessible here (declared outside try)
+    return handleError(error, res, 'getting resource by slug', { operation: 'getBySlug', slug: slug?.trim() || slug })
   }
 }`)
   }
@@ -705,12 +706,16 @@ export const list${model.name}s = async (
  */
 export const search${model.name}s = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
+    if (!req.body || typeof req.body !== 'object') {
+      return reply.code(400).send({ error: 'Request body required' })
+    }
+    
     const query = ${model.name}QuerySchema.parse(req.body)
     const result = await ${modelCamel}Service.list(query)
     
     return reply.send(result)
   } catch (error) {
-    return handleError(error, reply, 'searching ${model.name}s', {})
+    return handleError(error, reply, 'searching resources', { operation: 'search' })
   }
 }
 
