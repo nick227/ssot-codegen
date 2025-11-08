@@ -3,33 +3,67 @@
  */
 
 import type { ParsedModel, ParsedSchema } from '../dmmf-parser.js'
-import type { ModelAnalysis } from '@/utils/relationship-analyzer.js'
+import type { UnifiedModelAnalysis } from '@/analyzers/unified-analyzer/index.js'
 import { toKebabCase, toCamelCase } from '@/utils/naming.js'
 import {
   type ControllerConfig,
   DEFAULT_CONTROLLER_CONFIG,
-  generateIdValidator,
-  generateErrorHandler,
+  generateUnifiedHelpers,
   generateBulkValidators,
-  generatePaginationHelper
+  hasSoftDelete
 } from './controller-helpers.js'
 
 export type { ControllerConfig } from './controller-helpers.js'
 
 /**
+ * Validation errors for controller generation
+ */
+class ControllerGenerationError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'ControllerGenerationError'
+  }
+}
+
+/**
  * Generate enhanced controller with proper logging
  * OPTIMIZED: Accepts pre-computed analysis from cache
+ * 
+ * @throws {ControllerGenerationError} If analysis is missing or model has composite keys
  */
 export function generateEnhancedController(
   model: ParsedModel,
   schema: ParsedSchema,
   framework: 'express' | 'fastify' = 'express',
-  analysis: ModelAnalysis,
+  analysis: UnifiedModelAnalysis | null | undefined,
   config: ControllerConfig = DEFAULT_CONTROLLER_CONFIG
 ): string {
+  // VALIDATION: Ensure analysis is provided
+  if (!analysis) {
+    throw new ControllerGenerationError(
+      `Analysis required for model '${model.name}'. Ensure analyzeModelUnified() is called before controller generation.`
+    )
+  }
+  
+  // LIMITATION: Detect composite primary keys
+  const idFields = model.scalarFields.filter(f => f.isId)
+  if (idFields.length > 1) {
+    throw new ControllerGenerationError(
+      `Model '${model.name}' has composite primary key [${idFields.map(f => f.name).join(', ')}]. ` +
+      `Composite keys require custom controller implementation. Consider using separate endpoints ` +
+      `or a compound key string format.`
+    )
+  }
+  
+  if (!model.idField) {
+    throw new ControllerGenerationError(
+      `Model '${model.name}' has no primary key field. Add @id or @@id to your Prisma schema.`
+    )
+  }
+  
   const modelKebab = toKebabCase(model.name)
   const modelCamel = toCamelCase(model.name)
-  const idType = model.idField?.type === 'String' ? 'string' : 'number'
+  const idType = model.idField.type === 'String' ? 'string' : 'number'
   
   if (framework === 'express') {
     return generateExpressController(model, analysis, modelKebab, modelCamel, idType, config)
@@ -54,7 +88,7 @@ export const bulkCreate${model.name}s = async (req: Request, res: Response) => {
     logger.info({ count: result.count }, 'Bulk created ${model.name} records')
     return res.status(201).json({ 
       count: result.count, 
-      message: \`Created \${String(result.count)} ${model.name} records\`
+      message: \`Created \${result.count} ${model.name} records\`
     })
   } catch (error) {
     return handleError(error, res, 'bulk creating ${model.name}s', { operation: 'bulkCreate' })
@@ -69,16 +103,13 @@ export const bulkUpdate${model.name}s = async (req: Request, res: Response) => {
     const validated = BulkUpdate${model.name}Schema.parse(req.body)
     const result = await ${modelCamel}Service.updateMany(validated.where, validated.data)
     
-    logger.info({ count: result.count, where: validated.where }, 'Bulk updated ${model.name} records')
+    logger.info({ count: result.count }, 'Bulk updated ${model.name} records')
     return res.json({ 
       count: result.count, 
-      message: \`Updated \${String(result.count)} ${model.name} records\`
+      message: \`Updated \${result.count} ${model.name} records\`
     })
   } catch (error) {
-    return handleError(error, res, 'bulk updating ${model.name}s', { 
-      operation: 'bulkUpdate',
-      where: req.body?.where 
-    })
+    return handleError(error, res, 'bulk updating ${model.name}s', { operation: 'bulkUpdate' })
   }
 }
 
@@ -90,28 +121,15 @@ export const bulkDelete${model.name}s = async (req: Request, res: Response) => {
     const validated = BulkDelete${model.name}Schema.parse(req.body)
     const result = await ${modelCamel}Service.deleteMany(validated.where)
     
-    logger.info({ count: result.count, where: validated.where }, 'Bulk deleted ${model.name} records')
+    logger.info({ count: result.count }, 'Bulk deleted ${model.name} records')
     return res.json({ 
       count: result.count, 
-      message: \`Deleted \${String(result.count)} ${model.name} records\`
+      message: \`Deleted \${result.count} ${model.name} records\`
     })
   } catch (error) {
-    return handleError(error, res, 'bulk deleting ${model.name}s', { 
-      operation: 'bulkDelete',
-      where: req.body?.where 
-    })
+    return handleError(error, res, 'bulk deleting ${model.name}s', { operation: 'bulkDelete' })
   }
 }
-`
-}
-
-/**
- * Generate helper utilities for controllers
- */
-function generateHelpers(idType: string, config: ControllerConfig): string {
-  return `${generateIdValidator(idType)}
-${generateErrorHandler()}
-${generatePaginationHelper(config)}
 `
 }
 
@@ -120,21 +138,24 @@ ${generatePaginationHelper(config)}
  */
 function generateExpressController(
   model: ParsedModel,
-  analysis: ModelAnalysis,
+  analysis: UnifiedModelAnalysis,
   modelKebab: string,
   modelCamel: string,
   idType: string,
   config: ControllerConfig
 ): string {
-  const helpers = generateHelpers(idType, config)
+  const helpers = generateUnifiedHelpers(idType, config, 'express')
   const bulkMethods = config.enableBulkOperations ? generateBulkControllers(model, modelCamel) : ''
   const baseMethods = generateExpressBaseMethods(model, modelCamel, config)
   const domainMethods = config.enableDomainMethods 
-    ? generateExpressDomainMethods(model, analysis, modelCamel, idType)
+    ? generateExpressDomainMethods(model, analysis, modelCamel)
     : ''
   
   const bulkImport = config.enableBulkOperations ? `, z` : ''
   const bulkValidators = config.enableBulkOperations ? `\n${generateBulkValidators(model.name)}` : ''
+  
+  // Add Express param types for type safety
+  const idParamType = idType === 'number' ? 'string' : 'string'  // Always string in params, parsed later
   
   return `// @generated
 // This file is automatically generated. Do not edit manually.
@@ -280,11 +301,13 @@ export const delete${model.name} = async (req: Request, res: Response) => {
 }
 
 /**
- * Count ${model.name} records
+ * Count ${model.name} records with optional filtering
  */
-export const count${model.name}s = async (_req: Request, res: Response) => {
+export const count${model.name}s = async (req: Request, res: Response) => {
   try {
-    const total = await ${modelCamel}Service.count()
+    // Support optional where clause for filtered counts
+    const where = req.body?.where || {}
+    const total = await ${modelCamel}Service.count(where)
     
     return res.json({ total })
   } catch (error) {
@@ -299,9 +322,8 @@ export const count${model.name}s = async (_req: Request, res: Response) => {
  */
 function generateExpressDomainMethods(
   model: ParsedModel,
-  analysis: ModelAnalysis,
-  modelCamel: string,
-  idType: string
+  analysis: UnifiedModelAnalysis,
+  modelCamel: string
 ): string {
   const methods: string[] = []
   
@@ -334,16 +356,17 @@ export const get${model.name}BySlug = async (req: Request, res: Response) => {
 }`)
   }
   
-  // Published filtering
+  // Published filtering  
   if (analysis.hasPublishedField) {
     methods.push(`
 /**
- * List published ${model.name} records
+ * List published ${model.name} records (GET with query params)
  */
 export const listPublished${model.name}s = async (req: Request, res: Response) => {
   try {
-    const query = ${model.name}QuerySchema.parse(req.query)
-    const result = await ${modelCamel}Service.listPublished(query)
+    // Use pagination from query params for GET requests
+    const pagination = parsePagination(req.query as Record<string, unknown>)
+    const result = await ${modelCamel}Service.listPublished(pagination)
     
     return res.json(result)
   } catch (error) {
@@ -358,21 +381,22 @@ export const publish${model.name} = async (req: Request, res: Response) => {
   try {
     const idResult = parseIdParam(req.params.id)
     
-    if (!idResult.valid) {
-      logger.warn({ idParam: req.params.id }, idResult.error)
-      return res.status(400).json({ error: idResult.error })
+    if (!idResult.valid || idResult.id === undefined) {
+      logger.warn({ idParam: req.params.id }, idResult.error || 'Invalid ID')
+      return res.status(400).json({ error: idResult.error || 'Invalid ID' })
     }
     
-    const item = await ${modelCamel}Service.publish(idResult.id!)
+    const parsedId = idResult.id
+    const item = await ${modelCamel}Service.publish(parsedId)
     
     if (!item) {
-      logger.info({ ${modelCamel}Id: idResult.id }, '${model.name} not found for publish')
-      return res.status(404).json({ error: '${model.name} not found' })
+      logger.info({ ${modelCamel}Id: parsedId }, 'Resource not found for publish')
+      return res.status(404).json({ error: 'Resource not found' })
     }
     
     return res.json(item)
   } catch (error) {
-    return handleError(error, res, 'publishing ${model.name}', { ${modelCamel}Id: req.params.id })
+    return handleError(error, res, 'publishing resource', { ${modelCamel}Id: req.params.id })
   }
 }
 
@@ -477,7 +501,7 @@ export const approve${model.name} = async (req: Request, res: Response) => {
  */
 function generateFastifyController(
   model: ParsedModel,
-  analysis: ModelAnalysis,
+  analysis: UnifiedModelAnalysis,
   modelKebab: string,
   modelCamel: string,
   idType: string,
@@ -776,7 +800,7 @@ export const bulkDelete${model.name}s = async (req: FastifyRequest, reply: Fasti
  */
 function generateFastifyDomainMethods(
   model: ParsedModel,
-  analysis: ModelAnalysis,
+  analysis: UnifiedModelAnalysis,
   modelCamel: string,
   idType: string
 ): string {
@@ -944,6 +968,7 @@ export const approve${model.name} = async (req: FastifyRequest<{ Params: { id: s
   
   return methods.length > 0 ? '\n' + methods.join('') : ''
 }
+
 
 
 
