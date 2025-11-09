@@ -72,34 +72,36 @@ NODE_ENV=development
 function generatePlaceholder(envVar: string): string {
   const lower = envVar.toLowerCase()
   
-  if (lower.includes('secret') || lower.includes('key')) {
-    return 'your_' + envVar.toLowerCase().replace(/_/g, '_') + '_here'
-  }
-  if (lower.includes('url')) {
-    return 'https://your-url-here.com'
-  }
-  if (lower.includes('endpoint')) {
-    return 'http://localhost:8080'
-  }
-  if (lower.includes('id')) {
-    return 'your_client_id_here'
-  }
-  if (lower.includes('email')) {
-    return 'noreply@yourdomain.com'
-  }
-  if (lower.includes('domain')) {
-    return 'yourdomain.com'
-  }
-  if (lower.includes('region')) {
-    return 'us-east-1'
-  }
-  if (lower.includes('bucket')) {
-    return 'your-bucket-name'
-  }
-  if (lower.includes('cloud_name')) {
-    return 'your-cloud-name'
-  }
+  // Specific AWS patterns (check before generic patterns)
+  if (lower.includes('access_key_id')) return 'your_aws_access_key_id_here'
+  if (lower.includes('secret_access_key')) return 'your_aws_secret_key_here'
   
-  return 'your_value_here'
+  // Specific client patterns
+  if (lower.includes('client_id')) return 'your_client_id_here'
+  if (lower.includes('client_secret')) return 'your_client_secret_here'
+  
+  // API keys and secrets (generic)
+  if (lower.includes('api_key')) return `your_${lower}_here`
+  if (lower.includes('secret')) return `your_${lower}_here`
+  
+  // URLs and endpoints
+  if (lower.includes('callback') && lower.includes('url')) return 'http://localhost:3000/auth/callback'
+  if (lower.includes('url')) return 'https://your-url-here.com'
+  if (lower.includes('endpoint')) return 'http://localhost:8080'
+  
+  // Email and domain
+  if (lower.includes('email')) return 'noreply@yourdomain.com'
+  if (lower.includes('domain')) return 'yourdomain.com'
+  
+  // Cloud infrastructure
+  if (lower.includes('region')) return 'us-east-1'
+  if (lower.includes('bucket')) return 'your-bucket-name'
+  if (lower.includes('cloud_name')) return 'your-cloud-name'
+  if (lower.includes('account_id')) return 'your_account_id_here'
+  
+  // Generic ID (last resort)
+  if (lower.includes('_id')) return `your_${lower}_here`
+  
+  return `your_${lower}_here`
 }
 

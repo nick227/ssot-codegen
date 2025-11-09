@@ -32,14 +32,15 @@ export const PLUGIN_CATALOG: CLIPluginInfo[] = [
     category: 'auth',
     envVarsRequired: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'],
     envVarsOptional: ['GOOGLE_CALLBACK_URL'],
-    popular: true,
+    popular: false,
     requiresModel: 'User',
     dependencies: {
       'passport': '^0.7.0',
       'passport-google-oauth20': '^2.0.0',
       'express-session': '^1.17.3'
     },
-    configKey: 'googleAuth'
+    configKey: 'googleAuth',
+    setupInstructions: 'Get credentials from https://console.cloud.google.com/apis/credentials'
   },
   {
     id: 'jwt-service',
@@ -88,7 +89,7 @@ export const PLUGIN_CATALOG: CLIPluginInfo[] = [
     description: 'Claude 3 Opus, Sonnet, Haiku models',
     category: 'ai',
     envVarsRequired: ['ANTHROPIC_API_KEY'],
-    popular: true,
+    popular: false,
     dependencies: {
       '@anthropic-ai/sdk': '^0.9.0'
     },
@@ -114,7 +115,8 @@ export const PLUGIN_CATALOG: CLIPluginInfo[] = [
     category: 'ai',
     envVarsRequired: ['XAI_API_KEY'],
     dependencies: {},
-    configKey: 'grok'
+    configKey: 'grok',
+    setupInstructions: 'Get API key from https://console.x.ai/ (when available)'
   },
   {
     id: 'openrouter',
@@ -161,7 +163,8 @@ export const PLUGIN_CATALOG: CLIPluginInfo[] = [
     dependencies: {
       '@deepgram/sdk': '^3.0.0'
     },
-    configKey: 'deepgram'
+    configKey: 'deepgram',
+    setupInstructions: 'Get API key from https://console.deepgram.com/'
   },
   {
     id: 'elevenlabs',
@@ -172,7 +175,8 @@ export const PLUGIN_CATALOG: CLIPluginInfo[] = [
     dependencies: {
       'elevenlabs': '^0.5.0'
     },
-    configKey: 'elevenlabs'
+    configKey: 'elevenlabs',
+    setupInstructions: 'Get API key from https://elevenlabs.io/app/settings'
   },
   
   // ============================================================================
@@ -188,7 +192,8 @@ export const PLUGIN_CATALOG: CLIPluginInfo[] = [
       '@aws-sdk/client-s3': '^3.0.0',
       '@aws-sdk/s3-request-presigner': '^3.0.0'
     },
-    configKey: 's3'
+    configKey: 's3',
+    setupInstructions: 'Get credentials from https://console.aws.amazon.com/iam/'
   },
   {
     id: 'r2',
@@ -200,7 +205,8 @@ export const PLUGIN_CATALOG: CLIPluginInfo[] = [
       '@aws-sdk/client-s3': '^3.0.0',
       '@aws-sdk/s3-request-presigner': '^3.0.0'
     },
-    configKey: 'r2'
+    configKey: 'r2',
+    setupInstructions: 'Get credentials from https://dash.cloudflare.com/'
   },
   {
     id: 'cloudinary',
@@ -225,7 +231,7 @@ export const PLUGIN_CATALOG: CLIPluginInfo[] = [
     category: 'payments',
     envVarsRequired: ['STRIPE_SECRET_KEY', 'STRIPE_PUBLISHABLE_KEY'],
     envVarsOptional: ['STRIPE_WEBHOOK_SECRET'],
-    popular: true,
+    popular: false,
     dependencies: {
       'stripe': '^14.0.0'
     },
@@ -242,7 +248,8 @@ export const PLUGIN_CATALOG: CLIPluginInfo[] = [
     dependencies: {
       '@paypal/checkout-server-sdk': '^1.0.3'
     },
-    configKey: 'paypal'
+    configKey: 'paypal',
+    setupInstructions: 'Get credentials from https://developer.paypal.com/dashboard/applications'
   },
   
   // ============================================================================
@@ -255,11 +262,12 @@ export const PLUGIN_CATALOG: CLIPluginInfo[] = [
     category: 'email',
     envVarsRequired: ['SENDGRID_API_KEY'],
     envVarsOptional: ['SENDGRID_FROM_EMAIL'],
-    popular: true,
+    popular: false,
     dependencies: {
       '@sendgrid/mail': '^7.7.0'
     },
-    configKey: 'sendgrid'
+    configKey: 'sendgrid',
+    setupInstructions: 'Get API key from https://app.sendgrid.com/settings/api_keys'
   },
   {
     id: 'mailgun',
@@ -270,7 +278,8 @@ export const PLUGIN_CATALOG: CLIPluginInfo[] = [
     dependencies: {
       'mailgun.js': '^9.0.0'
     },
-    configKey: 'mailgun'
+    configKey: 'mailgun',
+    setupInstructions: 'Get API key from https://app.mailgun.com/settings/api_security'
   },
   
   // ============================================================================

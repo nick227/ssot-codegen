@@ -104,9 +104,9 @@ function generatePluginSection(config: ProjectConfig): string {
   
   const plugins = config.selectedPlugins
     .map(id => getPluginById(id))
-    .filter(Boolean)
+    .filter((p): p is CLIPluginInfo => p !== undefined)
   
-  const grouped = groupPluginsByCategory(plugins as any)
+  const grouped = groupPluginsByCategory(plugins)
   let section = ''
   
   for (const category of CATEGORY_ORDER) {

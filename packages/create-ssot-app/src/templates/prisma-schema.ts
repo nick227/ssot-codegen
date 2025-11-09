@@ -6,7 +6,6 @@ import type { ProjectConfig } from '../prompts.js'
 
 export function generatePrismaSchema(config: ProjectConfig): string {
   const dbProvider = config.database
-  const dbUrl = getDatabaseUrl(config.database)
 
   let schema = `// Prisma Schema
 // Learn more: https://pris.ly/d/prisma-schema
@@ -82,18 +81,5 @@ enum Role {
   }
 
   return schema
-}
-
-function getDatabaseUrl(database: string): string {
-  switch (database) {
-    case 'postgresql':
-      return 'postgresql://user:password@localhost:5432/mydb'
-    case 'mysql':
-      return 'mysql://user:password@localhost:3306/mydb'
-    case 'sqlite':
-      return 'file:./dev.db'
-    default:
-      return 'postgresql://user:password@localhost:5432/mydb'
-  }
 }
 

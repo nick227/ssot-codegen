@@ -12,8 +12,7 @@ import {
   CATEGORY_ICONS,
   CATEGORY_LABELS,
   CATEGORY_ORDER,
-  validatePluginSelection,
-  type CLIPluginInfo
+  validatePluginSelection
 } from './plugin-catalog.js'
 
 export interface ProjectConfig {

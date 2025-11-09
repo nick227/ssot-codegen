@@ -16,8 +16,6 @@ import { generateReadme } from './templates/readme.js'
 import { generateTsConfig } from './templates/tsconfig.js'
 import { getPluginById } from './plugin-catalog.js'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-
 export async function createProject(config: ProjectConfig): Promise<void> {
   const projectPath = path.join(process.cwd(), config.projectName)
 
@@ -99,7 +97,7 @@ export async function createProject(config: ProjectConfig): Promise<void> {
   console.log(pc.cyan('🔧 Generating Prisma client...'))
   
   try {
-    execSync(`${config.packageManager} prisma generate`, {
+    execSync(getPrismaCommand(config.packageManager, 'generate'), {
       cwd: projectPath,
       stdio: 'inherit'
     })
@@ -118,7 +116,7 @@ export async function createProject(config: ProjectConfig): Promise<void> {
   console.log()
   
   try {
-    execSync(`${config.packageManager} exec ssot-codegen generate`, {
+    execSync(getPackageCommand(config.packageManager, 'exec ssot-codegen generate'), {
       cwd: projectPath,
       stdio: 'inherit'
     })
@@ -238,6 +236,31 @@ function getInstallCommand(packageManager: string): string {
 }
 
 /**
+ * Get Prisma command for package manager
+ * NPM requires npx, others can call prisma directly
+ */
+function getPrismaCommand(packageManager: string, command: string): string {
+  const runner = packageManager === 'npm' ? 'npx' : packageManager
+  return `${runner} prisma ${command}`
+}
+
+/**
+ * Get generic package command (exec, run, etc.)
+ */
+function getPackageCommand(packageManager: string, command: string): string {
+  switch (packageManager) {
+    case 'npm':
+      return `npm ${command}`
+    case 'yarn':
+      return `yarn ${command}`
+    case 'pnpm':
+      return `pnpm ${command}`
+    default:
+      return `npm ${command}`
+  }
+}
+
+/**
  * Generate ssot.config.ts with plugin configuration
  */
 function generatePluginConfig(config: ProjectConfig): string {
@@ -273,6 +296,49 @@ function generatePluginConfig(config: ProjectConfig): string {
           defaultModel: 'claude-3-sonnet-20240229'
         }
         break
+      case 'gemini':
+        features[plugin.configKey] = {
+          enabled: true,
+          defaultModel: 'gemini-pro'
+        }
+        break
+      case 'deepgram':
+        features[plugin.configKey] = {
+          enabled: true,
+          defaultModel: 'nova-2'
+        }
+        break
+      case 'elevenlabs':
+        features[plugin.configKey] = {
+          enabled: true,
+          defaultVoice: 'EXAVITQu4vr4xnSDxMaL'
+        }
+        break
+      case 'lmstudio':
+        features[plugin.configKey] = {
+          enabled: true,
+          endpoint: 'http://localhost:1234'
+        }
+        break
+      case 'ollama':
+        features[plugin.configKey] = {
+          enabled: true,
+          endpoint: 'http://localhost:11434',
+          models: ['llama2']
+        }
+        break
+      case 's3':
+        features[plugin.configKey] = {
+          enabled: true,
+          region: 'us-east-1'
+        }
+        break
+      case 'r2':
+        features[plugin.configKey] = {
+          enabled: true,
+          region: 'auto'
+        }
+        break
       case 'paypal':
         features[plugin.configKey] = {
           enabled: true,
@@ -288,7 +354,7 @@ export default {
   framework: '${config.framework}',
   projectName: '${config.projectName}',
   
-  features: ${JSON.stringify(features, null, 4)}
+  features: ${JSON.stringify(features, null, 2)}
 } satisfies CodeGeneratorConfig
 `
 }
@@ -303,12 +369,13 @@ function showPluginSetupInstructions(pluginIds: string[]): void {
   console.log(pc.dim('Before running your API, configure the following:'))
   console.log()
   
-  const pluginsWithApiKeys = pluginIds
+  // Include plugins with env vars OR setup instructions (e.g., LM Studio, Ollama)
+  const pluginsWithSetup = pluginIds
     .map(id => getPluginById(id))
-    .filter(p => p && p.envVarsRequired.length > 0)
+    .filter(p => p && (p.envVarsRequired.length > 0 || p.setupInstructions))
   
-  if (pluginsWithApiKeys.length > 0) {
-    for (const plugin of pluginsWithApiKeys) {
+  if (pluginsWithSetup.length > 0) {
+    for (const plugin of pluginsWithSetup) {
       if (!plugin) continue
       
       console.log(pc.yellow(`  ☐ ${plugin.name}`))
@@ -324,7 +391,10 @@ function showPluginSetupInstructions(pluginIds: string[]): void {
       console.log()
     }
     
-    console.log(pc.dim('  All credentials should be added to the .env file'))
+    const hasEnvVars = pluginsWithSetup.some(p => p && p.envVarsRequired.length > 0)
+    if (hasEnvVars) {
+      console.log(pc.dim('  All credentials should be added to the .env file'))
+    }
   }
 }
 
