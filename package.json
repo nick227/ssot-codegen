@@ -23,6 +23,8 @@
     "check:all": "pnpm run typecheck && pnpm run lint && pnpm run knip && pnpm run madge",
     "ssot": "node packages/cli/dist/cli.js",
     "prepublish": "pnpm run build && pnpm run check:all",
+    "test:distribution": "node scripts/test-local-distribution.js",
+    "link:dev": "node scripts/link-for-development.js",
     "examples:all": "pnpm run examples:minimal && pnpm run examples:blog && pnpm run examples:ecommerce && pnpm run examples:ai-chat",
     "examples:minimal": "cd examples/minimal && pnpm run generate",
     "examples:blog": "cd examples/blog-example && pnpm run generate",

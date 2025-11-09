@@ -26,3 +26,4 @@ export function escapeForCodeGen(str: string): string {
     .replace(/<\/style>/gi, '<\\/style>')   // Style tag
 }
 
+

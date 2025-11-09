@@ -41,12 +41,14 @@ yarn-error.log*
 # Testing
 coverage/
 .nyc_output/
+.test-consumer/
 
 # Misc
 *.local
 .cache/
 .temp/
 tmp/
+*.tgz
 
 # Keep these example files (safe, no real keys)
 !.env.example
