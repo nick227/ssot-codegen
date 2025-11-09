@@ -1,0 +1,34 @@
+/**
+ * Generate tsconfig.json
+ */
+
+export function generateTsConfig(): string {
+  const config = {
+    compilerOptions: {
+      target: 'ES2022',
+      module: 'ESNext',
+      lib: ['ES2022'],
+      moduleResolution: 'bundler',
+      resolveJsonModule: true,
+      allowJs: true,
+      outDir: './dist',
+      rootDir: './src',
+      strict: true,
+      esModuleInterop: true,
+      skipLibCheck: true,
+      forceConsistentCasingInFileNames: true,
+      declaration: true,
+      declarationMap: true,
+      sourceMap: true,
+      paths: {
+        '@/*': ['./src/*'],
+        '@generated/*': ['./generated/*']
+      }
+    },
+    include: ['src/**/*', 'generated/**/*'],
+    exclude: ['node_modules', 'dist']
+  }
+
+  return JSON.stringify(config, null, 2) + '\n'
+}
+

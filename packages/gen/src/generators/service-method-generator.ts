@@ -22,9 +22,9 @@ export function generateEnhancedServiceMethods(
   const schema = {
     models: allModels,
     enums: [],
-    modelMap: new Map(allModels.map(m => [m.name, m])),
-    enumMap: new Map(),
-    reverseRelationMap: new Map()
+    modelMap: new Map(allModels.map(m => [m.name, m])) as ReadonlyMap<string, ParsedModel>,
+    enumMap: new Map() as ReadonlyMap<string, any>,
+    reverseRelationMap: new Map() as ReadonlyMap<string, readonly any[]>
   }
   const analysis = analyzeModelUnified(model, schema, {})
   const caps = analysis.capabilities

@@ -5,13 +5,16 @@
  */
 
 import fs from 'node:fs'
-import { createRequire } from 'node:module'
 import type { DMMF } from '@prisma/generator-helper'
 import { parseDMMF } from '../../dmmf-parser.js'
 import { GenerationPhase, type PhaseContext, type PhaseResult } from '../phase-runner.js'
 
-const require = createRequire(import.meta.url)
-const { getDMMF } = require('@prisma/internals')
+// Dynamic import for @prisma/internals
+async function getPrismaDMMF() {
+  const prismaInternals = await import('@prisma/internals')
+  // Handle both default and named exports
+  return prismaInternals.getDMMF || prismaInternals.default?.getDMMF
+}
 
 export class ParseSchemaPhase extends GenerationPhase {
   readonly name = 'parseSchema'
@@ -24,6 +27,7 @@ export class ParseSchemaPhase extends GenerationPhase {
   async execute(context: PhaseContext): Promise<PhaseResult> {
     const { config, logger } = context
     
+    const getDMMF = await getPrismaDMMF()
     let dmmf: DMMF.Document
     let schemaContent = ''
     

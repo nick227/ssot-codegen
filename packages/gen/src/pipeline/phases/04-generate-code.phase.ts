@@ -34,7 +34,7 @@ export class GenerateCodePhase extends GenerationPhase {
     const modelNames = schema.models.map(m => m.name)
     
     // Generate all code
-    const generatedFiles = generateCode(schema, { 
+    const generatedFiles = await generateCode(schema, { 
       framework,
       useEnhancedGenerators: !useRegistry,
       useRegistry,

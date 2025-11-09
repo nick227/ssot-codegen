@@ -23,8 +23,12 @@ import type {
 } from './types.js'
 import { GeneratorError } from './types.js'
 
-const require = createRequire(import.meta.url)
-const { getDMMF } = require('@prisma/internals')
+// Dynamic import for @prisma/internals
+async function getPrismaDMMF() {
+  const prismaInternals = await import('@prisma/internals')
+  // Handle both default and named exports
+  return prismaInternals.getDMMF || prismaInternals.default?.getDMMF
+}
 
 /**
  * Generate code from schema (public API implementation)
@@ -127,6 +131,7 @@ export async function validateSchemaAPI(schemaPathOrText: string): Promise<{
     const isFilePath = !schemaPathOrText.includes('\n') && !schemaPathOrText.includes('model ')
     
     // Get DMMF
+    const getDMMF = await getPrismaDMMF()
     const dmmf: DMMF.Document = isFilePath
       ? await getDMMF({ datamodelPath: schemaPathOrText })
       : await getDMMF({ datamodel: schemaPathOrText })
@@ -164,6 +169,7 @@ export async function analyzeSchemaAPI(schemaPathOrText: string): Promise<{
     const isFilePath = !schemaPathOrText.includes('\n') && !schemaPathOrText.includes('model ')
     
     // Get DMMF
+    const getDMMF = await getPrismaDMMF()
     const dmmf: DMMF.Document = isFilePath
       ? await getDMMF({ datamodelPath: schemaPathOrText })
       : await getDMMF({ datamodel: schemaPathOrText })

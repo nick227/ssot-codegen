@@ -37,6 +37,7 @@ import { SDKGenerationPhase } from './phases/sdk-generation-phase.js'
 import { HooksGenerationPhase } from './phases/hooks-generation-phase.js'
 import { PluginGenerationPhase } from './phases/plugin-generation-phase.js'
 import { ChecklistGenerationPhase } from './phases/checklist-generation-phase.js'
+import { WriteFilesPhase } from './phases/write-files-phase.js'
 
 /**
  * Orchestrates code generation through sequential phases
@@ -128,6 +129,10 @@ export class CodeGenerationPipeline {
     if (this.context.config.generation.checklist) {
       phases.push(new ChecklistGenerationPhase())
     }
+    
+    // CRITICAL: Write files phase (must run to persist generated code!)
+    // This was missing - files were generated but never written to disk
+    phases.push(new WriteFilesPhase())
     
     // Sort by order
     return phases.sort((a, b) => a.order - b.order)

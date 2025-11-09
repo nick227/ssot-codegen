@@ -49,7 +49,7 @@ export class GenerateCodePhaseTyped extends TypedPhaseAdapter<
     const useRegistry = process.env.USE_REGISTRY === 'true'
     
     // Generate all code
-    const generatedFiles = generateCode(schema, { 
+    const generatedFiles = await generateCode(schema, { 
       framework,
       useEnhancedGenerators: !useRegistry,
       useRegistry,

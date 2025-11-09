@@ -20,7 +20,21 @@ Generates a complete, production-ready REST API from your Prisma schema:
 
 ## Quick Start
 
-### Installation
+### Option 1: Create New Project (Recommended)
+
+The fastest way to get started - creates a complete project with everything configured:
+
+```bash
+npx create-ssot-app
+```
+
+This will:
+- Set up Prisma with your choice of database
+- Install all dependencies (Express/Fastify, Prisma, etc.)
+- Generate example models and complete API
+- Create a ready-to-run project
+
+### Option 2: Add to Existing Project
 
 ```bash
 npm install -D @ssot-codegen/gen @ssot-codegen/cli

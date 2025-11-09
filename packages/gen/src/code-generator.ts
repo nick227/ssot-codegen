@@ -38,6 +38,8 @@ import { type ModelAnalysis } from '@/utils/relationship-analyzer.js'
 import { AnalysisCache } from '@/cache/analysis-cache.js'
 // v2.0: Centralized validation (runs before analysis)
 import { ConfigValidator } from '@/validation/config-validator.js'
+// v2.0: Phase-based pipeline (alternative to legacy)
+import { CodeGenerationPipeline } from './pipeline/code-generation-pipeline.js'
 import { SchemaValidator } from '@/validation/schema-validator.js'
 // v2.0: Cross-platform path collision detection
 import { FilePathRegistry } from '@/utils/file-path-registry.js'
@@ -363,10 +365,10 @@ function normalizeConfig(config: CodeGeneratorConfig): CodeGeneratorConfig {
  * 
  * v2.0: Config normalized upfront for consistency
  */
-export function generateCode(
+export async function generateCode(
   schema: ParsedSchema,
   config: CodeGeneratorConfig
-): GeneratedFiles {
+): Promise<GeneratedFiles> {
   // v2.0 PHASE 0: Validate config FIRST (fail fast on invalid config)
   ConfigValidator.validate(config)
   
@@ -390,7 +392,7 @@ export function generateCode(
   
   // Use phase-based pipeline if enabled
   if (normalizedConfig.usePipeline) {
-    return generateCodeWithPipeline(schema, normalizedConfig)
+    return await generateCodeWithPipeline(schema, normalizedConfig)
   }
   
   // LEGACY: Use existing implementation (all bugs fixed, production-ready)
@@ -407,16 +409,13 @@ export function generateCode(
  * - Type-safe throughout
  * - Better error messages
  */
-function generateCodeWithPipeline(
+async function generateCodeWithPipeline(
   schema: ParsedSchema,
   config: CodeGeneratorConfig
-): GeneratedFiles {
-  // Import pipeline (lazy to avoid loading if not used)
-  const { CodeGenerationPipeline } = require('./pipeline/index.js')
-  
+): Promise<GeneratedFiles> {
   try {
     const pipeline = new CodeGenerationPipeline(schema, config)
-    return pipeline.execute()
+    return await pipeline.execute()
   } catch (error) {
     console.error('[ssot-codegen] Pipeline generation failed:', error)
     throw error

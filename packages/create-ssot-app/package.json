@@ -1,0 +1,41 @@
+{
+  "name": "create-ssot-app",
+  "version": "0.4.0",
+  "description": "Create a full-stack TypeScript API with Prisma in one command",
+  "type": "module",
+  "bin": {
+    "create-ssot-app": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "templates"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch"
+  },
+  "keywords": [
+    "prisma",
+    "api",
+    "codegen",
+    "typescript",
+    "express",
+    "fastify",
+    "scaffolding"
+  ],
+  "author": "SSOT CodeGen",
+  "license": "MIT",
+  "dependencies": {
+    "picocolors": "^1.0.0",
+    "prompts": "^2.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/prompts": "^2.4.9",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
+

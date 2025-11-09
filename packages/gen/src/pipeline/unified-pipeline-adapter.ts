@@ -84,9 +84,13 @@ export class UnifiedPipelineAdapter {
    * Parse schema from config
    */
   private async parseSchemaIfNeeded() {
+    // Dynamic import for Prisma internals
+    const prismaInternals = await import('@prisma/internals')
+    // Handle both default and named exports
+    const getDMMF = prismaInternals.getDMMF || prismaInternals.default?.getDMMF
+    
     // If schemaText provided, use it
     if (this.config.schemaText) {
-      const { getDMMF } = require('@prisma/internals')
       const dmmf = await getDMMF({ datamodel: this.config.schemaText })
       return parseDMMF(dmmf)
     }
@@ -95,7 +99,6 @@ export class UnifiedPipelineAdapter {
     if (this.config.schemaPath) {
       const fs = await import('fs/promises')
       const schemaText = await fs.readFile(this.config.schemaPath, 'utf-8')
-      const { getDMMF } = require('@prisma/internals')
       const dmmf = await getDMMF({ datamodel: schemaText })
       return parseDMMF(dmmf)
     }

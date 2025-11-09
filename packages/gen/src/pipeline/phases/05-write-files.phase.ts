@@ -26,6 +26,11 @@ export class WriteFilesPhase extends GenerationPhase {
     return 'Writing files to disk'
   }
   
+  shouldExecute(): boolean {
+    // Always write files
+    return true
+  }
+  
   async execute(context: PhaseContext): Promise<PhaseResult> {
     // Upfront invariant checks (simplified control flow)
     const { generatedFiles, pathsConfig: cfg } = context

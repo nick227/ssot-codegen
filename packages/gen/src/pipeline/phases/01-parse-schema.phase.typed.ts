@@ -20,7 +20,6 @@
  */
 
 import fs from 'node:fs'
-import { createRequire } from 'node:module'
 import type { DMMF } from '@prisma/generator-helper'
 import { parseDMMF } from '../../dmmf-parser.js'
 import { TypedPhaseAdapter, validateContext } from '../typed-phase-adapter.js'
@@ -29,8 +28,12 @@ import type {
   ParseSchemaOutput 
 } from '../typed-context.js'
 
-const require = createRequire(import.meta.url)
-const { getDMMF } = require('@prisma/internals')
+// Dynamic import for @prisma/internals
+async function getPrismaDMMF() {
+  const prismaInternals = await import('@prisma/internals')
+  // Handle both default and named exports
+  return prismaInternals.getDMMF || prismaInternals.default?.getDMMF
+}
 
 export class ParseSchemaPhaseTyped extends TypedPhaseAdapter<
   ContextAfterPhase0,  // Requires: config, logger, outputDir
@@ -55,6 +58,7 @@ export class ParseSchemaPhaseTyped extends TypedPhaseAdapter<
    * NO RUNTIME CHECKS NEEDED! TypeScript enforces at compile time.
    */
   async executeTyped(context: ContextAfterPhase0): Promise<ParseSchemaOutput> {
+    const getDMMF = await getPrismaDMMF()
     const { config, logger } = context
     
     // Optional: Runtime validation during migration
