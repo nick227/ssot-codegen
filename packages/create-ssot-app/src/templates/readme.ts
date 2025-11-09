@@ -3,6 +3,7 @@
  */
 
 import type { ProjectConfig } from '../prompts.js'
+import { getPluginById, groupPluginsByCategory, CATEGORY_ICONS, CATEGORY_LABELS, CATEGORY_ORDER, type CLIPluginInfo } from '../plugin-catalog.js'
 
 export function generateReadme(config: ProjectConfig): string {
   const pm = config.packageManager
@@ -18,7 +19,11 @@ Full-stack TypeScript API built with **SSOT CodeGen**.
 - **Database**: ${config.database.charAt(0).toUpperCase() + config.database.slice(1)}
 - **ORM**: Prisma
 - **Language**: TypeScript
-${config.includeAuth ? '- **Auth**: Included\n' : ''}
+
+## 🔌 Plugins Included
+
+${generatePluginSection(config)}
+
 ## 📦 What's Included
 
 - ✅ Complete REST API with CRUD operations
@@ -87,5 +92,44 @@ Edit \`ssot.config.ts\` to customize:
 
 Built with ❤️ using **create-ssot-app**
 `
+}
+
+/**
+ * Generate plugin documentation section
+ */
+function generatePluginSection(config: ProjectConfig): string {
+  if (!config.selectedPlugins || config.selectedPlugins.length === 0) {
+    return 'No plugins configured. You can add plugins by editing `ssot.config.ts` and regenerating.'
+  }
+  
+  const plugins = config.selectedPlugins
+    .map(id => getPluginById(id))
+    .filter(Boolean)
+  
+  const grouped = groupPluginsByCategory(plugins as any)
+  let section = ''
+  
+  for (const category of CATEGORY_ORDER) {
+    const categoryPlugins = grouped[category]
+    if (!categoryPlugins || categoryPlugins.length === 0) continue
+    
+    section += `### ${CATEGORY_ICONS[category]} ${CATEGORY_LABELS[category]}\n\n`
+    
+    for (const plugin of categoryPlugins) {
+      section += `- **${plugin.name}**: ${plugin.description}\n`
+      
+      if (plugin.envVarsRequired.length > 0) {
+        section += `  - Required: \`${plugin.envVarsRequired.join('`, `')}\`\n`
+      }
+      
+      if (plugin.setupInstructions) {
+        section += `  - Setup: ${plugin.setupInstructions}\n`
+      }
+      
+      section += '\n'
+    }
+  }
+  
+  return section
 }
 

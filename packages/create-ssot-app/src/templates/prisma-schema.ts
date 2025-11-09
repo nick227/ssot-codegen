@@ -23,6 +23,11 @@ generator client {
 `
 
   if (config.includeExamples) {
+    // Check if auth plugins selected
+    const hasAuthPlugin = config.selectedPlugins?.some(p => 
+      p === 'google-auth' || p === 'jwt-service' || p === 'api-key-manager'
+    )
+    
     schema += `// Example Models
 // Edit these or add your own models
 
@@ -35,8 +40,8 @@ model User {
   posts     Post[]
 `
 
-    if (config.includeAuth) {
-      schema += `  password  String   // Hash this in production!\n`
+    if (hasAuthPlugin) {
+      schema += `  password  String?  // Optional for OAuth, required for local auth\n`
       schema += `  role      Role     @default(USER)\n`
     }
 
@@ -54,7 +59,7 @@ model Post {
 }
 `
 
-    if (config.includeAuth) {
+    if (hasAuthPlugin) {
       schema += `
 enum Role {
   USER

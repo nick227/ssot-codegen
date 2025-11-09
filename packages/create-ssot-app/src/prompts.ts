@@ -6,13 +6,22 @@ import prompts from 'prompts'
 import pc from 'picocolors'
 import path from 'node:path'
 import fs from 'node:fs'
+import {
+  PLUGIN_CATALOG,
+  groupPluginsByCategory,
+  CATEGORY_ICONS,
+  CATEGORY_LABELS,
+  CATEGORY_ORDER,
+  validatePluginSelection,
+  type CLIPluginInfo
+} from './plugin-catalog.js'
 
 export interface ProjectConfig {
   projectName: string
   framework: 'express' | 'fastify'
   database: 'postgresql' | 'mysql' | 'sqlite'
-  includeAuth: boolean
   includeExamples: boolean
+  selectedPlugins: string[]
   packageManager: 'npm' | 'pnpm' | 'yarn'
 }
 
@@ -58,15 +67,18 @@ export async function getProjectConfig(): Promise<ProjectConfig> {
       },
       {
         type: 'confirm',
-        name: 'includeAuth',
-        message: 'Include authentication setup?',
-        initial: true
-      },
-      {
-        type: 'confirm',
         name: 'includeExamples',
         message: 'Include example models (User, Post)?',
         initial: true
+      },
+      {
+        type: 'multiselect',
+        name: 'selectedPlugins',
+        message: 'Select plugins to include (Space to select, Enter to continue):',
+        choices: createPluginChoices(),
+        hint: '- Space to select. Return to submit',
+        instructions: false,
+        min: 0
       },
       {
         type: 'select',
@@ -89,6 +101,76 @@ export async function getProjectConfig(): Promise<ProjectConfig> {
     }
   )
 
+  // Validate plugin selection and show warnings
+  if (response.selectedPlugins && response.selectedPlugins.length > 0) {
+    const validation = validatePluginSelection(response.selectedPlugins, {
+      includeExamples: response.includeExamples
+    })
+    
+    if (validation.warnings.length > 0) {
+      console.log()
+      console.log(pc.yellow('⚠️  Warnings:'))
+      validation.warnings.forEach(warning => {
+        console.log(pc.yellow(`  • ${warning}`))
+      })
+      console.log()
+      
+      const confirmWarnings = await prompts({
+        type: 'confirm',
+        name: 'continue',
+        message: 'Continue with selected plugins?',
+        initial: true
+      })
+      
+      if (!confirmWarnings.continue) {
+        console.log()
+        console.log(pc.red('✖ Cancelled'))
+        process.exit(0)
+      }
+    }
+  }
+
   return response as ProjectConfig
+}
+
+/**
+ * Create plugin choices grouped by category
+ */
+function createPluginChoices() {
+  const grouped = groupPluginsByCategory(PLUGIN_CATALOG)
+  const choices: Array<{
+    title: string
+    value?: string
+    description?: string
+    disabled?: boolean
+    selected?: boolean
+  }> = []
+  
+  // Iterate categories in defined order
+  for (const category of CATEGORY_ORDER) {
+    const plugins = grouped[category]
+    if (!plugins || plugins.length === 0) continue
+    
+    // Add category header
+    choices.push({
+      title: pc.bold(`${CATEGORY_ICONS[category]} ${CATEGORY_LABELS[category]}`),
+      disabled: true
+    })
+    
+    // Add plugins in category
+    for (const plugin of plugins) {
+      const requiresEnv = plugin.envVarsRequired.length > 0
+      const description = plugin.description + (requiresEnv ? pc.dim(' (requires API key)') : '')
+      
+      choices.push({
+        title: `  ${plugin.name}`,
+        value: plugin.id,
+        description,
+        selected: plugin.popular // Pre-select popular plugins
+      })
+    }
+  }
+  
+  return choices
 }
 

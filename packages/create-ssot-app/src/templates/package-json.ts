@@ -3,6 +3,7 @@
  */
 
 import type { ProjectConfig } from '../prompts.js'
+import { getPluginDependencies } from '../plugin-catalog.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import fs from 'node:fs'
@@ -61,6 +62,12 @@ export function generatePackageJson(config: ProjectConfig): string {
   } else {
     deps['fastify'] = '^4.26.0'
     deps['@fastify/cors'] = '^9.0.1'
+  }
+  
+  // Add plugin dependencies
+  if (config.selectedPlugins && config.selectedPlugins.length > 0) {
+    const pluginDeps = getPluginDependencies(config.selectedPlugins)
+    Object.assign(deps, pluginDeps)
   }
 
   const pkg = {

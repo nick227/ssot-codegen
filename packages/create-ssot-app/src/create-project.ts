@@ -14,6 +14,7 @@ import { generateEnvFile } from './templates/env-file.js'
 import { generateGitignore } from './templates/gitignore.js'
 import { generateReadme } from './templates/readme.js'
 import { generateTsConfig } from './templates/tsconfig.js'
+import { getPluginById } from './plugin-catalog.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -65,6 +66,16 @@ export async function createProject(config: ProjectConfig): Promise<void> {
 
   // Create basic source files
   createSourceFiles(projectPath, config)
+  
+  // Create plugin configuration if plugins selected
+  if (config.selectedPlugins && config.selectedPlugins.length > 0) {
+    console.log(pc.cyan('🔌 Generating plugin configuration...'))
+    
+    fs.writeFileSync(
+      path.join(projectPath, 'ssot.config.ts'),
+      generatePluginConfig(config)
+    )
+  }
 
   // Install dependencies
   console.log()
@@ -99,6 +110,11 @@ export async function createProject(config: ProjectConfig): Promise<void> {
   // Run ssot-codegen
   console.log()
   console.log(pc.cyan('🚀 Generating API code...'))
+  
+  // Show plugin info if any selected
+  if (config.selectedPlugins && config.selectedPlugins.length > 0) {
+    console.log(pc.dim(`   With plugins: ${config.selectedPlugins.length} enabled`))
+  }
   console.log()
   
   try {
@@ -108,6 +124,11 @@ export async function createProject(config: ProjectConfig): Promise<void> {
     })
   } catch (error) {
     throw new Error('Failed to generate API code')
+  }
+  
+  // Show plugin setup instructions
+  if (config.selectedPlugins && config.selectedPlugins.length > 0) {
+    showPluginSetupInstructions(config.selectedPlugins)
   }
 
   // Initialize git
@@ -213,6 +234,97 @@ function getInstallCommand(packageManager: string): string {
       return 'yarn install'
     default:
       return 'npm install'
+  }
+}
+
+/**
+ * Generate ssot.config.ts with plugin configuration
+ */
+function generatePluginConfig(config: ProjectConfig): string {
+  const features: Record<string, Record<string, unknown>> = {}
+  
+  for (const pluginId of config.selectedPlugins) {
+    const plugin = getPluginById(pluginId)
+    if (!plugin) continue
+    
+    // Build basic enabled config
+    features[plugin.configKey] = {
+      enabled: true
+    }
+    
+    // Add plugin-specific defaults
+    switch (pluginId) {
+      case 'google-auth':
+        features[plugin.configKey] = {
+          enabled: true,
+          strategy: 'jwt',
+          userModel: 'User'
+        }
+        break
+      case 'openai':
+        features[plugin.configKey] = {
+          enabled: true,
+          defaultModel: 'gpt-4'
+        }
+        break
+      case 'claude':
+        features[plugin.configKey] = {
+          enabled: true,
+          defaultModel: 'claude-3-sonnet-20240229'
+        }
+        break
+      case 'paypal':
+        features[plugin.configKey] = {
+          enabled: true,
+          mode: 'sandbox'
+        }
+        break
+    }
+  }
+  
+  return `import type { CodeGeneratorConfig } from '@ssot-codegen/gen'
+
+export default {
+  framework: '${config.framework}',
+  projectName: '${config.projectName}',
+  
+  features: ${JSON.stringify(features, null, 4)}
+} satisfies CodeGeneratorConfig
+`
+}
+
+/**
+ * Show setup instructions for selected plugins
+ */
+function showPluginSetupInstructions(pluginIds: string[]): void {
+  console.log()
+  console.log(pc.bold(pc.cyan('🔧 Plugin Setup Instructions')))
+  console.log()
+  console.log(pc.dim('Before running your API, configure the following:'))
+  console.log()
+  
+  const pluginsWithApiKeys = pluginIds
+    .map(id => getPluginById(id))
+    .filter(p => p && p.envVarsRequired.length > 0)
+  
+  if (pluginsWithApiKeys.length > 0) {
+    for (const plugin of pluginsWithApiKeys) {
+      if (!plugin) continue
+      
+      console.log(pc.yellow(`  ☐ ${plugin.name}`))
+      
+      if (plugin.setupInstructions) {
+        console.log(pc.dim(`     ${plugin.setupInstructions}`))
+      }
+      
+      if (plugin.envVarsRequired.length > 0) {
+        console.log(pc.dim(`     Required: ${plugin.envVarsRequired.join(', ')}`))
+      }
+      
+      console.log()
+    }
+    
+    console.log(pc.dim('  All credentials should be added to the .env file'))
   }
 }
 
