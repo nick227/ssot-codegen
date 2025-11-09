@@ -12,7 +12,10 @@
       "@/plugins/*": ["plugins/*"],
       "@/templates/*": ["templates/*"],
       "@/database/*": ["database/*"],
-      "@/api/*": ["api/*"]
+      "@/api/*": ["api/*"],
+      "@/cache/*": ["cache/*"],
+      "@/validation/*": ["validation/*"],
+      "@/builders/*": ["builders/*"]
     }
   },
   "include": [

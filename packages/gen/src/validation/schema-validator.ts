@@ -133,15 +133,17 @@ export class SchemaValidator {
         continue
       }
       
-      // Validate method structure
-      for (const method of annotation.methods) {
-        if (!method.name || !method.httpMethod || !method.path) {
-          errors.push({
-            severity: ErrorSeverity.ERROR,
-            message: `Invalid method structure in service annotation`,
-            model: modelName,
-            phase: 'service-annotation-validation'
-          })
+      // Validate method names
+      if (Array.isArray(annotation.methods)) {
+        for (const method of annotation.methods) {
+          if (typeof method !== 'string' || !method.trim()) {
+            errors.push({
+              severity: ErrorSeverity.ERROR,
+              message: `Invalid method name in service annotation: expected non-empty string`,
+              model: modelName,
+              phase: 'service-annotation-validation'
+            })
+          }
         }
       }
     }

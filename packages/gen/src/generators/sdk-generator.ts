@@ -284,7 +284,7 @@ ${methods.join(',\n\n')}
 /**
  * Generate main SDK factory
  */
-export function generateMainSDK(models: ParsedModel[], schema: ParsedSchema): string {
+export function generateMainSDK(models: readonly ParsedModel[], schema: ParsedSchema): string {
   // Filter out junction tables
   const nonJunctionModels = models.filter(m => {
     const analysis = analyzeModel(m, schema)

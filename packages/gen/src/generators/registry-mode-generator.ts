@@ -234,11 +234,12 @@ export class RegistryModeGenerator {
     }
     
     if (this.codeValidator) {
-      return this.codeValidator(code, filename)
+      const result = this.codeValidator(code, filename)
+      return typeof result === 'boolean' ? result : Boolean(result)
     }
     
     // Basic validation: non-empty
-    return code && code.trim().length > 0
+    return Boolean(code && code.trim().length > 0)
   }
   
   /**

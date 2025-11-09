@@ -457,7 +457,7 @@ export class ${modelName}Service {
  * Generate framework adapter index
  */
 export function generateFrameworkAdapterIndex(
-  models: ParsedModel[],
+  models: readonly ParsedModel[],
   schema: ParsedSchema,
   framework: 'vue' | 'zustand' | 'vanilla' | 'angular'
 ): string {

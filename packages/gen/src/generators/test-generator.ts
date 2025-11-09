@@ -5,7 +5,7 @@
 import type { ParsedModel, ParsedField } from '../dmmf-parser.js'
 
 export interface TestGeneratorOptions {
-  models: ParsedModel[]
+  models: readonly ParsedModel[]
   framework: 'express' | 'fastify'
 }
 

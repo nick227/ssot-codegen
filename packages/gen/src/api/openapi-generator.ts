@@ -43,7 +43,7 @@ export interface OpenAPISpec {
  * Generate complete OpenAPI specification from models
  */
 export function generateOpenAPISpec(
-  models: ParsedModel[],
+  models: readonly ParsedModel[],
   config: OpenAPIConfig,
   schema?: any
 ): OpenAPISpec {
@@ -231,7 +231,7 @@ function fieldToOpenAPIProperty(field: ParsedField, enumValues?: Record<string, 
 /**
  * Generate example data for a model
  */
-function generateExampleData(fields: ParsedField[], context: 'create' | 'update' | 'read', enumValues?: Record<string, string[]>): any {
+function generateExampleData(fields: readonly ParsedField[], context: 'create' | 'update' | 'read', enumValues?: Record<string, string[]>): any {
   const example: any = {}
 
   for (const field of fields) {

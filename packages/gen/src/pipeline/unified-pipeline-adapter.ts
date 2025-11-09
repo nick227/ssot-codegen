@@ -118,7 +118,7 @@ export class UnifiedPipelineAdapter {
       strictPluginValidation: false,
       continueOnError: true,
       failFast: false,
-      features: config.features
+      features: config.features as any
     }
   }
   
@@ -195,7 +195,7 @@ export class UnifiedPipelineAdapter {
     }
     
     // Extract model names from contracts
-    const modelNames = files.contracts ? Array.from(files.contracts.keys()) : []
+    const modelNames: string[] = files.contracts ? Array.from(files.contracts.keys()) : []
     
     // Get relationship count from context if available
     const relationshipCount = this.pipeline?.getContext().schema.models

@@ -43,10 +43,12 @@ export class HooksGenerationPhase implements GenerationPhase {
       this.validateAnalysisCache(context, errors)
       
       // Generate hooks for configured frameworks
+      // Note: generateAllHooks expects Map<string, ModelAnalysis> which is different from our cache
+      // For now, pass undefined to skip caching in hooks generator (hooks will analyze models themselves)
       const hooks = generateAllHooks(
         context.schema,
         { frameworks: [...context.config.generation.hookFrameworks] },
-        context.cache
+        undefined
       )
       
       // Add hooks to builders

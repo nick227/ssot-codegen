@@ -52,10 +52,13 @@ export class RegistryGenerationPhase implements GenerationPhase {
       // v2.0: Use shared RegistryModeGenerator (eliminates ~200 lines of duplicate code)
       console.log('[ssot-codegen] Generating unified registry system...')
       
+      // Convert service annotations to Map format expected by generateRegistryMode
+      const serviceAnnotationsMap = new Map(context.cache.getAllServiceAnnotations())
+      
       const result = generateRegistryMode(
         context.schema,
-        context.cache,
-        context.cache.serviceAnnotations,
+        context.cache as any,
+        serviceAnnotationsMap as any,
         {
           validateCode: false,  // Builder handles validation
           skipJunctionTables: true,
@@ -86,17 +89,17 @@ export class RegistryGenerationPhase implements GenerationPhase {
       }
       
       // Add service integrations to builders
-      const controllerBuilder = context.filesBuilder.getControllerBuilder()
+      const controllerBuilder = context.filesBuilder.getControllersBuilder()
       for (const [filename, content] of result.serviceControllers) {
         controllerBuilder.addFile(filename, content)
       }
       
-      const routeBuilder = context.filesBuilder.getRouteBuilder()
+      const routeBuilder = context.filesBuilder.getRoutesBuilder()
       for (const [filename, content] of result.serviceRoutes) {
         routeBuilder.addFile(filename, content)
       }
       
-      const serviceBuilder = context.filesBuilder.getServiceBuilder()
+      const serviceBuilder = context.filesBuilder.getServicesBuilder()
       for (const [filename, content] of result.serviceScaffolds) {
         serviceBuilder.addFile(filename, content)
       }

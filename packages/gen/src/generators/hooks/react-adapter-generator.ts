@@ -337,7 +337,7 @@ export function useReject${modelName}(
 /**
  * Generate React hooks index barrel
  */
-export function generateReactHooksIndex(models: ParsedModel[], schema: ParsedSchema): string {
+export function generateReactHooksIndex(models: readonly ParsedModel[], schema: ParsedSchema): string {
   const nonJunctionModels = models.filter(m => {
     const analysis = analyzeModel(m, schema)
     return !analysis.isJunctionTable
@@ -524,7 +524,7 @@ export function SDKProvider({
 /**
  * Generate React hooks README
  */
-export function generateReactHooksReadme(models: ParsedModel[], schema: ParsedSchema): string {
+export function generateReactHooksReadme(models: readonly ParsedModel[], schema: ParsedSchema): string {
   const nonJunctionModels = models.filter(m => {
     const analysis = analyzeModel(m, schema)
     return !analysis.isJunctionTable

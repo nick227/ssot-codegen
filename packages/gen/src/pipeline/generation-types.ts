@@ -7,6 +7,9 @@ import type { ParsedSchema, ParsedModel } from '../dmmf-parser.js'
 import type { ServiceAnnotation } from '../service-linker.js'
 import type { UnifiedModelAnalysis } from '../analyzers/index.js'
 
+// Re-export types that are used by the pipeline
+export type { ParsedSchema, ParsedModel }
+
 /**
  * Error severity levels for generation issues
  */
@@ -103,6 +106,7 @@ export interface IAnalysisCache {
   
   getAnalysisCount(): number
   getExpectedCount(schema: ParsedSchema): number
+  getMissingAnalysis(schema: ParsedSchema): string[]
 }
 
 /**
@@ -121,8 +125,8 @@ export interface GenerationPhase {
  * Files builder interface
  */
 export interface IFilesBuilder {
-  getDTOBuilder(modelName: string): IFileBuilder
-  getValidatorBuilder(modelName: string): IFileBuilder
+  getDTOBuilder(modelName?: string): IFileBuilder
+  getValidatorBuilder(modelName?: string): IFileBuilder
   getServicesBuilder(): IFileBuilder
   getControllersBuilder(): IFileBuilder
   getRoutesBuilder(): IFileBuilder
@@ -137,6 +141,7 @@ export interface IFilesBuilder {
   getVanillaHooksBuilder(): IFileBuilder
   getAngularHooksBuilder(): IFileBuilder
   setPluginOutputs(outputs: Map<string, unknown>): void
+  build(): import('./types.js').GeneratedFiles
 }
 
 /**

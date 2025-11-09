@@ -87,7 +87,8 @@ export class FullTextSearchPlugin implements FeaturePluginV2 {
     const warnings: any[] = []
     const suggestions: any[] = []
     
-    const pluginConfig = context.config.plugins?.[this.name] as SearchPluginConfig
+    const plugins = context.config.plugins as Record<string, unknown> | undefined
+    const pluginConfig = plugins?.[this.name] as SearchPluginConfig
     
     if (!pluginConfig?.models || Object.keys(pluginConfig.models).length === 0) {
       errors.push({
@@ -136,7 +137,8 @@ export class FullTextSearchPlugin implements FeaturePluginV2 {
   
   generate(context: PluginContextV2): PluginOutputV2 {
     const files = new Map<string, string>()
-    const pluginConfig = context.config.plugins?.[this.name] as SearchPluginConfig
+    const plugins = context.config.plugins as Record<string, unknown> | undefined
+    const pluginConfig = plugins?.[this.name] as SearchPluginConfig
     
     if (!pluginConfig) {
       throw new Error('Search plugin config not found')
@@ -180,7 +182,7 @@ export class FullTextSearchPlugin implements FeaturePluginV2 {
     }
   }
   
-  private generateSearchConfig(models: ParsedModel[], config: SearchPluginConfig): string {
+  private generateSearchConfig(models: readonly ParsedModel[], config: SearchPluginConfig): string {
     const enabledModels = Object.entries(config.models)
       .filter(([_, cfg]) => cfg.enabled)
     
@@ -236,7 +238,7 @@ ${fields}
     return parts.length > 0 ? `,\n  ranking: {\n${parts.join(',\n')}\n  }` : ''
   }
   
-  private buildModelMetadata(models: ParsedModel[], enabledModels: Array<[string, ModelSearchConfig]>): string {
+  private buildModelMetadata(models: readonly ParsedModel[], enabledModels: Array<[string, ModelSearchConfig]>): string {
     return enabledModels.map(([modelName, modelConfig]) => {
       const model = models.find(m => m.name === modelName)
       if (!model) return ''
@@ -248,7 +250,7 @@ ${fields}
     }).join(',\n')
   }
   
-  private generateSearchService(models: ParsedModel[], config: SearchPluginConfig): string {
+  private generateSearchService(models: readonly ParsedModel[], config: SearchPluginConfig): string {
     const enabledModels = Object.entries(config.models)
       .filter(([_, cfg]) => cfg.enabled)
     
@@ -523,7 +525,7 @@ export async function searchAll(req: Request, res: Response) {
 `
   }
   
-  private generateSearchTypes(models: ParsedModel[], config: SearchPluginConfig): string {
+  private generateSearchTypes(models: readonly ParsedModel[], config: SearchPluginConfig): string {
     return `// @generated
 // Search Types
 

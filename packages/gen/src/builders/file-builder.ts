@@ -147,7 +147,7 @@ export class FileBuilder implements IFileBuilder {
   /**
    * Build immutable result
    */
-  build(): ReadonlyMap<string, string> {
+  build(): Map<string, string> {
     return new Map(this.files)
   }
   
@@ -162,7 +162,7 @@ export class FileBuilder implements IFileBuilder {
   /**
    * Restore from snapshot (for rollback)
    */
-  restore(snapshot: ReadonlyMap<string, string>): void {
+  restore(snapshot: Map<string, string>): void {
     this.clear()
     for (const [path, content] of snapshot) {
       this.files.set(path, content)

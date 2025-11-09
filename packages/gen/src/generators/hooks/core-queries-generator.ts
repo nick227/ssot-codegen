@@ -299,7 +299,7 @@ function generateHelperMutations(
 /**
  * Generate core queries index barrel
  */
-export function generateCoreQueriesIndex(models: ParsedModel[], schema: ParsedSchema): string {
+export function generateCoreQueriesIndex(models: readonly ParsedModel[], schema: ParsedSchema): string {
   // Filter out junction tables (analyzeModel needed for this helper function)
   const nonJunctionModels = models.filter(m => {
     const analysis = analyzeModel(m, schema)

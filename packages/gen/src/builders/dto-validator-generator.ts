@@ -22,7 +22,7 @@ export class DTOValidatorGenerator {
    */
   static generateForModel(
     model: ParsedModel,
-    filesBuilder: GeneratedFilesBuilder
+    filesBuilder: import('../pipeline/generation-types.js').IFilesBuilder
   ): boolean {
     const modelKebab = toKebabCase(model.name)
     let allSuccess = true

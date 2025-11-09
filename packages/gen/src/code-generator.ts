@@ -260,7 +260,7 @@ function validateServiceAnnotation(annotation: any, modelName: string, errors: G
  * Detect naming conflicts between models and services
  */
 function detectNamingConflicts(
-  models: ParsedModel[],
+  models: readonly ParsedModel[],
   serviceAnnotations: Map<string, ServiceAnnotation>,
   errors: GenerationError[]
 ): void {

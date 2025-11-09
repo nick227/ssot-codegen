@@ -20,7 +20,8 @@ import {
   ErrorSeverity,
   type GenerationPhase,
   type PhaseResult,
-  type ParsedSchema
+  type ParsedSchema,
+  type GenerationError
 } from './generation-types.js'
 
 // Import all phases
@@ -209,7 +210,14 @@ export class CodeGenerationPipeline {
       if (this.hookRegistry.hasReplacement(phase.name)) {
         console.log(`[ssot-codegen]   (using replacement hook)`)
         const replacement = this.hookRegistry.getReplacement(phase.name)!
-        result = await replacement(this.context as any)
+        const hookResult = await replacement(this.context as any)
+        // Convert hook PhaseResult to pipeline PhaseResult
+        result = {
+          success: hookResult.success,
+          status: hookResult.success ? PhaseStatus.COMPLETED : PhaseStatus.FAILED,
+          errors: [],
+          data: hookResult.data
+        }
       } else {
         // Execute original phase
         result = await phase.execute(this.context)

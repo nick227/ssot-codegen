@@ -10,7 +10,7 @@ import { analyzeModel } from '@/utils/relationship-analyzer.js'
 /**
  * Generate SDK README
  */
-export function generateSDKReadme(models: ParsedModel[], schema: ParsedSchema): string {
+export function generateSDKReadme(models: readonly ParsedModel[], schema: ParsedSchema): string {
   const nonJunctionModels = models.filter(m => {
     const analysis = analyzeModel(m, schema)
     return !analysis.isJunctionTable
@@ -111,7 +111,7 @@ Your IDE autocomplete has all the answers! Just type \`api.\` and explore.
 /**
  * Generate API Reference (Table of Contents)
  */
-export function generateAPIReference(models: ParsedModel[], schema: ParsedSchema): string {
+export function generateAPIReference(models: readonly ParsedModel[], schema: ParsedSchema): string {
   const nonJunctionModels = models.filter(m => {
     const analysis = analyzeModel(m, schema)
     return !analysis.isJunctionTable
@@ -450,7 +450,7 @@ export type { SDK, SDKConfig } from './index.js'
 /**
  * Generate type exports
  */
-export function generateSDKTypes(models: ParsedModel[], schema: ParsedSchema): string {
+export function generateSDKTypes(models: readonly ParsedModel[], schema: ParsedSchema): string {
   const nonJunctionModels = models.filter(m => {
     const analysis = analyzeModel(m, schema)
     return !analysis.isJunctionTable

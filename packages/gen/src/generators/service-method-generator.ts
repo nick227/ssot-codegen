@@ -4,7 +4,7 @@
  */
 
 import type { ParsedModel } from '../dmmf-parser.js'
-import { analyzeModelCapabilities, type ModelCapabilities } from '@/analyzers/index.js'
+import { analyzeModelUnified, type ModelCapabilities } from '@/analyzers/index.js'
 import { mapPrismaToTypeScript } from '../type-mapper.js'
 import { toCamelCase } from '@/utils/naming.js'
 
@@ -15,9 +15,19 @@ import { toCamelCase } from '@/utils/naming.js'
  */
 export function generateEnhancedServiceMethods(
   model: ParsedModel,
-  existingMethods: Set<string> = new Set()
+  existingMethods: Set<string> = new Set(),
+  allModels: readonly ParsedModel[] = []
 ): string {
-  const caps = analyzeModelCapabilities(model)
+  // Create minimal ParsedSchema for analyzer
+  const schema = {
+    models: allModels,
+    enums: [],
+    modelMap: new Map(allModels.map(m => [m.name, m])),
+    enumMap: new Map(),
+    reverseRelationMap: new Map()
+  }
+  const analysis = analyzeModelUnified(model, schema, {})
+  const caps = analysis.capabilities
   const methods: string[] = []
   
   // Generate search method
@@ -47,9 +57,10 @@ export function generateEnhancedServiceMethods(
   
   // Generate getBy{Relation} methods for foreign keys
   for (const fk of caps.foreignKeys) {
-    const methodName = `getBy${capitalize(fk.relationName)}`
+    const relationName = fk.relationName || fk.relationAlias
+    const methodName = `getBy${capitalize(relationName)}`
     if (!existingMethods.has(methodName)) {
-      methods.push(generateGetByRelationMethod(model, fk.relationName, fk.fieldName, caps.hasActive))
+      methods.push(generateGetByRelationMethod(model, relationName, fk.fieldNames[0], caps.hasActive))
     }
   }
   
