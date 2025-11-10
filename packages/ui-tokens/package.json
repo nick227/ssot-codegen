@@ -1,0 +1,51 @@
+{
+  "name": "@ssot-ui/tokens",
+  "version": "1.0.0",
+  "description": "Design tokens for SSOT UI - compiles to Tailwind config and React Native tokens",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./tokens.json": "./tokens.json",
+    "./tailwind": "./dist/tailwind.js",
+    "./react-native": "./dist/react-native.js"
+  },
+  "files": [
+    "dist",
+    "tokens.json",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc && node scripts/build-tokens.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "design-tokens",
+    "tailwind",
+    "react-native",
+    "theme",
+    "ssot"
+  ],
+  "author": "SSOT CodeGen",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0"
+  },
+  "peerDependencies": {
+    "tailwindcss": "^3.4.0"
+  },
+  "peerDependenciesMeta": {
+    "tailwindcss": {
+      "optional": true
+    }
+  }
+}
+
