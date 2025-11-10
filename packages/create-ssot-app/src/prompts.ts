@@ -22,6 +22,8 @@ export interface ProjectConfig {
   includeExamples: boolean
   selectedPlugins: string[]
   packageManager: 'npm' | 'pnpm' | 'yarn'
+  generateUI: boolean
+  uiTemplate?: 'data-browser' | 'blog' | 'ecommerce' | 'dashboard'
 }
 
 export async function getProjectConfig(): Promise<ProjectConfig> {
@@ -87,6 +89,24 @@ export async function getProjectConfig(): Promise<ProjectConfig> {
           { title: 'pnpm', value: 'pnpm', description: 'Fast, efficient' },
           { title: 'npm', value: 'npm', description: 'Default, reliable' },
           { title: 'yarn', value: 'yarn', description: 'Classic alternative' }
+        ],
+        initial: 0
+      },
+      {
+        type: 'confirm',
+        name: 'generateUI',
+        message: '🎨 Generate UI components (experimental)?',
+        initial: false
+      },
+      {
+        type: (prev) => prev ? 'select' : null,
+        name: 'uiTemplate',
+        message: 'Choose UI template:',
+        choices: [
+          { title: '📊 Data Browser', value: 'data-browser', description: 'Read-only admin panel for browsing data' },
+          { title: '📝 Blog', value: 'blog', description: 'Full blog with posts and comments (coming soon)', disabled: true },
+          { title: '🛒 E-commerce', value: 'ecommerce', description: 'Product catalog and cart (coming soon)', disabled: true },
+          { title: '📈 Dashboard', value: 'dashboard', description: 'Analytics dashboard (coming soon)', disabled: true }
         ],
         initial: 0
       }
