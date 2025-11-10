@@ -19,6 +19,7 @@ function createMockConfig(overrides?: Partial<ProjectConfig>): ProjectConfig {
     includeExamples: true,
     selectedPlugins: [],
     packageManager: 'pnpm',
+    generateUI: false,
     ...overrides
   }
 }

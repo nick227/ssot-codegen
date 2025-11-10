@@ -15,6 +15,7 @@ import { generateGitignore } from './templates/gitignore.js'
 import { generateReadme } from './templates/readme.js'
 import { generateTsConfig } from './templates/tsconfig.js'
 import { getPluginById } from './plugin-catalog.js'
+import { generateUI, ParsedModel } from './ui-generator.js'
 
 export async function createProject(config: ProjectConfig): Promise<void> {
   const projectPath = path.join(process.cwd(), config.projectName)
@@ -124,6 +125,24 @@ export async function createProject(config: ProjectConfig): Promise<void> {
     throw new Error('Failed to generate API code')
   }
   
+  // Generate UI if requested
+  if (config.generateUI) {
+    console.log()
+    console.log(pc.cyan('🎨 Generating UI...'))
+    console.log(pc.dim(`   Template: ${config.uiTemplate || 'data-browser'}`))
+    console.log()
+    
+    try {
+      const models = parseModelsFromSchema(path.join(projectPath, 'prisma', 'schema.prisma'))
+      generateUI(projectPath, config, models)
+      console.log(pc.green('✓ UI generated successfully'))
+      console.log(pc.dim(`   ${models.length} models → ${models.length * 2} pages`))
+    } catch (error) {
+      console.log(pc.yellow('⚠️  UI generation failed (optional):'))
+      console.log(pc.dim(`   ${(error as Error).message}`))
+    }
+  }
+  
   // Show plugin setup instructions
   if (config.selectedPlugins && config.selectedPlugins.length > 0) {
     showPluginSetupInstructions(config.selectedPlugins)
@@ -150,6 +169,77 @@ export async function createProject(config: ProjectConfig): Promise<void> {
     // Git init is optional, don't fail if it doesn't work
     console.log(pc.dim('   (Git init skipped)'))
   }
+  
+  // Show UI instructions if generated
+  if (config.generateUI) {
+    console.log()
+    console.log(pc.green('━'.repeat(50)))
+    console.log()
+    console.log(pc.bold(pc.green('✨ UI Generated!')))
+    console.log()
+    console.log('Your admin panel is ready at:')
+    console.log(pc.cyan(`  http://localhost:3001/admin`))
+    console.log()
+    console.log('To start the UI dev server:')
+    console.log(pc.dim(`  cd ${config.projectName}`))
+    console.log(pc.cyan(`  ${config.packageManager} run dev:ui`))
+    console.log()
+    console.log('See UI_README.md for customization options.')
+    console.log()
+    console.log(pc.green('━'.repeat(50)))
+  }
+}
+
+/**
+ * Parse models from Prisma schema
+ */
+function parseModelsFromSchema(schemaPath: string): ParsedModel[] {
+  const schema = fs.readFileSync(schemaPath, 'utf-8')
+  const models: ParsedModel[] = []
+  
+  // Simple regex-based parsing (good enough for generated schemas)
+  const modelRegex = /model\s+(\w+)\s*\{([^}]+)\}/g
+  let modelMatch
+  
+  while ((modelMatch = modelRegex.exec(schema)) !== null) {
+    const modelName = modelMatch[1]
+    const modelBody = modelMatch[2]
+    
+    // Skip internal Prisma models
+    if (modelName.startsWith('_')) continue
+    
+    const fields: Array<{ name: string; type: string; isRelation: boolean }> = []
+    
+    // Parse fields
+    const fieldRegex = /^\s*(\w+)\s+(\w+)/gm
+    let fieldMatch
+    
+    while ((fieldMatch = fieldRegex.exec(modelBody)) !== null) {
+      const fieldName = fieldMatch[1]
+      const fieldType = fieldMatch[2]
+      
+      // Skip Prisma directives and attributes
+      if (fieldName.startsWith('@') || fieldName === 'model') continue
+      
+      // Check if it's a relation (type is another model, starts with uppercase)
+      const isRelation = /^[A-Z]/.test(fieldType) && !['String', 'Int', 'Float', 'Boolean', 'DateTime', 'Json', 'Decimal', 'BigInt', 'Bytes'].includes(fieldType)
+      
+      fields.push({
+        name: fieldName,
+        type: fieldType,
+        isRelation
+      })
+    }
+    
+    models.push({
+      name: modelName,
+      nameLower: modelName.toLowerCase(),
+      namePlural: modelName.toLowerCase() + 's', // Simple pluralization
+      fields
+    })
+  }
+  
+  return models
 }
 
 function createSourceFiles(projectPath: string, config: ProjectConfig): void {

@@ -4,6 +4,7 @@
 
 import type { ProjectConfig } from '../prompts.js'
 import { getPluginDependencies } from '../plugin-catalog.js'
+import { getUIDependencies, getUIDevDependencies, getUIScripts } from '../ui-generator.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import fs from 'node:fs'
@@ -69,23 +70,39 @@ export function generatePackageJson(config: ProjectConfig): string {
     const pluginDeps = getPluginDependencies(config.selectedPlugins)
     Object.assign(deps, pluginDeps)
   }
+  
+  // Add UI dependencies if UI generation is enabled
+  if (config.generateUI) {
+    const uiDeps = getUIDependencies(config)
+    const uiDevDeps = getUIDevDependencies(config)
+    Object.assign(deps, uiDeps)
+    Object.assign(devDeps, uiDevDeps)
+  }
+
+  const scripts: Record<string, string> = {
+    dev: 'tsx watch src/server.ts',
+    build: 'tsc',
+    start: 'node dist/server.js',
+    'db:push': 'prisma db push',
+    'db:migrate': 'prisma migrate dev',
+    'db:studio': 'prisma studio',
+    generate: 'prisma generate && ssot-codegen generate',
+    'generate:prisma': 'prisma generate',
+    'generate:api': 'ssot-codegen generate'
+  }
+  
+  // Add UI scripts if UI generation is enabled
+  if (config.generateUI) {
+    const uiScripts = getUIScripts(config)
+    Object.assign(scripts, uiScripts)
+  }
 
   const pkg = {
     name: config.projectName,
     version: '0.1.0',
     type: 'module',
     description: `Full-stack TypeScript API built with SSOT CodeGen`,
-    scripts: {
-      dev: 'tsx watch src/server.ts',
-      build: 'tsc',
-      start: 'node dist/server.js',
-      'db:push': 'prisma db push',
-      'db:migrate': 'prisma migrate dev',
-      'db:studio': 'prisma studio',
-      generate: 'prisma generate && ssot-codegen generate',
-      'generate:prisma': 'prisma generate',
-      'generate:api': 'ssot-codegen generate'
-    },
+    scripts,
     dependencies: deps,
     devDependencies: devDeps,
     engines: {
