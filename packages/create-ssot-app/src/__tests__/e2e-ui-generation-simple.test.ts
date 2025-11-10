@@ -81,7 +81,7 @@ describe('E2E: UI Generation (Simple)', () => {
     const models = parseModels(schemaContent)
     
     // Generate UI
-    generateUI(TEST_PROJECT_PATH, config, models)
+    await generateUI(TEST_PROJECT_PATH, config, models)
     
     // VERIFY: Files exist
     console.log('\n✅ Verifying generated files...\n')

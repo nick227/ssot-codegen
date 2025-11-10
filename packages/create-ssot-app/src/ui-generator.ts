@@ -24,7 +24,7 @@ export interface ParsedModel {
 /**
  * Generate UI files based on template selection
  */
-export function generateUI(projectPath: string, config: ProjectConfig, models: ParsedModel[]): void {
+export async function generateUI(projectPath: string, config: ProjectConfig, models: ParsedModel[], mappings?: any): Promise<void> {
   if (!config.generateUI || !config.uiTemplate) {
     return
   }
@@ -33,7 +33,11 @@ export function generateUI(projectPath: string, config: ProjectConfig, models: P
     case 'data-browser':
       generateDataBrowser(projectPath, config, models)
       break
-    case 'blog':
+    case 'blog': {
+      const { generateBlogTemplate } = await import('./templates/blog-generator.js')
+      generateBlogTemplate(projectPath, config, models, mappings)
+      break
+    }
     case 'ecommerce':
     case 'dashboard':
       // Not implemented yet

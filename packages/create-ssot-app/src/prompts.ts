@@ -104,7 +104,7 @@ export async function getProjectConfig(): Promise<ProjectConfig> {
         message: 'Choose UI template:',
         choices: [
           { title: '📊 Data Browser', value: 'data-browser', description: 'Read-only admin panel for browsing data' },
-          { title: '📝 Blog', value: 'blog', description: 'Full blog with posts and comments (coming soon)', disabled: true },
+          { title: '📝 Blog', value: 'blog', description: 'Full blog with posts, comments, and authors' },
           { title: '🛒 E-commerce', value: 'ecommerce', description: 'Product catalog and cart (coming soon)', disabled: true },
           { title: '📈 Dashboard', value: 'dashboard', description: 'Analytics dashboard (coming soon)', disabled: true }
         ],

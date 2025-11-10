@@ -134,7 +134,7 @@ export async function createProject(config: ProjectConfig): Promise<void> {
     
     try {
       const models = parseModelsFromSchema(path.join(projectPath, 'prisma', 'schema.prisma'))
-      generateUI(projectPath, config, models)
+      await generateUI(projectPath, config, models)
       console.log(pc.green('✓ UI generated successfully'))
       console.log(pc.dim(`   ${models.length} models → ${models.length * 2} pages`))
     } catch (error) {

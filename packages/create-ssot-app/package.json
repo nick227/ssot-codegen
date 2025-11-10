@@ -16,7 +16,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "vitest run e2e-ui-generation",
-    "test:e2e-simple": "vitest run e2e-ui-generation-simple"
+    "test:e2e-simple": "vitest run e2e-ui-generation-simple",
+    "test:blog": "vitest run e2e-blog-generation"
   },
   "keywords": [
     "prisma",
