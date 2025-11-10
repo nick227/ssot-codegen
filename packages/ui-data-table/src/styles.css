@@ -1,0 +1,59 @@
+/**
+ * @ssot-ui/data-table styles
+ * Uses tokens from @ssot-ui/tokens
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.ssot-data-table {
+  @apply w-full;
+}
+
+.ssot-table-container {
+  @apply overflow-x-auto;
+}
+
+.ssot-table {
+  @apply w-full border-collapse bg-white;
+}
+
+.ssot-table thead th {
+  @apply px-4 py-3 text-left text-sm font-semibold text-neutral-900 bg-neutral-50 border-b-2 border-neutral-200;
+}
+
+.ssot-table tbody td {
+  @apply px-4 py-3 text-sm text-neutral-700;
+}
+
+.ssot-table tbody tr:hover {
+  @apply bg-neutral-50;
+}
+
+.ssot-table.compact thead th {
+  @apply px-2 py-2 text-xs;
+}
+
+.ssot-table.compact tbody td {
+  @apply px-2 py-2 text-xs;
+}
+
+/* Focus styles for accessibility */
+.ssot-table thead th:focus,
+.ssot-table tbody td:focus,
+.ssot-table button:focus,
+.ssot-table input:focus {
+  @apply outline-none ring-2 ring-primary ring-offset-2;
+}
+
+/* Sort indicator */
+.sort-indicator {
+  @apply inline-flex items-center justify-center w-4 h-4;
+}
+
+/* Loading skeleton */
+.ssot-table-skeleton {
+  @apply animate-pulse bg-neutral-200 h-4 rounded;
+}
+
