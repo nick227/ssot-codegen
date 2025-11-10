@@ -1,0 +1,24 @@
+{
+  "version": "1.0.0",
+  "pluralRules": "icu",
+  "defaultLocale": "en",
+  "locales": [
+    {
+      "code": "en",
+      "name": "English",
+      "messages": {
+        "app.title": "My Blog",
+        "posts.list.title": "All Posts",
+        "posts.list.empty": "No posts yet",
+        "posts.detail.back": "Back to posts",
+        "posts.form.create": "Create Post",
+        "posts.form.save": "Save Changes",
+        "posts.form.cancel": "Cancel",
+        "common.loading": "Loading...",
+        "common.error": "An error occurred",
+        "common.search": "Search..."
+      }
+    }
+  ]
+}
+

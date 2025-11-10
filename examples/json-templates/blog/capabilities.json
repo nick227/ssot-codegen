@@ -1,0 +1,30 @@
+{
+  "version": "1.0.0",
+  "ui": [
+    "Avatar",
+    "Badge",
+    "Button",
+    "Card",
+    "DataTable",
+    "Form",
+    "Modal",
+    "Toast",
+    "TimeAgo"
+  ],
+  "sanitize": {
+    "policy": "rich"
+  },
+  "security": {
+    "enforceGuards": true,
+    "denyByDefault": true,
+    "csrfProtection": true
+  },
+  "telemetry": {
+    "enabled": false
+  },
+  "redaction": {
+    "fields": ["email", "phone"],
+    "strategy": "mask"
+  }
+}
+

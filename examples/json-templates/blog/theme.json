@@ -1,0 +1,79 @@
+{
+  "version": "1.0.0",
+  "modes": ["light", "dark"],
+  "defaultMode": "light",
+  
+  "colors": {
+    "primary": {
+      "50": { "light": "#eff6ff", "dark": "#1e3a5f" },
+      "100": { "light": "#dbeafe", "dark": "#2c5282" },
+      "500": { "light": "#3b82f6", "dark": "#60a5fa" },
+      "600": { "light": "#2563eb", "dark": "#3b82f6" },
+      "900": { "light": "#1e3a8a", "dark": "#dbeafe" }
+    },
+    "neutral": {
+      "50": { "light": "#fafafa", "dark": "#18181b" },
+      "100": { "light": "#f4f4f5", "dark": "#27272a" },
+      "500": { "light": "#71717a", "dark": "#a1a1aa" },
+      "900": { "light": "#18181b", "dark": "#fafafa" }
+    },
+    "success": {
+      "500": { "light": "#22c55e", "dark": "#4ade80" }
+    },
+    "error": {
+      "500": { "light": "#ef4444", "dark": "#f87171" }
+    }
+  },
+  
+  "spacing": {
+    "1": 4,
+    "2": 8,
+    "3": 12,
+    "4": 16,
+    "6": 24,
+    "8": 32,
+    "12": 48,
+    "16": 64
+  },
+  
+  "typography": {
+    "fontFamilies": {
+      "sans": "system-ui, -apple-system, sans-serif",
+      "mono": "Consolas, Monaco, monospace"
+    },
+    "fontSizes": {
+      "sm": "14px",
+      "base": "16px",
+      "lg": "18px",
+      "xl": "20px",
+      "2xl": "24px",
+      "3xl": "30px",
+      "4xl": "36px"
+    },
+    "fontWeights": {
+      "normal": 400,
+      "medium": 500,
+      "semibold": 600,
+      "bold": 700
+    },
+    "lineHeights": {
+      "tight": 1.25,
+      "normal": 1.5,
+      "relaxed": 1.75
+    }
+  },
+  
+  "radii": {
+    "sm": "4px",
+    "md": "8px",
+    "lg": "12px",
+    "full": "9999px"
+  },
+  
+  "shadows": {
+    "sm": "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+    "md": "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+    "lg": "0 10px 15px -3px rgba(0, 0, 0, 0.1)"
+  }
+}
+

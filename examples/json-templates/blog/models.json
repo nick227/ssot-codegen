@@ -1,0 +1,46 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2025-11-10T22:00:00.000Z",
+  "schemaPath": "./prisma/schema.prisma",
+  "models": [
+    {
+      "name": "Post",
+      "fields": [
+        { "name": "id", "type": "String", "isRequired": true, "isList": false, "isId": true, "isRelation": false },
+        { "name": "title", "type": "String", "isRequired": true, "isList": false, "isRelation": false },
+        { "name": "slug", "type": "String", "isRequired": true, "isList": false, "isUnique": true, "isRelation": false },
+        { "name": "content", "type": "String", "isRequired": true, "isList": false, "isRelation": false },
+        { "name": "excerpt", "type": "String", "isRequired": false, "isList": false, "isRelation": false },
+        { "name": "status", "type": "String", "isRequired": true, "isList": false, "isRelation": false },
+        { "name": "coverImage", "type": "String", "isRequired": false, "isList": false, "isRelation": false },
+        { "name": "authorId", "type": "String", "isRequired": true, "isList": false, "isRelation": false },
+        { "name": "author", "type": "User", "isRequired": true, "isList": false, "isRelation": true, "relationTo": "User" },
+        { "name": "comments", "type": "Comment", "isRequired": false, "isList": true, "isRelation": true, "relationTo": "Comment" },
+        { "name": "createdAt", "type": "DateTime", "isRequired": true, "isList": false, "isRelation": false },
+        { "name": "updatedAt", "type": "DateTime", "isRequired": true, "isList": false, "isRelation": false }
+      ]
+    },
+    {
+      "name": "User",
+      "fields": [
+        { "name": "id", "type": "String", "isRequired": true, "isList": false, "isId": true, "isRelation": false },
+        { "name": "name", "type": "String", "isRequired": true, "isList": false, "isRelation": false },
+        { "name": "email", "type": "String", "isRequired": true, "isList": false, "isUnique": true, "isRelation": false },
+        { "name": "role", "type": "String", "isRequired": true, "isList": false, "isRelation": false },
+        { "name": "posts", "type": "Post", "isRequired": false, "isList": true, "isRelation": true, "relationTo": "Post" }
+      ]
+    },
+    {
+      "name": "Comment",
+      "fields": [
+        { "name": "id", "type": "String", "isRequired": true, "isList": false, "isId": true, "isRelation": false },
+        { "name": "content", "type": "String", "isRequired": true, "isList": false, "isRelation": false },
+        { "name": "postId", "type": "String", "isRequired": true, "isList": false, "isRelation": false },
+        { "name": "post", "type": "Post", "isRequired": true, "isList": false, "isRelation": true, "relationTo": "Post" },
+        { "name": "createdAt", "type": "DateTime", "isRequired": true, "isList": false, "isRelation": false }
+      ]
+    }
+  ],
+  "enums": []
+}
+

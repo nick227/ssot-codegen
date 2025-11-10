@@ -1,0 +1,61 @@
+{
+  "version": "1.0.0",
+  "models": {
+    "post": {
+      "list": {
+        "pagination": {
+          "type": "cursor",
+          "maxPageSize": 100,
+          "defaultPageSize": 20
+        },
+        "filterable": [
+          {
+            "field": "status",
+            "ops": ["eq", "in"],
+            "enum": ["draft", "published", "archived"]
+          },
+          "authorId"
+        ],
+        "sortable": ["createdAt", "title", "updatedAt"],
+        "defaultSort": [
+          { "field": "createdAt", "dir": "desc" }
+        ],
+        "search": {
+          "fields": ["title", "content", "excerpt"],
+          "strategy": "fulltext"
+        }
+      },
+      "detail": {
+        "relations": ["author", "comments"]
+      },
+      "mutations": {
+        "create": true,
+        "update": true,
+        "delete": true
+      },
+      "fields": {
+        "content": {
+          "readRoles": [],
+          "writeRoles": ["admin", "editor"]
+        }
+      }
+    },
+    "user": {
+      "list": {
+        "pagination": {
+          "type": "cursor",
+          "maxPageSize": 50,
+          "defaultPageSize": 10
+        },
+        "filterable": ["role"],
+        "sortable": ["name"]
+      },
+      "mutations": {
+        "create": false,
+        "update": false,
+        "delete": false
+      }
+    }
+  }
+}
+

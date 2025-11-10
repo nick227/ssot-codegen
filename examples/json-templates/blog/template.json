@@ -1,0 +1,86 @@
+{
+  "$schema": "../../../packages/ui-schemas/json-schema/template.json",
+  "version": "1.0.0",
+  "runtimeVersion": "^3.0.0",
+  "name": "blog",
+  "description": "Simple blog template with posts and authors",
+  
+  "pages": [
+    {
+      "type": "list",
+      "route": "/",
+      "runtime": "server",
+      "model": "post",
+      "title": "Featured Posts",
+      "cardComponent": "PostCard",
+      "filters": [
+        { "field": "status", "label": "Status", "type": "enum" }
+      ],
+      "sort": [
+        { "field": "createdAt", "dir": "desc" }
+      ],
+      "pagination": {
+        "type": "cursor",
+        "defaultSize": 20
+      },
+      "relations": ["author"],
+      "search": true,
+      "seo": {
+        "title": "Blog - Latest Posts",
+        "description": "Read our latest articles and stories"
+      }
+    },
+    {
+      "type": "detail",
+      "route": "/posts/[slug]",
+      "runtime": "server",
+      "model": "post",
+      "title": "Post",
+      "idParam": "slug",
+      "relations": ["author", "comments"],
+      "fields": [
+        { "field": "title", "label": "Title", "format": "text" },
+        { "field": "content", "label": "Content", "format": "html", "sanitizePolicy": "rich" },
+        { "field": "createdAt", "label": "Published", "format": "date" },
+        { "field": "author.name", "label": "Author", "format": "text" }
+      ],
+      "breadcrumbs": true,
+      "seo": {
+        "title": "{{post.title}}",
+        "description": "{{post.excerpt}}",
+        "og:image": "{{post.coverImage}}"
+      }
+    },
+    {
+      "type": "form",
+      "route": "/admin/posts/new",
+      "runtime": "client",
+      "model": "post",
+      "title": "Create New Post",
+      "mode": "create",
+      "fields": [
+        { "name": "title", "label": "Title", "type": "text", "required": true },
+        { "name": "slug", "label": "Slug", "type": "text", "required": true },
+        { "name": "content", "label": "Content", "type": "richtext", "required": true },
+        { "name": "status", "label": "Status", "type": "select", "required": true }
+      ],
+      "success": {
+        "redirect": "/admin/posts",
+        "message": "Post created successfully!"
+      }
+    }
+  ],
+  
+  "guards": {
+    "/admin/*": {
+      "roles": ["admin", "editor"]
+    }
+  },
+  
+  "features": {
+    "forms": true,
+    "richText": true,
+    "i18n": false
+  }
+}
+
