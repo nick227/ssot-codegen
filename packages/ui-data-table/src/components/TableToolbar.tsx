@@ -4,6 +4,7 @@
 
 import { useState, useCallback } from 'react'
 import type { FilterDef, FilterParam, SearchParam, Messages } from '../types.js'
+import { FilterPanel } from './FilterPanel.js'
 
 interface TableToolbarProps<T> {
   searchable?: boolean | string[]
@@ -131,12 +132,16 @@ export function TableToolbar<T>({
         </div>
       )}
       
-      {/* Filter panel (TODO: Implement in next iteration) */}
+      {/* Filter panel */}
       {showFilters && filterable && (
-        <div className="mt-4 p-4 bg-neutral-50 rounded-md">
-          <p className="text-sm text-neutral-600">
-            Filter controls will be implemented in next iteration
-          </p>
+        <div className="mt-4">
+          <FilterPanel
+            filters={filterable}
+            activeFilters={filters}
+            onApply={onFilterAdd}
+            onClear={onFiltersClear}
+            messages={messages}
+          />
         </div>
       )}
     </div>
