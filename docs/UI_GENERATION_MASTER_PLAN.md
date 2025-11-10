@@ -295,18 +295,21 @@ import { tokens } from './tokens'
 - Keyboard accessible
 
 ✅ **Filters**
-- Text filter: contains, starts with, ends with
-- Enum filter: multi-select dropdown
+- One control per filterable column in dedicated filter panel
+- Text filter: contains, equals, starts with, ends with operators
+- Enum filter: multi-select dropdown with search
 - Boolean filter: true/false/all toggle
-- Date range filter: from/to date pickers
-- Number range filter: min/max inputs
-- Active filter chips with clear buttons
+- Date range filter: from/to date pickers (ISO strings)
+- Number range filter: min/max inputs with between/lt/lte/gt/gte
+- Active filter chips showing: "Field: Value ×" with clear button
+- "Clear all filters" action
 
 ✅ **Sorting**
-- Multi-column sort support
-- Click header to toggle asc/desc/none
-- Visual indicators (arrows)
-- Keyboard navigation
+- Multi-column sort with stable visual "sort order" list
+- Click header to toggle: none → asc → desc → none
+- Visual indicators: ↑/↓ for primary, superscript ¹²³ for secondary sorts
+- Sort order displayed: "Sorted by: 1. createdAt ↓  2. title ↑  [Clear]"
+- Keyboard navigation with Enter to toggle
 
 ✅ **Pagination**
 - Page numbers with prev/next
@@ -315,20 +318,26 @@ import { tokens } from './tokens'
 - Shows "X-Y of Z results"
 
 ✅ **Export**
-- CSV export with current filters applied
-- Server-side or client-side mode
-- Respects column visibility
+- CSV export with current filters and sort applied
+- Client mode: total ≤ 10k rows (prevent massive downloads)
+- Server mode required: total > 10k (server generates CSV via hook)
+- Respects column visibility and custom formatters
+- Filename format: {resource}-export-{timestamp}.csv
 
 ✅ **Accessibility**
-- Keyboard navigation (arrow keys, tab, enter, space)
-- Focus states visible
-- ARIA labels on table and controls
-- Screen reader announcements
+- ARIA roles: role="grid" on table, role="gridcell" on cells
+- Header IDs linked to cells via headers attribute
+- Roving tabindex for cell navigation
+- Keyboard shortcuts: Arrow keys (navigate), Enter/Space (activate), Escape (close)
+- Focus states: 2px outline on all interactive elements
+- Screen reader announcements: Sort changes, filter updates, page changes
+- WCAG 2.1 AA compliant (verified with axe)
 
 ✅ **Performance**
-- Virtual rows when rowCount > 1000
-- Memoized renders
-- Lazy load heavy components
+- Virtualization: Auto-enable at threshold (default 1000 rows)
+- SSR-safe fallback: Regular rendering on server, virtual in browser
+- Memoized renders for cells and headers
+- Lazy load heavy components (date pickers, rich selects)
 
 ✅ **Definition of Done**
 - 20+ unit tests covering all features
@@ -357,19 +366,28 @@ import { tokens } from './tokens'
 ✅ **Field Widgets by Type**
 ```
 String      → Text input
-Int/Float   → Number input
+Int/Float   → Number input  
 Boolean     → Switch/Checkbox
 DateTime    → Date picker
 Enum        → Select dropdown
-Relation    → Autocomplete select (uses SDK)
-String[]    → Multi-select or tags input
+Relation    → Autocomplete select (async fetch via getOptions hook)
+String[]    → Tags input or multi-select
 ```
+
+**Relations handling**:
+- Force explicit `getOptions` hook (no implicit includes)
+- User provides: `getOptions: useUserList` for author field
+- Component calls hook with search query
+- Prevents N+1 queries and massive payloads
+- Example: Author select fetches users on demand, not included in post data
 
 ✅ **Validation**
 - Integrate with zodResolver (react-hook-form)
-- Show inline errors per field
-- Prevent submit if invalid
-- Async validation support
+- Show inline errors per field (from Zod schema)
+- Prevent submit if client validation fails
+- Async server errors: Map to specific fields via error.details
+- Example: Server returns `{ code: 'VALIDATION_ERROR', details: { fields: { email: 'Already exists' } } }`
+- Form displays error under email field
 
 ✅ **Field Customization**
 - Override widget per field
@@ -383,11 +401,14 @@ String[]    → Multi-select or tags input
 - Sections with titles
 - Custom grid layout
 
-✅ **Advanced Widgets** (Optional)
-- File picker component
-- Rich text editor (lazy loaded)
-- Date range picker
-- Color picker
+✅ **Advanced Widgets** (Optional, Lazy Loaded)
+- File picker: Pluggable adapter (S3/Cloudinary/local)
+  - Don't bake storage choice into core
+  - User provides upload handler
+  - Component handles UI only (preview, progress, validation)
+- Rich text editor: Lazy loaded, sanitizes output (XSS protection)
+- Date range picker: From/to with validation
+- Color picker: Hex/RGB with preview
 
 ✅ **Form Submission**
 - Async submit handler
@@ -431,10 +452,10 @@ String[]    → Multi-select or tags input
 - Router-agnostic (Next.js App Router default)
 
 ✅ **States**
-- Loading skeleton
-- Empty state with CTA
-- Error state with retry
-- Success messages/toasts
+- Explicit Empty, Error, Loading components passed as props (theme globally)
+- User can provide custom state components per screen
+- No hidden state logic - all wiring visible
+- Example: `<ListScreen emptyState={<MyEmptyState />} loadingState={<MySkeleton />} />`
 
 ✅ **Definition of Done**
 - 10 tests around prop wiring and navigation
@@ -470,7 +491,8 @@ String[]    → Multi-select or tags input
   name: string
   description: string
   version: string
-  minSdkVersion: string
+  minSdkVersion: string        // Required SDK hook contract version
+  tokenSet: string             // e.g., 'ssot-tokens@1'
   router: 'nextjs-app' | 'nextjs-pages' | 'expo'
   
   requiredModels: [
@@ -488,9 +510,19 @@ String[]    → Multi-select or tags input
   ]
   
   featureFlags: {
-    auth: boolean
-    comments: boolean
-    search: boolean
+    auth: boolean              // Auth integration
+    comments: boolean          // Comment system
+    search: boolean            // Global search
+    seo: boolean               // Metadata + Open Graph
+  }
+  
+  migrations: [
+    { from: '1.0.0', to: '1.1.0', breaking: false, description: 'Added SEO support' }
+  ]
+  
+  breakingChangePolicy: {
+    requiresMajorBump: ['change field types', 'remove required fields', 'change router']
+    requiresMinorBump: ['add optional fields', 'add feature flags']
   }
 }
 ```
@@ -498,7 +530,11 @@ String[]    → Multi-select or tags input
 **Compiler validates**:
 - All required models are mapped
 - All required fields are mapped
-- Field types match (or are compatible)
+- Field types match or are compatible
+- Warns on type mismatches (e.g., template expects DateTime, user has String)
+- Requires explicit transform if types don't match
+- Produces diff view: template field → chosen field + confidence score
+- Persists validation result to `ui-mapping.md`
 - Fails with actionable diff showing missing mappings
 
 **Compiler generates**:
@@ -614,6 +650,45 @@ $ pnpm ssot ui init blog
 - Inline comments explaining template decisions
 - Examples of common customizations
 - Troubleshooting section with solutions
+
+**Blog template specific requirements**:
+
+✅ **SEO (if featureFlags.seo = true)**:
+- Generate metadata export in each page.tsx
+- Open Graph tags for social sharing
+- Structured data (JSON-LD) for posts
+- Sitemap generation (optional)
+- Example:
+  ```typescript
+  export const metadata = {
+    title: post.heading,
+    description: post.summary,
+    openGraph: {
+      title: post.heading,
+      description: post.summary,
+      images: [post.coverImage]
+    }
+  }
+  ```
+
+✅ **Content Security**:
+- Rich text content: Sanitize HTML to prevent XSS
+- Use DOMPurify or similar before rendering
+- Whitelist allowed tags and attributes
+- Strip script tags, event handlers
+- Example: `<div dangerouslySetInnerHTML={{ __html: sanitize(post.body) }} />`
+
+✅ **Auth Integration (if featureFlags.auth = true)**:
+- Auth-gated routes (create, edit, delete)
+- Public routes (list, detail, read-only comments)
+- Example: Comments read-only when auth is off
+
+✅ **Definition of Done**:
+- Example repo deployable to Vercel (build succeeds)
+- Mapping works with 2 different schemas (tested)
+- SEO validation passes (metadata present, OG tags valid)
+- Security audit passes (XSS tests, sanitization verified)
+- Performance: Lighthouse score >90
 
 ---
 
@@ -955,6 +1030,384 @@ columns={[
 - Generated UI code
 - Deployment instructions
 - Live demo link
+
+---
+
+## 🔧 Gaps to Fill (Close Before Implementation)
+
+### Sort/Filter Wire Format Serialization
+
+**Define canonical format** for all adapters:
+
+**Sort** (client → server):
+```json
+{
+  "sort": [
+    { "field": "createdAt", "dir": "desc" },
+    { "field": "title", "dir": "asc" }
+  ]
+}
+```
+
+**Filter** (client → server):
+```json
+{
+  "filters": [
+    { "field": "published", "op": "eq", "value": true },
+    { "field": "views", "op": "gte", "value": 100 }
+  ]
+}
+```
+
+**Adapters** (REST/tRPC/GraphQL):
+- Must translate this format to backend query language
+- Contract tests ensure all adapters handle all operators
+- Document adapter implementation guide
+
+---
+
+### Date/Time Handling
+
+**Rule**: Always ISO strings on wire, local display in UI
+
+**Server**:
+- Stores in UTC
+- Returns ISO strings: `"2025-01-15T10:30:00.000Z"`
+
+**Client**:
+- Receives ISO strings
+- Displays in user's local timezone
+- Sends ISO strings for mutations
+
+**Display helpers**:
+```typescript
+formatDate(isoString)     → "Jan 15, 2025"
+formatDateTime(isoString) → "Jan 15, 2025 10:30 AM"
+formatRelative(isoString) → "2 hours ago"
+```
+
+**Date pickers**:
+- User selects in local timezone
+- Converts to UTC ISO string before sending
+- Server receives UTC
+
+---
+
+### i18n Strategy
+
+**Components accept messages dictionary**:
+```typescript
+<DataTable
+  messages={{
+    search: 'Buscar...',
+    noResults: 'No se encontraron resultados',
+    loading: 'Cargando...'
+  }}
+/>
+```
+
+**Templates ship with**:
+- English (en) only by default
+- Messages object structure documented
+- Users provide translations for other languages
+
+**NOT included**:
+- Auto-translation
+- Multiple language bundles
+- Language detection
+
+**Keep it simple**: Dict prop, users own translations
+
+---
+
+### Accessibility Bar (WCAG 2.1 AA)
+
+**Checklist in each package README**:
+- [ ] Keyboard navigation (all interactive elements reachable)
+- [ ] Focus indicators (visible 2px outline, 3:1 contrast ratio)
+- [ ] ARIA labels (all controls labeled, roles assigned)
+- [ ] Color contrast (4.5:1 for text, 3:1 for large text)
+- [ ] Screen reader support (meaningful announcements)
+- [ ] Skip links (bypass navigation)
+- [ ] No keyboard traps (can escape all modals/dropdowns)
+- [ ] Form labels (explicit or aria-label)
+- [ ] Error messages (associated with fields via aria-describedby)
+
+**Verification**:
+- Axe CI check on all Storybook stories
+- Manual keyboard-only testing
+- Screen reader testing (NVDA/JAWS)
+
+---
+
+## 🔐 Security Checklist for Templates
+
+### CSRF Protection
+**Guidance in template README**:
+- Use framework's built-in CSRF tokens (Next.js, Expo)
+- Include CSRF token in all mutation requests
+- Validate tokens on server
+- Example: Next.js Server Actions have built-in protection
+
+### Auth Boundaries
+**Generated code**:
+- Clear separation between public and protected routes
+- Auth middleware at layout level
+- Redirect to login if unauthorized
+- Example: `/posts/new` requires auth, `/posts/[id]` is public
+
+### XSS in Rich Text Editor
+**Template code**:
+- Always sanitize rich text content before rendering
+- Use DOMPurify with strict whitelist
+- Strip script tags, event handlers, data URIs
+- Example provided in generated component
+
+### File Upload Validation
+**Template code**:
+- Validate file type (both client and server)
+- Validate file size (prevent DoS)
+- Scan for malware (if using cloud storage)
+- Generate safe filenames (prevent path traversal)
+- Example:
+  ```typescript
+  const allowedTypes = ['image/jpeg', 'image/png']
+  const maxSize = 5 * 1024 * 1024 // 5MB
+  
+  if (!allowedTypes.includes(file.type)) {
+    throw new Error('Invalid file type')
+  }
+  ```
+
+### Rate Limiting Hints
+**Template README includes**:
+- Recommend rate limiting on create/update/delete routes
+- Example: 10 requests per minute per IP
+- Suggest using Vercel rate limiting or custom middleware
+- Not enforced by template (user's responsibility)
+
+### SQL Injection (via SDK)
+**Not a concern**:
+- SDK uses Prisma (parameterized queries)
+- Filter operators are whitelisted
+- No raw SQL in generated code
+- Document: "Safe by default via Prisma"
+
+---
+
+## ⚠️ Risk Hotspots & Mitigations
+
+### Risk 1: SDK Contract Mismatch
+**Hotspot**: Components expect exact hook shapes, backend changes break UI
+
+**Mitigation**:
+- Freeze SDK hook contract before any component work
+- Version the contract: `@ssot-sdk-contract@1.0.0`
+- Add adapter contract tests with mock server
+- Breaking changes require major version bump
+- Adapters translate to REST/GraphQL/tRPC (shield components from backend changes)
+
+**Test**:
+```typescript
+describe('REST Adapter Contract', () => {
+  it('useList returns correct shape', async () => {
+    const result = await adapter.list('post', { page: 1, pageSize: 20 })
+    expect(result).toMatchObject({
+      items: expect.any(Array),
+      total: expect.any(Number)
+    })
+  })
+})
+```
+
+---
+
+### Risk 2: Bundle Size Bloat
+**Hotspot**: Rich text editors, charts, date pickers are heavy
+
+**Mitigation**:
+- Lazy load all heavy dependencies
+- Example: `const RichTextEditor = lazy(() => import('./RichTextEditor'))`
+- Tree-shakeable exports (import only what you use)
+- Bundlesize bot on every PR (fails if >60kb gzipped)
+- Monitor with `@next/bundle-analyzer`
+
+**Thresholds**:
+- @ssot-ui/data-table: <60kb gzipped
+- @ssot-ui/form-builder: <80kb gzipped (includes react-hook-form)
+- Rich text plugin: Lazy loaded, not counted in core bundle
+
+---
+
+### Risk 3: Regeneration Conflicts
+**Hotspot**: User edits generated file, regeneration overwrites changes
+
+**Mitigation Strategy 1** (Safe Blocks + Prompt):
+```typescript
+// ===== GENERATED CODE START - DO NOT EDIT =====
+const columns = [
+  { key: 'title', header: 'Title' }
+]
+// ===== GENERATED CODE END =====
+
+// ✨ YOUR CUSTOMIZATIONS - Safe to edit
+const customColumns = [
+  ...columns,
+  { key: 'custom', header: 'Custom', cellRender: myRender }
+]
+```
+
+**Mitigation Strategy 2** (Prompt Before Overwrite):
+```bash
+$ pnpm ssot generate --ui
+
+⚠️ Detected changes in generated files:
+  - app/(dashboard)/posts/page.tsx (modified 2 days ago)
+  
+Options:
+  1) Keep your changes (skip regeneration)
+  2) View diff
+  3) Overwrite with new code
+  4) Three-way merge
+> 1
+
+✓ Skipped modified files
+✓ Regenerated unchanged files
+```
+
+**Decision**: Use Strategy 2 (prompt) as default. Safe blocks if user opts in.
+
+**Never**: Silently overwrite user changes
+
+---
+
+### Risk 4: Template Doesn't Match User's Domain
+**Hotspot**: Blog template used for e-commerce, weird results
+
+**Mitigation**:
+- Template selection wizard with domain matching
+- Clear template descriptions and use cases
+- Show required models before selection
+- Suggest closest template based on schema
+- Allow hybrid: "Start with blog, customize for your domain"
+
+---
+
+## ✅ Phase Exit Criteria
+
+### Phase 1 Exit: Components Ready
+**Must achieve ALL**:
+- [ ] data-table package published to npm
+- [ ] form-builder package published to npm
+- [ ] crud-screens package published to npm
+- [ ] Each has 20+ tests passing
+- [ ] Each has Storybook with examples
+- [ ] Each has complete README
+- [ ] Bundle size <60kb verified
+- [ ] Accessibility audit passes (axe)
+- [ ] Example "first render" time <5 minutes
+- [ ] SDK contract locked and documented
+- [ ] Theme tokens v1 published
+
+**Gate**: Cannot start Phase 2 until ALL checkboxes complete
+
+---
+
+### Phase 2 Exit: Blog Template Works
+**Must achieve ALL**:
+- [ ] Blog template available via CLI
+- [ ] Interactive `pnpm ssot ui init blog` works
+- [ ] Auto-detection suggests ≥90% of fields correctly
+- [ ] Compiler validates mappings with actionable errors
+- [ ] Generated code compiles without TypeScript errors
+- [ ] Two different schemas successfully generate working apps
+- [ ] Example app deploys to Vercel in <5 minutes
+- [ ] ui-README.md and ui-mapping.md generated
+- [ ] SEO metadata generated correctly
+- [ ] Content sanitization prevents XSS
+- [ ] Lighthouse score >90 on example
+
+**Test schemas**:
+1. Standard blog (Post, User, Comment with expected field names)
+2. Custom blog (BlogPost, Author, Reply with different field names)
+
+**Gate**: Cannot start Phase 3 until blog template proven with diverse schemas
+
+---
+
+### Phase 3 Exit: Admin Panel Works
+**Must achieve ALL**:
+- [ ] Admin panel lists 100% of models from any schema
+- [ ] Zero crashes with unknown field types
+- [ ] Field mapper achieves 80% hint accuracy (manual review of 100 schemas)
+- [ ] Read-only mode works perfectly
+- [ ] Write mode disabled by default
+- [ ] CLI `pnpm ssot dev --admin` launches successfully
+- [ ] Renders 1000 items in <2 seconds with virtualization
+- [ ] Dangerous operations show clear warnings
+- [ ] Embeddable in existing Next.js app
+- [ ] Security fields (passwords, tokens) hidden automatically
+
+**Gate**: Admin panel must be safe and functional before v1 release
+
+---
+
+### Final Release Gate
+**Must achieve ALL**:
+- [ ] All phase exit criteria met
+- [ ] Full documentation published
+- [ ] Security audit completed
+- [ ] Performance benchmarks met
+- [ ] All tests passing (200+ total)
+- [ ] CI/CD pipeline configured
+- [ ] Example projects deployed
+- [ ] Beta users provide positive feedback
+- [ ] No critical bugs open
+- [ ] Licensing clear
+- [ ] Attribution documented
+
+---
+
+## 🔓 Telemetry (Opt-In)
+
+**Anonymous usage counters** to catch performance regressions:
+
+**Collected** (if user opts in):
+- Component usage frequency (which components used)
+- Render timings (95th percentile)
+- Bundle sizes after build
+- Error rates (crashes, validation failures)
+
+**NOT collected**:
+- User data or schema structure
+- Field names or values
+- IP addresses or identifiers
+
+**Implementation**:
+- Opt-in during `ssot ui init`
+- Can disable anytime in config
+- Open source the telemetry code
+- Aggregate data published quarterly
+
+---
+
+## 📜 Licensing & Attribution
+
+**Template license**:
+- MIT license on all templates
+- Users can modify and redistribute
+- Attribution appreciated but not required
+
+**Component packages**:
+- MIT license
+- Free for commercial use
+- No restrictions
+
+**Clarify**:
+- Generated code belongs to user
+- No usage restrictions
+- No telemetry without opt-in
+- Open source friendly
 
 ---
 
