@@ -1,0 +1,135 @@
+{
+  "$ref": "#/definitions/models",
+  "definitions": {
+    "models": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "generatedAt": {
+          "type": "string"
+        },
+        "schemaPath": {
+          "type": "string"
+        },
+        "models": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "isRequired": {
+                      "type": "boolean"
+                    },
+                    "isList": {
+                      "type": "boolean"
+                    },
+                    "isUnique": {
+                      "type": "boolean"
+                    },
+                    "isId": {
+                      "type": "boolean"
+                    },
+                    "isRelation": {
+                      "type": "boolean"
+                    },
+                    "relationTo": {
+                      "type": "string"
+                    },
+                    "relationName": {
+                      "type": "string"
+                    },
+                    "default": {},
+                    "documentation": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "type",
+                    "isRequired",
+                    "isList",
+                    "isRelation"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "idFields": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "uniqueFields": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "documentation": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "fields"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "enums": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "values": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "documentation": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "values"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "version",
+        "generatedAt",
+        "schemaPath",
+        "models",
+        "enums"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

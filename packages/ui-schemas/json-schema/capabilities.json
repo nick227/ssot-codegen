@@ -1,0 +1,165 @@
+{
+  "$ref": "#/definitions/capabilities",
+  "definitions": {
+    "capabilities": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "ui": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sanitize": {
+          "type": "object",
+          "properties": {
+            "policy": {
+              "type": "string",
+              "enum": [
+                "basic",
+                "strict",
+                "rich",
+                "custom"
+              ]
+            },
+            "custom": {
+              "type": "object",
+              "properties": {
+                "allowedTags": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "allowedAttrs": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "required": [
+                "allowedTags",
+                "allowedAttrs"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "policy"
+          ],
+          "additionalProperties": false
+        },
+        "security": {
+          "type": "object",
+          "properties": {
+            "enforceGuards": {
+              "type": "boolean",
+              "default": true
+            },
+            "denyByDefault": {
+              "type": "boolean",
+              "default": true
+            },
+            "csrfProtection": {
+              "type": "boolean",
+              "default": true
+            }
+          },
+          "additionalProperties": false
+        },
+        "telemetry": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false
+            },
+            "events": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "scrub": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "redaction": {
+          "type": "object",
+          "properties": {
+            "fields": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "strategy": {
+              "type": "string",
+              "enum": [
+                "mask",
+                "hash",
+                "remove"
+              ],
+              "default": "mask"
+            }
+          },
+          "required": [
+            "fields"
+          ],
+          "additionalProperties": false
+        },
+        "fileUpload": {
+          "type": "object",
+          "properties": {
+            "maxSize": {
+              "type": "integer",
+              "exclusiveMinimum": 0
+            },
+            "allowedTypes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "storage": {
+              "type": "string",
+              "enum": [
+                "s3",
+                "cloudinary",
+                "local",
+                "custom"
+              ]
+            }
+          },
+          "required": [
+            "maxSize",
+            "allowedTypes",
+            "storage"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "version",
+        "ui",
+        "sanitize",
+        "security"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

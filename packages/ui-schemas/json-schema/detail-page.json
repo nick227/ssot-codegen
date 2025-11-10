@@ -1,0 +1,184 @@
+{
+  "$ref": "#/definitions/detail-page",
+  "definitions": {
+    "detail-page": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "detail"
+        },
+        "route": {
+          "type": "string"
+        },
+        "runtime": {
+          "type": "string",
+          "enum": [
+            "server",
+            "client",
+            "edge"
+          ]
+        },
+        "model": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "idParam": {
+          "type": "string",
+          "default": "id"
+        },
+        "relations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "field": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "format": {
+                "type": "string",
+                "enum": [
+                  "text",
+                  "date",
+                  "html",
+                  "markdown",
+                  "json",
+                  "richtext"
+                ]
+              },
+              "sanitizePolicy": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "field",
+              "label"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "layout": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "standard",
+                "split",
+                "tabs",
+                "wizard"
+              ]
+            },
+            "slots": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        "seo": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "canonical": {
+              "type": "string"
+            },
+            "og:image": {
+              "type": "string"
+            },
+            "og:type": {
+              "type": "string"
+            },
+            "noindex": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "visibleWhen": {
+          "type": "object",
+          "properties": {
+            "field": {
+              "type": "string"
+            },
+            "op": {
+              "type": "string",
+              "enum": [
+                "eq",
+                "ne",
+                "in",
+                "exists",
+                "roleAny"
+              ]
+            },
+            "value": {}
+          },
+          "required": [
+            "field",
+            "op"
+          ],
+          "additionalProperties": false
+        },
+        "breadcrumbs": {
+          "type": "boolean"
+        },
+        "prevNext": {
+          "type": "boolean"
+        },
+        "relatedSections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "relation": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "component": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "relation",
+              "title",
+              "component"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "type",
+        "route",
+        "runtime",
+        "model",
+        "fields"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

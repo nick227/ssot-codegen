@@ -1,0 +1,172 @@
+{
+  "$ref": "#/definitions/form-page",
+  "definitions": {
+    "form-page": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "form"
+        },
+        "route": {
+          "type": "string"
+        },
+        "runtime": {
+          "type": "string",
+          "const": "client"
+        },
+        "model": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "create",
+            "edit",
+            "inline"
+          ]
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "text",
+                  "textarea",
+                  "number",
+                  "checkbox",
+                  "select",
+                  "multiselect",
+                  "date",
+                  "richtext",
+                  "file",
+                  "tags"
+                ]
+              },
+              "required": {
+                "type": "boolean",
+                "default": false
+              },
+              "validation": {
+                "type": "string"
+              },
+              "widget": {
+                "type": "string"
+              },
+              "helpText": {
+                "type": "string"
+              },
+              "placeholder": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "label",
+              "type"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "validation": {
+          "type": "string",
+          "enum": [
+            "zod",
+            "yup",
+            "custom"
+          ],
+          "default": "zod"
+        },
+        "layout": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "standard",
+                "split",
+                "tabs",
+                "wizard"
+              ]
+            },
+            "slots": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        "visibleWhen": {
+          "type": "object",
+          "properties": {
+            "field": {
+              "type": "string"
+            },
+            "op": {
+              "type": "string",
+              "enum": [
+                "eq",
+                "ne",
+                "in",
+                "exists",
+                "roleAny"
+              ]
+            },
+            "value": {}
+          },
+          "required": [
+            "field",
+            "op"
+          ],
+          "additionalProperties": false
+        },
+        "success": {
+          "type": "object",
+          "properties": {
+            "redirect": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "autosave": {
+          "type": "boolean"
+        },
+        "confirmBeforeLeave": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "required": [
+        "type",
+        "route",
+        "runtime",
+        "model",
+        "mode",
+        "fields"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

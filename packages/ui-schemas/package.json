@@ -1,0 +1,48 @@
+{
+  "name": "@ssot-ui/schemas",
+  "version": "3.0.0",
+  "description": "JSON schemas and Zod validators for SSOT UI templates",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./json-schema": {
+      "types": "./dist/json-schema/index.d.ts",
+      "import": "./dist/json-schema/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "generate-json-schema": "node scripts/generate-json-schema.js"
+  },
+  "dependencies": {
+    "zod": "^3.22.4",
+    "zod-to-json-schema": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0"
+  },
+  "files": [
+    "dist",
+    "json-schema"
+  ],
+  "keywords": [
+    "ssot",
+    "ui",
+    "templates",
+    "json",
+    "schema",
+    "zod",
+    "validation"
+  ],
+  "license": "MIT"
+}
+
