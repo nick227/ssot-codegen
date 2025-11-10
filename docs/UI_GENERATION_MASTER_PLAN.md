@@ -1,0 +1,1096 @@
+# UI Generation - Master Implementation Plan
+
+## 🎯 Executive Summary
+
+Build TWO distinct UI generation systems:
+
+**PATH 1: Dynamic Admin Panel** (Dev tool with field mapper)
+- Zero-config data browser for any schema
+- Uses intelligent field detection
+- For development and internal admin panels
+- **Read-only by default** (write mode per model/field)
+
+**PATH 2: Production UI Templates** (Real apps with schema mapping)
+- Pre-built UI projects (blog, e-commerce, CRM)
+- Explicit schema-to-template variable mapping
+- Production-ready components
+
+**CRITICAL FOUNDATION**: Lock SDK contract first - all components depend on standardized hook shapes.
+
+---
+
+## 🔒 SDK Contract (MUST BE LOCKED FIRST)
+
+**All UI packages depend on this standardized interface:**
+
+```
+useList(resource, params) → { data, total, isLoading, error, refetch }
+  params: { page, pageSize, sort, filters, search }
+
+useGet(resource, { id }) → { data, isLoading, error }
+
+useCreate(resource) → { mutate, isPending, error }
+
+useUpdate(resource) → { mutate, isPending, error }
+
+useDelete(resource) → { mutate, isPending, error }
+```
+
+**Adapters**: Translate to REST/GraphQL/tRPC backend implementations
+
+**Decision**: Freeze this contract before ANY template or component work begins
+
+---
+
+## 🎨 Cross-Cutting Decisions (Decide Once, Use Everywhere)
+
+### Routing Stacks
+- **Web**: Next.js App Router (production templates and CRUD screens assume this)
+- **Mobile**: Expo Router (Phase 2+, templates will support this)
+
+### Theme System (Build First)
+- **Web**: Tailwind extend configuration with semantic tokens
+- **Mobile**: JavaScript tokens (React Native StyleSheet)
+- **Requirement**: Identical token names across platforms
+- **Priority**: Define tokens before any component styling
+
+### Pagination Shape
+- **Server returns**: `{ items: T[], total: number }`
+- **Client sends**: `{ page: number, pageSize: number }`
+
+### Filter Syntax (Server-agnostic)
+```
+{
+  field: string
+  op: 'eq' | 'ne' | 'in' | 'lt' | 'lte' | 'gt' | 'gte' | 
+       'contains' | 'startsWith' | 'endsWith' | 'between'
+  value: any
+}
+```
+
+### Error Format
+```
+{
+  code: string
+  message: string
+  details?: Record<string, any>
+}
+```
+
+### Authentication Context
+- Components receive `onUnauthorized` / redirect callback
+- No auth mechanics in components
+- Auth implementation stays in user's app
+
+### Internationalization
+- Strings via simple dictionary prop
+- Templates ship with `en` default
+- User provides translations
+
+---
+
+## 📦 Repository Structure (Docs-First)
+
+```
+monorepo/
+├── packages/
+│   ├── ui-data-table/
+│   │   ├── src/
+│   │   ├── stories/         (Storybook - 5+ examples)
+│   │   └── README.md
+│   ├── ui-form-builder/
+│   │   ├── src/
+│   │   ├── stories/         (Storybook - 4+ examples)
+│   │   └── README.md
+│   ├── ui-crud-screens/
+│   ├── sdk-adapter/         (Shared adapter package)
+│   │   ├── rest-adapter.ts
+│   │   ├── trpc-adapter.ts
+│   │   └── graphql-adapter.ts
+│   └── admin-panel/
+│
+├── templates/
+│   ├── blog/
+│   │   ├── template.json    (Metadata)
+│   │   ├── examples/        (Full example projects)
+│   │   └── README.md
+│   ├── ecommerce/
+│   └── crm/
+│
+└── docs/
+    ├── sdk-contract.md
+    ├── theme-tokens.md
+    └── templates/
+```
+
+---
+
+## ⚠️ Risks & Mitigations
+
+### Risk 1: Scope Creep in Phase 1
+**Mitigation**: 
+- Ship ONLY data-table + form-builder first
+- Defer auth-forms until a template actually needs it
+- Defer dashboard-cards until required
+
+### Risk 2: Template/SDK Mismatch
+**Mitigation**:
+- Freeze SDK hook contract before any template work
+- All templates must validate against locked contract
+- Breaking changes require major version bump
+
+### Risk 3: Field-Mapper Accuracy (Admin Panel)
+**Mitigation**:
+- Keep admin panel READ-ONLY for v1
+- Enable write mode only after manual allowlist per field
+- Clear warnings on dangerous operations
+
+### Risk 4: Bundle Size Bloat
+**Mitigation**:
+- Target: <60kb gzipped per package (without charts)
+- Tree-shakeable exports
+- Lazy load heavy components (rich text, charts)
+- Monitor with bundlesize bot
+
+---
+
+## 🎨 Foundation: Theme Tokens (Week 0 - BUILD FIRST)
+
+**Priority: CRITICAL - Must be defined before ANY component styling**
+
+### Theme Token System
+
+**Define once, use everywhere**:
+- Semantic color tokens (primary, secondary, success, warning, error, neutral)
+- Spacing scale (xs, sm, md, lg, xl, 2xl, etc.)
+- Typography scale (headings, body, captions)
+- Border radius (sm, md, lg, full)
+- Shadow levels (sm, md, lg, xl)
+- Z-index layers (dropdown, modal, tooltip, etc.)
+
+**Implementation**:
+
+**Web (Tailwind extend)**:
+```javascript
+// tailwind.config.js
+module.exports = {
+  theme: {
+    extend: {
+      colors: {
+        primary: { DEFAULT: '#3B82F6', hover: '#2563EB' },
+        secondary: { DEFAULT: '#64748B', hover: '#475569' }
+        // ... all tokens
+      },
+      spacing: {
+        xs: '0.5rem',  // 8px
+        sm: '1rem',    // 16px
+        md: '1.5rem',  // 24px
+        // ... all tokens
+      }
+    }
+  }
+}
+```
+
+**Mobile (JavaScript tokens)**:
+```javascript
+// tokens.ts
+export const tokens = {
+  colors: {
+    primary: { DEFAULT: '#3B82F6', hover: '#2563EB' },
+    secondary: { DEFAULT: '#64748B', hover: '#475569' }
+    // ... identical names to web
+  },
+  spacing: {
+    xs: 8,
+    sm: 16,
+    md: 24,
+    // ... identical names to web
+  }
+}
+
+// Usage in React Native
+import { tokens } from './tokens'
+<View style={{ padding: tokens.spacing.md }} />
+```
+
+**Requirement**: Token names MUST be identical across platforms
+**Deliverable**: Single source of truth JSON file that compiles to both formats
+
+---
+
+## 📋 Implementation Sequence
+
+### PHASE 1: Production UI Components (Weeks 1-4)
+**Priority: HIGHEST - Build this first**
+**Scope Control**: Ship data-table + form-builder FIRST, defer auth-forms and dashboard-cards
+
+---
+
+#### 1.1 @ssot-ui/data-table
+
+**Acceptance Criteria**:
+
+✅ **Data Source**
+- Accept resource string OR explicit fetcher conforming to SDK hook contract
+- Work with `useList(resource, params)` contract
+- Support custom data transformations
+
+✅ **Columns Configuration**
+```
+{
+  key: string
+  header: string
+  sortable?: boolean
+  filterType?: 'text' | 'enum' | 'boolean' | 'date-range' | 'number-range'
+  cellRender?: (value, row) => ReactNode
+}
+```
+
+✅ **Search**
+- Search across explicit field list provided by user
+- Debounced input (300ms)
+- Clear button
+- Keyboard accessible
+
+✅ **Filters**
+- Text filter: contains, starts with, ends with
+- Enum filter: multi-select dropdown
+- Boolean filter: true/false/all toggle
+- Date range filter: from/to date pickers
+- Number range filter: min/max inputs
+- Active filter chips with clear buttons
+
+✅ **Sorting**
+- Multi-column sort support
+- Click header to toggle asc/desc/none
+- Visual indicators (arrows)
+- Keyboard navigation
+
+✅ **Pagination**
+- Page numbers with prev/next
+- Optional infinite scroll mode
+- Page size selector
+- Shows "X-Y of Z results"
+
+✅ **Export**
+- CSV export with current filters applied
+- Server-side or client-side mode
+- Respects column visibility
+
+✅ **Accessibility**
+- Keyboard navigation (arrow keys, tab, enter, space)
+- Focus states visible
+- ARIA labels on table and controls
+- Screen reader announcements
+
+✅ **Performance**
+- Virtual rows when rowCount > 1000
+- Memoized renders
+- Lazy load heavy components
+
+✅ **Definition of Done**
+- 20+ unit tests covering all features
+- Storybook with 5 examples (basic, filtered, sorted, custom cells, mocked latency)
+- Works with mocked 2-second latency
+- Documentation for REST/tRPC/GraphQL adapters
+- Bundle size < 60kb gzipped (without virtual scroll lib)
+
+---
+
+#### 1.2 @ssot-ui/form-builder
+
+**Acceptance Criteria**:
+
+✅ **Schema Input**
+- Accept Zod schema (Prisma-derived from codegen)
+- Parse schema to infer field types
+- Support nested schemas (sections)
+
+✅ **Field Widgets by Type**
+```
+String      → Text input
+Int/Float   → Number input
+Boolean     → Switch/Checkbox
+DateTime    → Date picker
+Enum        → Select dropdown
+Relation    → Autocomplete select (uses SDK)
+String[]    → Multi-select or tags input
+```
+
+✅ **Validation**
+- Integrate with zodResolver (react-hook-form)
+- Show inline errors per field
+- Prevent submit if invalid
+- Async validation support
+
+✅ **Field Customization**
+- Override widget per field
+- Set labels, placeholders, help text
+- Mark fields as disabled/readonly
+- Conditional field visibility
+
+✅ **Layout Presets**
+- 1-column (mobile default)
+- 2-column (desktop)
+- Sections with titles
+- Custom grid layout
+
+✅ **Advanced Widgets** (Optional)
+- File picker component
+- Rich text editor (lazy loaded)
+- Date range picker
+- Color picker
+
+✅ **Form Submission**
+- Async submit handler
+- Loading state during submit
+- Success/error callbacks
+- Optimistic updates option
+
+✅ **Definition of Done**
+- 20+ tests (field mapping, validation, submission)
+- 4 Storybook stories (simple, relations, file upload, wizard)
+- Documentation with adapter examples
+- Works with all Prisma field types
+
+---
+
+#### 1.3 @ssot-ui/crud-screens
+
+**Acceptance Criteria**:
+
+✅ **Component Composition**
+- Consumes data-table + form-builder
+- Generates List/Detail/Create/Edit via props (NOT codegen)
+- Composable, not monolithic
+
+✅ **Screens**
+```
+<ListScreen resource="post" columns={[...]} />
+<DetailScreen resource="post" sections={[...]} />
+<CreateScreen resource="post" fields={[...]} />
+<EditScreen resource="post" fields={[...]} />
+```
+
+✅ **Navigation**
+- Breadcrumbs with back button
+- Links between screens
+- Router-agnostic (Next.js App Router default)
+
+✅ **States**
+- Loading skeleton
+- Empty state with CTA
+- Error state with retry
+- Success messages/toasts
+
+✅ **Definition of Done**
+- 10 tests around prop wiring and navigation
+- Demo page showing all four screens connected
+- Documentation for Next.js integration
+- Works with SDK contract hooks
+
+---
+
+#### 1.X DEFERRED to Post-Template Phase
+
+**@ssot-ui/auth-forms** - Defer until blog template needs it
+
+**@ssot-ui/dashboard-cards** - Defer until dashboard template needs it
+
+**Rationale**: Focus on core CRUD functionality first, add specialized components when templates require them
+
+---
+
+### PHASE 2: Production UI Templates (Weeks 5-8)
+**Priority: HIGH - Build after core components**
+
+#### 2.1 Template Metadata Format
+
+**template.json structure**:
+```
+{
+  name: string
+  description: string
+  version: string
+  minSdkVersion: string
+  router: 'nextjs-app' | 'nextjs-pages' | 'expo'
+  
+  requiredModels: [
+    {
+      template: 'user'
+      description: 'User/Author model'
+      requiredFields: [
+        { template: 'name', type: 'String', description: 'Display name' }
+        { template: 'avatar', type: 'String?', description: 'Profile image' }
+      ]
+      optionalFields: [
+        { template: 'bio', type: 'String?', description: 'User bio' }
+      ]
+    }
+  ]
+  
+  featureFlags: {
+    auth: boolean
+    comments: boolean
+    search: boolean
+  }
+}
+```
+
+**Compiler validates**:
+- All required models are mapped
+- All required fields are mapped
+- Field types match (or are compatible)
+- Fails with actionable diff showing missing mappings
+
+---
+
+#### 2.2 Mapping Configuration in ssot.config.ts
+
+**Format**:
+```
+uiProjects: {
+  template: 'blog'
+  
+  schemaMappings: {
+    models: {
+      'user': 'User'
+      'post': 'BlogPost'
+      'comment': 'Comment'
+    }
+    
+    fields: {
+      'user.name': 'User.email'
+      'post.title': 'BlogPost.heading'
+      'post.author': 'BlogPost.writer'
+      'post.author.name': 'BlogPost.writer.fullName'  // Nested!
+    }
+  }
+}
+```
+
+**Resolver Logic**:
+- Try exact match first
+- Try plural/singular variations
+- Check type compatibility
+- Calculate confidence score (0-100)
+- Suggest top 3 candidates
+
+---
+
+#### 2.3 CLI: `pnpm ssot ui init <template>`
+
+**Auto-Detection**:
+- Compare template.json to user's Prisma schema
+- Match models by similarity (case-insensitive, plural/singular)
+- Suggest fields based on type and name similarity
+- Show confidence scores
+
+**Interactive Flow**:
+```
+$ pnpm ssot ui init blog
+
+✓ Detected model mappings:
+  user → User (100% confidence)
+  post → Post (100% confidence)
+  comment → Comment (100% confidence)
+
+⚠ Need field mappings:
+  user.name (required String)
+    User has: id, email, username, firstName
+    → Suggest: email (90%) or firstName (85%)
+  > email
+
+  post.title (required String)
+    Post has: id, heading, body, slug
+    → Suggest: heading (95%)
+  > heading
+
+✓ Generated ssot.config.ts with mappings
+✓ Generated mapping.report.md
+```
+
+**Validation**:
+- All required fields must be mapped
+- Types must match or be compatible
+- CLI prevents generation if invalid
+
+---
+
+#### 2.4 Blog Template (First Template)
+
+**Template contents**:
+- PostList screen with table/card views
+- PostDetail screen with full post display
+- PostCreate form with rich text editor
+- PostEdit form pre-populated
+- UserProfile screen with user info and posts
+- CommentSection component with nested replies
+- Navigation and routing setup
+- Authentication integration
+- Search functionality
+
+**Template variables**:
+- Model: user, post, comment
+- User fields: name, avatar, bio
+- Post fields: title, content, excerpt, published, author, createdAt
+- Comment fields: content, author, post, createdAt
+
+**Documentation**:
+- Explain all required mappings
+- Provide example configurations
+- Document customization options
+- Include screenshots
+
+---
+
+#### 2.5 Additional Templates (Priority Order)
+
+**E-commerce template**:
+- Models: product, category, order, cart, user
+- Screens: ProductList, ProductDetail, Cart, Checkout, OrderHistory
+- Features: Product filtering, image galleries, payment integration
+
+**CRM template**:
+- Models: contact, company, deal, task, user
+- Screens: ContactList, ContactDetail, KanbanBoard, ActivityFeed
+- Features: Drag-and-drop, pipeline management, notes
+
+**Dashboard template**:
+- Models: metric, report, user
+- Screens: Overview, Analytics, Reports, Settings
+- Features: Real-time charts, KPI cards, export
+
+---
+
+### PHASE 3: Dynamic Admin Panel (Weeks 9-12)
+**Priority: MEDIUM - Build after production templates**
+**Critical Constraint**: READ-ONLY by default, write mode per model/field toggle
+
+#### 3.1 Field Mapping Library (Hint Layer Only)
+
+**Build pattern library**:
+- Create library.json with semantic concepts
+- Organize by categories (identity, display, content, temporal, status, etc.)
+- Define 50-100 core field patterns with variations
+- Specify confidence scores per pattern
+- Include display hints (component type, priority, format)
+- Document pattern matching rules
+
+**Semantic concepts to include**:
+- Identity: id, uuid, primary keys
+- Display: title, name, label, heading
+- Content: description, body, text, summary
+- Temporal: createdAt, updatedAt, publishedAt
+- Status: published, active, enabled, archived
+- Contact: email, phone, address
+- Media: avatar, image, photo, thumbnail
+- Quantitative: views, count, rating, price
+- Security: password, token, hash, secret
+- Relational: author, creator, user, owner
+
+---
+
+#### 3.2 Field Matcher Engine
+
+**Build matching system**:
+- Implement pattern matching (exact, prefix, suffix, contains, regex)
+- Support case-insensitive matching
+- Calculate confidence scores
+- Apply context awareness (model-specific boosts)
+- Handle type validation
+- Return ranked matches with reasons
+
+**Matcher features**:
+- Cache results for performance
+- Support custom pattern extensions
+- Allow user overrides via config
+- Apply minimum confidence thresholds
+- Provide fallback classifications
+
+---
+
+#### 3.3 User Configuration Layer
+
+**Add fieldMappings to ssot.config.ts**:
+- Support custom pattern definitions
+- Allow model-specific field overrides
+- Enable global field overrides
+- Support ignore list for sensitive fields
+- Set minimum confidence threshold
+
+**Override priority system**:
+- Model-specific overrides (highest priority)
+- Global overrides
+- Ignore list
+- Auto-detection with custom patterns
+- Confidence threshold check
+- Generic fallback (lowest priority)
+
+---
+
+#### 3.4 Schema Analyzer
+
+**Build analysis engine**:
+- Parse Prisma schema at runtime
+- Classify each field using matcher
+- Determine display priorities
+- Identify primary display fields
+- Group fields by semantic category
+- Generate model profiles with metadata
+
+**Model profile includes**:
+- All fields with classifications
+- Primary field for titles
+- Subtitle field
+- Image field
+- Date field
+- Status fields
+- Relations (belongs-to and has-many)
+
+---
+
+#### 3.5 Dynamic UI Components (Hint-Based Display Only)
+
+**SmartTable/SmartDetail/SmartForm use hint layer for**:
+- **title**: Primary display field (bold, prominent)
+- **identifier**: Unique reference (link to detail)
+- **primaryDate**: Most relevant timestamp
+- **status**: Boolean/enum state (badge)
+- **avatar**: Image/icon representation
+- **subtitle**: Secondary description
+
+**NOT used for**:
+- Auto-generating write operations
+- Inferring relationships
+- Security decisions
+- Data transformations
+
+**Purpose**: Smart display formatting, NOT data manipulation
+
+---
+
+#### 3.6 Admin Panel Application
+
+**Build main panel**:
+- Dashboard with model statistics (count, recent additions)
+- Sidebar with all models listed (auto-discovered from SDK or schema)
+- Dynamic routing (/:model, /:model/:id)
+- Use SmartTable for list views (read-only)
+- Use SmartDetail for detail views (read-only)
+- SmartForm ONLY if write mode enabled per model
+- Include search and filter UI
+- Add pagination controls
+- Show loading states
+- Handle errors gracefully
+
+**Panel features**:
+- Works with any Prisma schema (zero config)
+- **READ-ONLY by default** (safe data browser)
+- Write mode: toggle per model OR per field
+- Embeddable in existing apps (route mount point)
+- Standalone CLI: `pnpm ssot dev --admin`
+- Clear warnings on dangerous operations
+- Audit logging for write operations
+
+**Write Mode Configuration** (v2+):
+```
+adminPanel: {
+  writeMode: {
+    enabled: true
+    allowlist: ['Post', 'Comment']  // Only these models writable
+    fieldAllowlist: {
+      User: ['name', 'bio']  // Only these User fields writable
+    }
+  }
+}
+```
+
+---
+
+#### 3.7 Library Seeding System
+
+**Build pattern discovery**:
+- Analyze multiple real-world schemas
+- Extract field name patterns
+- Calculate occurrence frequencies
+- Identify common types per field name
+- Group by contexts (model types)
+- Generate confidence scores
+
+**Auto-seed workflow**:
+- Collect schemas from GitHub repositories
+- Analyze 100-1000 schemas
+- Generate pattern suggestions
+- Review and approve high-confidence patterns
+- Add to library.json
+- Update documentation
+
+---
+
+### PHASE 4: Integration & Polish (Weeks 13-16)
+**Priority: HIGH - Essential finishing touches**
+
+#### 4.1 CLI Integration
+
+**Extend ssot CLI**:
+- Add generate --ui flag for production templates
+- Add dev --admin flag for admin panel
+- Add ui init command for template setup
+- Add ui configure command for interactive mapping
+- Add ui analyze command to review mappings
+- Add ui list command to show available templates
+
+**CLI features**:
+- Interactive prompts with suggestions
+- Validation of mappings
+- Preview before generation
+- Watch mode for development
+- Error messages with solutions
+
+---
+
+#### 4.2 Code Generation Pipeline
+
+**Integrate with existing pipeline**:
+- Add UIGenerationPhase to pipeline
+- Generate UI based on uiProjects config
+- Place files in generated/ui/ directory
+- Respect user's chosen template
+- Apply schema mappings correctly
+- Generate navigation/routing
+- Generate theme/styling
+
+**Generated structure**:
+- screens/ directory with all pages
+- components/ directory with reusable pieces
+- navigation/ with routing setup
+- theme/ with styling configuration
+- README with usage instructions
+
+---
+
+#### 4.3 Documentation
+
+**Create comprehensive docs**:
+
+**For production templates**:
+- Getting started guide
+- Available templates list
+- Configuration reference
+- Schema mapping guide
+- Customization examples
+- Troubleshooting section
+
+**For admin panel**:
+- Installation guide
+- Configuration options
+- Field mapping reference
+- Security best practices
+- Embedding instructions
+
+**For component packages**:
+- API documentation per package
+- Usage examples
+- Customization guide
+- TypeScript types reference
+- Storybook stories
+
+---
+
+#### 4.4 Testing
+
+**Unit tests**:
+- Test each component package independently
+- Test template compiler logic
+- Test mapping resolver with various scenarios
+- Test field matcher with edge cases
+- Test schema analyzer
+
+**Integration tests**:
+- Test full template generation end-to-end
+- Test admin panel with various schemas
+- Test all component packages together
+- Test CLI commands
+
+**E2E tests**:
+- Generate actual projects
+- Verify file structure
+- Check generated code validity
+- Test with different schema configurations
+- Validate mappings work correctly
+
+---
+
+#### 4.5 Examples & Demos
+
+**Create example projects**:
+- Blog example with full configuration
+- E-commerce example
+- CRM example
+- Dashboard example
+- Admin panel demo
+
+**Each example includes**:
+- Complete Prisma schema
+- ssot.config.ts with mappings
+- Generated UI code
+- Deployment instructions
+- Live demo link
+
+---
+
+## 🎯 Key Decisions Summary
+
+### What We're Building:
+
+**PATH 1: Dynamic Admin Panel**
+- Purpose: Dev tool for exploring any schema
+- Technology: Field mapper with smart detection
+- Configuration: Zero config with optional overrides
+- Use case: Development, internal admin panels
+
+**PATH 2: Production UI Templates**
+- Purpose: Real production applications
+- Technology: Pre-built templates with schema mapping
+- Configuration: Explicit mapping required
+- Use case: Production apps, client projects
+
+### What We're NOT Building:
+- Universal AI-powered UI generator
+- One-size-fits-all solution
+- Automatic production-ready code without config
+
+### Build Order:
+1. Production component packages (immediate value)
+2. Production templates with mapping (most requested)
+3. Dynamic admin panel (nice-to-have dev tool)
+
+### Field Mapper Usage:
+- Only used in dynamic admin panel
+- Not used in production templates
+- Optional user overrides available
+
+### Schema Mapping Usage:
+- Only used in production templates
+- Explicit configuration required
+- Interactive CLI helper available
+
+---
+
+## 📊 Success Metrics
+
+### Phase 1 Success:
+- Five component packages published
+- Each package has 20+ tests
+- Documentation complete
+- Storybook stories created
+- First user feedback received
+
+### Phase 2 Success:
+- Three templates available (blog, ecommerce, CRM)
+- Interactive CLI working
+- Schema mapping 90% auto-detected
+- User can generate working app in under 10 minutes
+- Example projects deployed
+
+### Phase 3 Success:
+- Admin panel works with any schema
+- Field mapper 80%+ accuracy
+- Zero config required for basic usage
+- User overrides working
+- Standalone mode available
+
+### Phase 4 Success:
+- Full documentation published
+- All tests passing
+- CI/CD pipeline configured
+- First production deployments
+- Community feedback positive
+
+---
+
+## 🚀 Immediate Next Step
+
+**Start with @ssot-ui/data-table package**
+
+Why this first:
+- Most requested feature
+- Clear, bounded scope
+- No dependencies on other systems
+- Can be used standalone
+- Quick win for users
+- Foundation for other components
+
+Tasks for data-table:
+1. Create package structure
+2. Define TypeScript interfaces
+3. Implement core table component
+4. Add search functionality
+5. Add filter functionality
+6. Add sort functionality
+7. Add pagination
+8. Add responsive design
+9. Write documentation
+10. Create examples
+11. Write tests
+12. Publish to npm
+
+Estimated: 1 week for MVP, 2 weeks for polish
+
+---
+
+## 💡 Critical Requirements
+
+### For All Components:
+- TypeScript with strict mode
+- Full type safety
+- Comprehensive documentation
+- Unit test coverage >80%
+- Accessibility compliant (WCAG 2.1 AA)
+- Mobile responsive
+- Dark mode support
+- Customizable styling
+- Zero breaking changes after 1.0
+
+### For Templates:
+- Production-ready code quality
+- Best practices followed
+- Security considered
+- Performance optimized
+- SEO friendly
+- Documented customization
+- Example configurations
+
+### For Admin Panel:
+- Works with any valid Prisma schema
+- Secure by default (hide passwords, tokens)
+- Fast with large datasets
+- Clear error messages
+- Helpful defaults
+- Easy to embed
+
+---
+
+## 🎯 End Goal
+
+Users can:
+
+**For Production Apps**:
+- Choose a template (blog, ecommerce, CRM)
+- Configure schema mappings
+- Generate production-ready UI
+- Customize as needed
+- Deploy to production
+- Time saved: Days to hours
+
+**For Development**:
+- Start dev server with --admin flag
+- Get instant CRUD for all models
+- Explore data visually
+- Test relationships
+- Debug schema issues
+- Time saved: Build admin panel (weeks to minutes)
+
+**Result**: Complete full-stack from Prisma schema to production app with both backend API and frontend UI.
+
+---
+
+## 📈 KPIs to Track
+
+### Phase 1: Component Quality
+
+**Time to First Data Table Rendering**
+- Target: < 5 minutes from npm install to working table
+- Measure: Time from `npm i @ssot-ui/data-table` to rendering data
+
+**Bundle Size**
+- Target: < 60kb gzipped per package (without charts)
+- Measure: Bundlesize bot on each PR
+- Monitor: Tree-shaking effectiveness
+
+**Accessibility Compliance**
+- Target: 100% pass rate on axe audits
+- Measure: Run axe on all Storybook examples
+- Check: Keyboard navigation, screen reader, ARIA
+
+**Test Coverage**
+- Target: > 80% line coverage per package
+- Measure: Vitest coverage reports
+- Focus: User interactions, edge cases, error states
+
+---
+
+### Phase 2: Template Mapping Success
+
+**Auto-Detection Accuracy**
+- Target: ≥ 90% of required fields successfully suggested
+- Measure: CLI auto-detection confidence scores
+- Track: Percent of fields matched without user input
+
+**Template Generation Time**
+- Target: < 10 minutes from init to working app
+- Measure: `pnpm ssot ui init` to `npm run dev` succeeds
+- Include: Mapping config + code generation + install
+
+**Mapping Validation Success**
+- Target: 100% catch rate for invalid mappings
+- Measure: Compiler validates all mappings before generation
+- Zero: Runtime errors due to missing mappings
+
+**Template Deployability**
+- Target: Example projects deploy to Vercel/Netlify in < 5 min
+- Measure: CI/CD pipeline duration
+- Check: Build succeeds, no TypeScript errors
+
+---
+
+### Phase 3: Admin Panel Discovery
+
+**Model Discovery Success**
+- Target: 100% of Prisma models listed in admin panel
+- Measure: Zero crashes with unknown field types
+- Validate: Works with any valid Prisma schema
+
+**Field Mapper Accuracy**
+- Target: 80% of fields correctly classified with hints
+- Measure: Manual review of 100 diverse schemas
+- Accept: Lower accuracy OK since it's read-only hints
+
+**Admin Panel Performance**
+- Target: < 2 seconds to render list of 1000 records
+- Measure: Virtual scrolling kicks in at threshold
+- Check: No UI freezing during data load
+
+**Zero Configuration Success**
+- Target: Admin panel works immediately with zero config
+- Measure: `pnpm ssot dev --admin` succeeds out of box
+- Validate: All models browsable without setup
+
+---
+
+### Cross-Cutting Metrics
+
+**Developer Experience**
+- SDK contract conformance: 100% (locked)
+- TypeScript errors in generated code: 0
+- Documentation completeness: All APIs documented
+- Storybook example coverage: 5+ examples per component
+
+**Performance Benchmarks**
+- Initial load (FCP): < 1.5s
+- Time to Interactive (TTI): < 3s
+- Lighthouse score: > 90 (performance, accessibility, best practices)
+
+**Community Feedback**
+- GitHub stars/week growth
+- npm downloads/week growth
+- Issue close rate: > 80% within 7 days
+- User survey satisfaction: > 4.5/5
+
+---
+
+This is the complete, consolidated, sequential plan for UI generation.
+
+
