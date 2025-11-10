@@ -2,13 +2,13 @@
  * Compile tokens to Tailwind config
  */
 
-import type { TokenSet, TailwindConfig } from '../types.js'
+import type { TokenSet, TailwindConfig, ColorTokens } from '../types.js'
 
 export function compileTailwindConfig(tokens: TokenSet): TailwindConfig {
   return {
     theme: {
       extend: {
-        colors: compileColors(tokens.colors),
+        colors: tokens.colors as unknown as Record<string, unknown>,
         spacing: compileSpacing(tokens.spacing),
         fontSize: compileFontSize(tokens.typography.fontSize),
         fontWeight: tokens.typography.fontWeight,
@@ -18,15 +18,10 @@ export function compileTailwindConfig(tokens: TokenSet): TailwindConfig {
         zIndex: compileZIndex(tokens.zIndex),
         opacity: compileOpacity(tokens.opacity),
         screens: compileBreakpoints(tokens.breakpoints),
-        transitionDuration: tokens.transitions
+        transitionDuration: tokens.transitions ?? {}
       }
     }
   }
-}
-
-function compileColors(colors: any): Record<string, any> {
-  // Colors are already in the right format for Tailwind
-  return colors
 }
 
 function compileSpacing(spacing: Record<string, number>): Record<string, string> {
@@ -77,7 +72,8 @@ function compileBorderRadius(borderRadius: Record<string, number | string>): Rec
   return result
 }
 
-function compileZIndex(zIndex: Record<string, number>): Record<string, string> {
+function compileZIndex(zIndex?: Record<string, number>): Record<string, string> {
+  if (!zIndex) return {}
   const result: Record<string, string> = {}
   
   for (const [key, value] of Object.entries(zIndex)) {
@@ -87,7 +83,8 @@ function compileZIndex(zIndex: Record<string, number>): Record<string, string> {
   return result
 }
 
-function compileOpacity(opacity: Record<string, number>): Record<string, string> {
+function compileOpacity(opacity?: Record<string, number>): Record<string, string> {
+  if (!opacity) return {}
   const result: Record<string, string> = {}
   
   for (const [key, value] of Object.entries(opacity)) {
@@ -97,7 +94,8 @@ function compileOpacity(opacity: Record<string, number>): Record<string, string>
   return result
 }
 
-function compileBreakpoints(breakpoints: Record<string, number>): Record<string, string> {
+function compileBreakpoints(breakpoints?: Record<string, number>): Record<string, string> {
+  if (!breakpoints) return {}
   const result: Record<string, string> = {}
   
   for (const [key, value] of Object.entries(breakpoints)) {

@@ -12,7 +12,7 @@ export interface UseListResult<T> {
   data: T[]
   total: number
   isLoading: boolean
-  isFetching?: boolean
+  isFetching: boolean
   error: ErrorShape | null
   refetch: () => void
 }
@@ -68,7 +68,8 @@ export type NestedInclude = boolean | { include?: Record<string, NestedInclude> 
  */
 export interface DataTableProps<T = any> {
   // Data source (hook mode)
-  hook?: (params?: ListParams) => UseListResult<T>
+  resource?: string
+  hook?: (params?: ListParams) => UseListResult<T> | ((resource: string, params?: ListParams) => UseListResult<T>)
   hookParams?: Omit<ListParams, 'page' | 'pageSize' | 'sort' | 'filters' | 'search'>
   
   // OR explicit data mode

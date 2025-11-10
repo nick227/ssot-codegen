@@ -2,7 +2,7 @@
  * Table toolbar with search and filters
  */
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import type { FilterDef, FilterParam, SearchParam, Messages } from '../types.js'
 import { FilterPanel } from './FilterPanel.js'
 
@@ -34,17 +34,24 @@ export function TableToolbar<T>({
   const [searchQuery, setSearchQuery] = useState(search?.query || '')
   const [showFilters, setShowFilters] = useState(false)
   
-  // Debounced search
-  const handleSearchChange = useCallback((query: string) => {
-    setSearchQuery(query)
+  // Sync external search changes
+  useEffect(() => {
+    setSearchQuery(search?.query || '')
+  }, [search?.query])
+  
+  // Debounced search (actual 300ms delay)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchQuery.trim()) {
+        const fields = Array.isArray(searchable) ? searchable : undefined
+        onSearchChange({ query: searchQuery.trim(), fields })
+      } else {
+        onSearchChange(null)
+      }
+    }, 300)
     
-    if (query.trim()) {
-      const fields = Array.isArray(searchable) ? searchable : undefined
-      onSearchChange({ query: query.trim(), fields })
-    } else {
-      onSearchChange(null)
-    }
-  }, [searchable, onSearchChange])
+    return () => clearTimeout(timer)
+  }, [searchQuery, searchable, onSearchChange])
   
   const hasSearchOrFilters = searchable || (filterable && filterable.length > 0)
   
@@ -63,13 +70,13 @@ export function TableToolbar<T>({
                 type="search"
                 placeholder={searchPlaceholder || messages?.search || 'Search...'}
                 value={searchQuery}
-                onChange={(e) => handleSearchChange(e.target.value)}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full px-4 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 aria-label="Search table"
               />
               {searchQuery && (
                 <button
-                  onClick={() => handleSearchChange('')}
+                  onClick={() => setSearchQuery('')}
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
                   aria-label="Clear search"
                   type="button"

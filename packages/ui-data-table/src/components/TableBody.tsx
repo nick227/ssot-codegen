@@ -139,11 +139,11 @@ export function TableBody<T>({
   )
 }
 
-function formatCellValue(value: any): string {
+function formatCellValue(value: unknown): string {
   if (value === null || value === undefined) return '-'
   if (typeof value === 'boolean') return value ? '✓' : '○'
   if (value instanceof Date) return value.toLocaleDateString()
-  if (typeof value === 'object') return JSON.stringify(value)
+  if (typeof value === 'object') return '[object]'
   return String(value)
 }
 

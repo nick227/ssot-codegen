@@ -7,7 +7,7 @@
  */
 
 import { useMemo, useEffect } from 'react'
-import type { DataTableProps } from '../types.js'
+import type { DataTableProps, ListParams, UseListResult } from '../types.js'
 import { useTableState } from '../hooks/useTableState.js'
 import { TableHeader } from './TableHeader.js'
 import { TableBody } from './TableBody.js'
@@ -17,6 +17,7 @@ import { getRelationName, isRelationPath } from '../utils/cell-accessor.js'
 
 export function DataTable<T = any>(props: DataTableProps<T>) {
   const {
+    resource,
     hook,
     hookParams,
     data: explicitData,
@@ -49,11 +50,15 @@ export function DataTable<T = any>(props: DataTableProps<T>) {
   const tableState = useTableState({ defaultPageSize, defaultSort })
   
   // Use hook if provided, otherwise use explicit data
-  const hookResult = hook?.(
-    hookParams 
-      ? { ...hookParams, ...tableState.params }
-      : tableState.params
-  )
+  const params = hookParams 
+    ? { ...hookParams, ...tableState.params }
+    : tableState.params
+  
+  const hookResult = hook
+    ? resource
+      ? (hook as unknown as (resource: string, params?: ListParams) => UseListResult<T>)(resource, params)
+      : (hook as unknown as (params?: ListParams) => UseListResult<T>)(params)
+    : undefined
   
   const data = hookResult?.data ?? explicitData ?? []
   const total = hookResult?.total ?? explicitTotal ?? data.length

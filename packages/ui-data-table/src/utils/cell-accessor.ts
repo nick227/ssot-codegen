@@ -6,17 +6,17 @@
  * Get nested value from object using dot notation
  * e.g., get(post, 'author.name') → post.author?.name
  */
-export function getNestedValue(obj: any, path: string): any {
-  if (!obj || !path) return undefined
+export function getNestedValue(obj: unknown, path: string): unknown {
+  if (!obj || typeof obj !== 'object' || !path) return undefined
   
   const parts = path.split('.')
-  let value = obj
+  let value: unknown = obj
   
   for (const part of parts) {
-    if (value === null || value === undefined) {
+    if (value === null || value === undefined || typeof value !== 'object') {
       return undefined
     }
-    value = value[part]
+    value = (value as Record<string, unknown>)[part]
   }
   
   return value
