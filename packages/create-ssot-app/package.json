@@ -18,7 +18,8 @@
     "test:e2e": "vitest run e2e-ui-generation",
     "test:e2e-simple": "vitest run e2e-ui-generation-simple",
     "test:blog": "vitest run e2e-blog-generation",
-    "test:chatbot": "vitest run e2e-chatbot-generation"
+    "test:chatbot": "vitest run e2e-chatbot-generation",
+    "test:chatbot-ai": "vitest run e2e-chatbot-with-openai"
   },
   "keywords": [
     "prisma",

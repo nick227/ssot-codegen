@@ -40,7 +40,7 @@ export async function generateUI(projectPath: string, config: ProjectConfig, mod
     }
     case 'chatbot': {
       const { generateChatbotTemplate } = await import('./templates/chatbot-generator.js')
-      generateChatbotTemplate(projectPath, config, models, mappings)
+      await generateChatbotTemplate(projectPath, config, models, mappings)
       break
     }
     case 'ecommerce':

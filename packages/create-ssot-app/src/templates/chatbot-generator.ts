@@ -24,12 +24,14 @@ export interface ChatbotMapping {
 /**
  * Generate chatbot template UI
  */
-export function generateChatbotTemplate(
+export async function generateChatbotTemplate(
   projectPath: string,
   config: ProjectConfig,
   models: ParsedModel[],
   mappings?: ChatbotMapping
-): void {
+): Promise<void> {
+  // Check if OpenAI plugin is selected
+  const hasOpenAI = config.selectedPlugins?.includes('openai') || false
   // Default mappings
   const schemaMappings: ChatbotMapping = mappings || {
     models: {
@@ -101,6 +103,14 @@ export function generateChatbotTemplate(
     path.join(componentsDir, 'TypingIndicator.tsx'),
     generateTypingIndicator()
   )
+  
+  // Generate API integration if backend exists
+  const { generateChatbotAPI } = await import('./chatbot-api-generator.js')
+  generateChatbotAPI(projectPath, config, {
+    hasOpenAI,
+    messageModel,
+    userModel
+  })
 }
 
 function findModel(models: ParsedModel[], name: string): ParsedModel | undefined {
@@ -183,34 +193,34 @@ export default function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
   
-  const handleSend = (content: string) => {
+  const handleSend = async (content: string) => {
     if (!content.trim()) return
     
-    // Send user message
-    sendMessage({
-      ${fields.message.content}: content,
-      ${fields.message.senderId}: 1, // TODO: Get current user ID
-      ${fields.message.isBot}: false
-    }, {
-      onSuccess: () => {
-        // Simulate bot typing
-        setIsTyping(true)
-        
-        setTimeout(() => {
-          // Send bot response (mock for now)
-          sendMessage({
-            ${fields.message.content}: generateBotResponse(content),
-            ${fields.message.senderId}: 0, // Bot user ID
-            ${fields.message.isBot}: true
-          }, {
-            onSuccess: () => {
-              setIsTyping(false)
-              refetch()
-            }
-          })
-        }, 1500)
+    setIsTyping(true)
+    
+    try {
+      // Call backend API - handles both user message and AI response
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: content,
+          userId: 1 // TODO: Get from auth context
+        })
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to send message')
       }
-    })
+      
+      // Backend saves both user message and bot response
+      await refetch()
+    } catch (error) {
+      console.error('Chat error:', error)
+      alert('Failed to send message. Please try again.')
+    } finally {
+      setIsTyping(false)
+    }
   }
   
   if (isLoading) {
@@ -245,22 +255,10 @@ export default function ChatPage() {
       
       {/* Input area */}
       <div className="border-t border-neutral-200 bg-white px-6 py-4">
-        <ChatInput onSend={handleSend} isLoading={isPending} />
+        <ChatInput onSend={handleSend} isLoading={isTyping} />
       </div>
     </div>
   )
-}
-
-// Simple bot response generator (replace with real AI/logic)
-function generateBotResponse(userMessage: string): string {
-  const responses = [
-    "Thanks for your message! How can I help you today?",
-    "That's interesting! Tell me more.",
-    "I understand. Let me look into that for you.",
-    "Great question! Here's what I can tell you...",
-    "I'm here to help! What else would you like to know?"
-  ]
-  return responses[Math.floor(Math.random() * responses.length)]
 }
 `
 }
