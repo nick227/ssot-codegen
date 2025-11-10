@@ -78,7 +78,14 @@ async function generateTestProject(): Promise<void> {
     const { generateGitignore } = await import('../templates/gitignore.js')
     const { generateTsConfig } = await import('../templates/tsconfig.js')
     const { generateReadme } = await import('../templates/readme.js')
-    const { generateUI, type ParsedModel } = await import('../ui-generator.js')
+    const { generateUI } = await import('../ui-generator.js')
+    
+    type ParsedModel = {
+      name: string
+      nameLower: string
+      namePlural: string
+      fields: Array<{ name: string; type: string; isRelation: boolean }>
+    }
     
     // Create project directory
     fs.mkdirSync(TEST_PROJECT_PATH, { recursive: true })
@@ -109,7 +116,7 @@ async function generateTestProject(): Promise<void> {
     
     fs.writeFileSync(
       path.join(TEST_PROJECT_PATH, 'tsconfig.json'),
-      generateTsConfig(config)
+      generateTsConfig()
     )
     
     fs.writeFileSync(

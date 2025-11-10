@@ -15,7 +15,8 @@
     "dev": "tsc -p tsconfig.json --watch",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "vitest run e2e-ui-generation"
+    "test:e2e": "vitest run e2e-ui-generation",
+    "test:e2e-simple": "vitest run e2e-ui-generation-simple"
   },
   "keywords": [
     "prisma",

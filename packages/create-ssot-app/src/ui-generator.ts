@@ -6,6 +6,9 @@
 import type { ProjectConfig } from './prompts.js'
 import fs from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export interface ParsedModel {
   name: string
@@ -631,12 +634,15 @@ export function getUIDependencies(config: ProjectConfig): Record<string, string>
     return {}
   }
   
+  // Check if we're in development (packages exist locally)
+  const isDev = fs.existsSync(path.resolve(__dirname, '../../ui-data-table'))
+  
   return {
     'next': '^14.1.0',
     'react': '^18.2.0',
     'react-dom': '^18.2.0',
-    '@ssot-ui/data-table': '^1.0.0',
-    '@ssot-ui/tokens': '^1.0.0'
+    '@ssot-ui/data-table': isDev ? 'file:../ui-data-table' : '^1.0.0',
+    '@ssot-ui/tokens': isDev ? 'file:../ui-tokens' : '^1.0.0'
   }
 }
 

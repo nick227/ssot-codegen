@@ -1,0 +1,67 @@
+// Example Blog Schema (with non-standard field names)
+// This demonstrates how schema mapping works
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model (template expects 'user', we have 'Author')
+model Author {
+  id           Int        @id @default(autoincrement())
+  email        String     @unique
+  fullName     String     // Template expects 'name', we have 'fullName'
+  profileImage String?    // Template expects 'avatar', we have 'profileImage'
+  biography    String?    // Template expects 'bio', we have 'biography'
+  createdAt    DateTime   @default(now())
+  
+  // Relations
+  blogPosts    BlogPost[] @relation("AuthorPosts")
+  comments     Comment[]  @relation("AuthorComments")
+}
+
+// Post model (template expects 'post', we have 'BlogPost')
+model BlogPost {
+  id             Int       @id @default(autoincrement())
+  heading        String    // Template expects 'title', we have 'heading'
+  body           String    @db.Text // Template expects 'content', we have 'body'
+  summary        String?   // Template expects 'excerpt', we have 'summary'
+  slug           String    @unique
+  published      Boolean   @default(false)
+  featuredImage  String?   // Template expects 'coverImage', we have 'featuredImage'
+  tags           String[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  
+  // Relations (template expects 'author', we have 'writer')
+  writerId       Int
+  writer         Author    @relation("AuthorPosts", fields: [writerId], references: [id])
+  
+  comments       Comment[] @relation("PostComments")
+  
+  @@index([writerId])
+  @@index([slug])
+  @@index([published])
+}
+
+// Comment model (standard, matches template)
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  
+  // Relations (template expects 'author', we have 'user')
+  userId    Int
+  user      Author   @relation("AuthorComments", fields: [userId], references: [id])
+  
+  postId    Int
+  post      BlogPost @relation("PostComments", fields: [postId], references: [id])
+  
+  @@index([userId])
+  @@index([postId])
+}
+
