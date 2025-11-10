@@ -1,0 +1,62 @@
+{
+  "name": "@ssot-ui/adapters",
+  "version": "3.0.0",
+  "description": "Vendor-agnostic adapter interfaces for SSOT UI runtime",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./data": {
+      "types": "./dist/interfaces/data.d.ts",
+      "import": "./dist/interfaces/data.js"
+    },
+    "./ui": {
+      "types": "./dist/interfaces/ui.d.ts",
+      "import": "./dist/interfaces/ui.js"
+    },
+    "./auth": {
+      "types": "./dist/interfaces/auth.d.ts",
+      "import": "./dist/interfaces/auth.js"
+    },
+    "./router": {
+      "types": "./dist/interfaces/router.d.ts",
+      "import": "./dist/interfaces/router.js"
+    },
+    "./format": {
+      "types": "./dist/interfaces/format.d.ts",
+      "import": "./dist/interfaces/format.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "react": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/react": "^18.2.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "ssot",
+    "ui",
+    "adapters",
+    "interfaces"
+  ],
+  "license": "MIT"
+}
+
