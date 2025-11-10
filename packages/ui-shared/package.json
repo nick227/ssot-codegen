@@ -1,0 +1,43 @@
+{
+  "name": "@ssot-ui/shared",
+  "version": "1.0.0",
+  "description": "Shared UI components for SSOT templates",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "styles.css"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@ssot-ui/tokens": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "typescript": "^5.3.3",
+    "vitest": "^2.1.0",
+    "@testing-library/react": "^14.0.0",
+    "@testing-library/jest-dom": "^6.1.5"
+  },
+  "keywords": [
+    "ssot",
+    "ui",
+    "components",
+    "react",
+    "shared"
+  ],
+  "author": "SSOT CodeGen",
+  "license": "MIT"
+}
+

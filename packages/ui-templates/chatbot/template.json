@@ -1,0 +1,58 @@
+{
+  "name": "chatbot",
+  "displayName": "Chatbot Template",
+  "version": "1.0.0",
+  "description": "Real-time chatbot UI with message history",
+  "minSdkVersion": "1.0.0",
+  "tokenSet": "ssot-tokens@1",
+  "router": "nextjs-app",
+  
+  "requiredModels": [
+    {
+      "template": "user",
+      "description": "User model for chat participants",
+      "requiredFields": [
+        { "template": "id", "type": "Int | String", "description": "Unique identifier" },
+        { "template": "name", "type": "String", "description": "Display name" }
+      ],
+      "optionalFields": [
+        { "template": "avatar", "type": "String?", "description": "Profile image" },
+        { "template": "isOnline", "type": "Boolean?", "description": "Online status" }
+      ]
+    },
+    {
+      "template": "message",
+      "description": "Chat message model",
+      "requiredFields": [
+        { "template": "id", "type": "Int | String", "description": "Unique identifier" },
+        { "template": "content", "type": "String", "description": "Message text" },
+        { "template": "sender", "type": "User", "description": "Message sender" },
+        { "template": "timestamp", "type": "DateTime", "description": "Message time" }
+      ],
+      "optionalFields": [
+        { "template": "isBot", "type": "Boolean?", "description": "Is bot message" },
+        { "template": "isRead", "type": "Boolean?", "description": "Read status" }
+      ]
+    }
+  ],
+  
+  "sharedComponents": [
+    "@ssot-ui/shared/Avatar",
+    "@ssot-ui/shared/Badge",
+    "@ssot-ui/shared/TimeAgo",
+    "@ssot-ui/shared/Button",
+    "@ssot-ui/shared/Card"
+  ],
+  
+  "featureFlags": {
+    "realTime": true,
+    "typing": true,
+    "fileUpload": false,
+    "reactions": false
+  },
+  
+  "pages": [
+    "/(chat)"
+  ]
+}
+

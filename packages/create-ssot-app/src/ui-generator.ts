@@ -38,6 +38,11 @@ export async function generateUI(projectPath: string, config: ProjectConfig, mod
       generateBlogTemplate(projectPath, config, models, mappings)
       break
     }
+    case 'chatbot': {
+      const { generateChatbotTemplate } = await import('./templates/chatbot-generator.js')
+      generateChatbotTemplate(projectPath, config, models, mappings)
+      break
+    }
     case 'ecommerce':
     case 'dashboard':
       // Not implemented yet
@@ -641,13 +646,20 @@ export function getUIDependencies(config: ProjectConfig): Record<string, string>
   // Check if we're in development (packages exist locally)
   const isDev = fs.existsSync(path.resolve(__dirname, '../../ui-data-table'))
   
-  return {
+  const deps: Record<string, string> = {
     'next': '^14.1.0',
     'react': '^18.2.0',
     'react-dom': '^18.2.0',
-    '@ssot-ui/data-table': isDev ? 'file:../ui-data-table' : '^1.0.0',
-    '@ssot-ui/tokens': isDev ? 'file:../ui-tokens' : '^1.0.0'
+    '@ssot-ui/tokens': isDev ? 'file:../ui-tokens' : '^1.0.0',
+    '@ssot-ui/shared': isDev ? 'file:../ui-shared' : '^1.0.0'
   }
+  
+  // Add template-specific dependencies
+  if (config.uiTemplate === 'data-browser' || config.uiTemplate === 'blog') {
+    deps['@ssot-ui/data-table'] = isDev ? 'file:../ui-data-table' : '^1.0.0'
+  }
+  
+  return deps
 }
 
 /**

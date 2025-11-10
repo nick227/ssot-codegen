@@ -23,7 +23,7 @@ export interface ProjectConfig {
   selectedPlugins: string[]
   packageManager: 'npm' | 'pnpm' | 'yarn'
   generateUI: boolean
-  uiTemplate?: 'data-browser' | 'blog' | 'ecommerce' | 'dashboard'
+  uiTemplate?: 'data-browser' | 'blog' | 'chatbot' | 'ecommerce' | 'dashboard'
 }
 
 export async function getProjectConfig(): Promise<ProjectConfig> {
@@ -105,6 +105,7 @@ export async function getProjectConfig(): Promise<ProjectConfig> {
         choices: [
           { title: '📊 Data Browser', value: 'data-browser', description: 'Read-only admin panel for browsing data' },
           { title: '📝 Blog', value: 'blog', description: 'Full blog with posts, comments, and authors' },
+          { title: '💬 Chatbot', value: 'chatbot', description: 'Real-time chat with bot responses (shares components with blog)' },
           { title: '🛒 E-commerce', value: 'ecommerce', description: 'Product catalog and cart (coming soon)', disabled: true },
           { title: '📈 Dashboard', value: 'dashboard', description: 'Analytics dashboard (coming soon)', disabled: true }
         ],
