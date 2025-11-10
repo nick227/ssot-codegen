@@ -1,0 +1,48 @@
+{
+  "name": "@ssot-ui/runtime",
+  "version": "3.0.0",
+  "description": "JSON-first runtime renderer for SSOT UI templates",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@ssot-ui/schemas": "workspace:*",
+    "@ssot-ui/loader": "workspace:*",
+    "@ssot-ui/adapters": "workspace:*",
+    "react": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/react": "^18.2.0",
+    "@testing-library/react": "^14.1.2",
+    "jsdom": "^24.0.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "ssot",
+    "ui",
+    "runtime",
+    "json",
+    "renderer"
+  ],
+  "license": "MIT"
+}
+
