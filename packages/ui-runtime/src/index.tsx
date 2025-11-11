@@ -15,6 +15,14 @@ export { TemplateRuntime, type RuntimeConfig, type TemplateRuntimeProps } from '
 export { ErrorBoundary } from './components/error-boundary.js'
 export { LoadingFallback } from './components/loading-fallback.js'
 
+// Expression hooks (NEW)
+export {
+  useExpression,
+  useConditionalVisibility,
+  useConditionalEnabled,
+  buildExpressionContext
+} from './hooks/use-expression.js'
+
 // Re-export types for convenience
 export type {
   DataAdapter,
@@ -25,4 +33,15 @@ export type {
   Result,
   ErrorModel
 } from '@ssot-ui/adapters'
+
+// Re-export expression types
+export type {
+  Expression,
+  ExpressionContext,
+  LiteralExpression,
+  FieldAccessExpression,
+  OperationExpression,
+  ConditionExpression,
+  PermissionExpression
+} from '@ssot-ui/expressions'
 
