@@ -17,7 +17,10 @@ const prisma = new PrismaClient()
 export const adapters = {
   data: new PrismaDataAdapter(prisma, dataContract as any),
   ui: InternalUIAdapter,
-  auth: NextAuthAdapter, // TODO: Configure with NextAuth
+  auth: NextAuthAdapter,
   router: NextRouterAdapter,
   format: new IntlFormatAdapter('en-US')
 }
+
+// NOTE: Configure NextAuth in app/api/auth/[...nextauth]/route.ts
+// See: https://next-auth.js.org/configuration/initialization

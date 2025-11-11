@@ -60,7 +60,7 @@ export async function createProject(config: ProjectConfig): Promise<void> {
 
   fs.writeFileSync(
     path.join(projectPath, 'tsconfig.json'),
-    generateTsConfig()
+    generateTsConfig(config)
   )
 
   // Create basic source files

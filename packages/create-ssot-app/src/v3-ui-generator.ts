@@ -7,8 +7,12 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import type { ProjectConfig } from './prompts.js'
 import type { ParsedModel } from './ui-generator.js'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 /**
  * Generate V3 UI (JSON templates + mount point)
@@ -142,10 +146,13 @@ const prisma = new PrismaClient()
 export const adapters = {
   data: new PrismaDataAdapter(prisma, dataContract as any),
   ui: InternalUIAdapter,
-  auth: NextAuthAdapter, // TODO: Configure with NextAuth
+  auth: NextAuthAdapter,
   router: NextRouterAdapter,
   format: new IntlFormatAdapter('en-US')
 }
+
+// NOTE: Configure NextAuth in app/api/auth/[...nextauth]/route.ts
+// See: https://next-auth.js.org/configuration/initialization
 `
 }
 
@@ -230,6 +237,11 @@ Edit any JSON file → See changes **instantly** (no rebuild!)
  * Generate basic V3 template (fallback)
  */
 function generateBasicV3Template(templatesDir: string, models: ParsedModel[]): void {
+  // Validate models exist
+  if (models.length === 0) {
+    throw new Error('Cannot generate V3 template: No models found in Prisma schema')
+  }
+  
   // Basic template.json
   fs.writeFileSync(
     path.join(templatesDir, 'template.json'),

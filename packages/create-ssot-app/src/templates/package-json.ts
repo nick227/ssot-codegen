@@ -74,8 +74,11 @@ export function generatePackageJson(config: ProjectConfig): string {
   // Add UI dependencies if UI generation is enabled
   if (config.generateUI) {
     if (config.uiMode === 'v3-runtime') {
-      // V3: Runtime + adapters only
+      // V3: Next.js + React + Runtime + adapters
       const isDev = isLocalDevelopment()
+      deps['next'] = '^14.1.0'
+      deps['react'] = '^18.2.0'
+      deps['react-dom'] = '^18.2.0'
       deps['@ssot-ui/runtime'] = isDev ? 'file:../packages/ui-runtime' : '^3.0.0'
       deps['@ssot-ui/adapter-data-prisma'] = isDev ? 'file:../packages/ui-adapter-data-prisma' : '^3.0.0'
       deps['@ssot-ui/adapter-ui-internal'] = isDev ? 'file:../packages/ui-adapter-ui-internal' : '^3.0.0'
@@ -84,6 +87,8 @@ export function generatePackageJson(config: ProjectConfig): string {
       deps['@ssot-ui/adapter-format-intl'] = isDev ? 'file:../packages/ui-adapter-format-intl' : '^3.0.0'
       devDeps['@ssot-ui/prisma-to-models'] = isDev ? 'file:../packages/prisma-to-models' : '^3.0.0'
       devDeps['@ssot-ui/schemas'] = isDev ? 'file:../packages/ui-schemas' : '^3.0.0'
+      devDeps['@types/react'] = '^18.2.0'
+      devDeps['@types/react-dom'] = '^18.2.0'
     } else {
       // V2: Generated code dependencies
       const uiDeps = getUIDependencies(config)
