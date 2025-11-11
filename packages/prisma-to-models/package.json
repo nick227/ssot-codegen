@@ -1,0 +1,43 @@
+{
+  "name": "@ssot-ui/prisma-to-models",
+  "version": "3.0.0",
+  "description": "Generate models.json from Prisma schema for SSOT UI templates",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "prisma-to-models": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@prisma/internals": "^5.22.0",
+    "@ssot-ui/schemas": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "ssot",
+    "ui",
+    "prisma",
+    "models",
+    "generator"
+  ],
+  "license": "MIT"
+}
+
