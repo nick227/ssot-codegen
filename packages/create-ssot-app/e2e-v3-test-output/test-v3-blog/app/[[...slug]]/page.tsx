@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * V3 Runtime Mount Point
  * 

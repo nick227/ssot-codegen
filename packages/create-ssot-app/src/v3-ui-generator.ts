@@ -84,9 +84,22 @@ export async function generateV3UI(
     generateNextConfig()
   )
   
+  // Generate global styles
+  fs.writeFileSync(
+    path.join(projectPath, 'app', 'globals.css'),
+    generateGlobalStyles()
+  )
+  
+  // Generate tailwind.config.js
+  fs.writeFileSync(
+    path.join(projectPath, 'tailwind.config.js'),
+    generateTailwindConfig()
+  )
+  
   console.log('  ✅ Generated mount point (app/[[...slug]]/page.tsx)')
   console.log('  ✅ Generated root layout (app/layout.tsx)')
   console.log('  ✅ Generated Next.js configuration')
+  console.log('  ✅ Generated global styles and Tailwind config')
   console.log('  ✅ Generated adapter configuration')
 }
 
@@ -94,7 +107,9 @@ export async function generateV3UI(
  * Generate mount point (single file that renders entire app!)
  */
 function generateMountPoint(config: ProjectConfig): string {
-  return `/**
+  return `'use client'
+
+/**
  * V3 Runtime Mount Point
  * 
  * This is the ONLY page file needed!
@@ -175,6 +190,7 @@ export const adapters = {
  */
 function generateRootLayout(config: ProjectConfig): string {
   return `import type { Metadata } from 'next'
+import './globals.css'
 
 export const metadata: Metadata = {
   title: '${config.projectName}',
@@ -216,6 +232,47 @@ const nextConfig = {
 }
 
 module.exports = nextConfig
+`
+}
+
+/**
+ * Generate global styles
+ */
+function generateGlobalStyles(): string {
+  return `@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global styles for V3 runtime */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+}
+`
+}
+
+/**
+ * Generate tailwind.config.js
+ */
+function generateTailwindConfig(): string {
+  return `/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    './app/**/*.{js,ts,jsx,tsx}',
+    './lib/**/*.{js,ts,jsx,tsx}',
+    './node_modules/@ssot-ui/**/*.{js,ts,jsx,tsx}'
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+}
 `
 }
 

@@ -32,7 +32,10 @@
     "@ssot-ui/adapter-ui-internal": "file:../packages/ui-adapter-ui-internal",
     "@ssot-ui/adapter-auth-nextauth": "file:../packages/ui-adapter-auth-nextauth",
     "@ssot-ui/adapter-router-next": "file:../packages/ui-adapter-router-next",
-    "@ssot-ui/adapter-format-intl": "file:../packages/ui-adapter-format-intl"
+    "@ssot-ui/adapter-format-intl": "file:../packages/ui-adapter-format-intl",
+    "tailwindcss": "^3.4.0",
+    "autoprefixer": "^10.4.17",
+    "postcss": "^8.4.33"
   },
   "devDependencies": {
     "prisma": "^6.0.0",
