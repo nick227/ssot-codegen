@@ -92,9 +92,9 @@ describe('Real-World V3 Integration Test', () => {
     const criticalFiles = [
       'package.json',
       'tsconfig.json',
-      'next.config.mjs',
-      'tailwind.config.mjs',
-      'postcss.config.mjs',
+      'next.config.js',
+      'tailwind.config.js',
+      'postcss.config.js',
       'app/layout.tsx',
       'app/[[...slug]]/page.tsx',
       'app/globals.css',

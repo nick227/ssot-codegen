@@ -78,9 +78,9 @@ export async function generateV3UI(
     generateRootLayout(config)
   )
   
-  // Generate next.config.js
+  // Generate next.config.mjs (ES module)
   fs.writeFileSync(
-    path.join(projectPath, 'next.config.js'),
+    path.join(projectPath, 'next.config.mjs'),
     generateNextConfig()
   )
   
@@ -90,15 +90,15 @@ export async function generateV3UI(
     generateGlobalStyles()
   )
   
-  // Generate tailwind.config.js
+  // Generate tailwind.config.mjs (ES module)
   fs.writeFileSync(
-    path.join(projectPath, 'tailwind.config.js'),
+    path.join(projectPath, 'tailwind.config.mjs'),
     generateTailwindConfig()
   )
   
-  // Generate postcss.config.js (REQUIRED for Tailwind)
+  // Generate postcss.config.mjs (ES module)
   fs.writeFileSync(
-    path.join(projectPath, 'postcss.config.js'),
+    path.join(projectPath, 'postcss.config.mjs'),
     generatePostCSSConfig()
   )
   
@@ -234,7 +234,7 @@ export default function RootLayout({
 }
 
 /**
- * Generate next.config.js
+ * Generate next.config.mjs (ES module for Next.js)
  */
 function generateNextConfig(): string {
   return `/** @type {import('next').NextConfig} */
@@ -253,7 +253,7 @@ const nextConfig = {
   }
 }
 
-module.exports = nextConfig
+export default nextConfig
 `
 }
 
@@ -280,11 +280,11 @@ body {
 }
 
 /**
- * Generate tailwind.config.js
+ * Generate tailwind.config.mjs (ES module)
  */
 function generateTailwindConfig(): string {
   return `/** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
   content: [
     './app/**/*.{js,ts,jsx,tsx}',
     './lib/**/*.{js,ts,jsx,tsx}',
@@ -302,7 +302,7 @@ module.exports = {
  * Generate PostCSS config (REQUIRED for Tailwind)
  */
 function generatePostCSSConfig(): string {
-  return `module.exports = {
+  return `export default {
   plugins: {
     tailwindcss: {},
     autoprefixer: {},

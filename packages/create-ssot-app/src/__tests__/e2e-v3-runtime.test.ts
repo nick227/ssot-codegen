@@ -369,9 +369,9 @@ describe('V3 JSON Runtime E2E', () => {
   test('Verify Next.js configuration files', () => {
     const start = Date.now()
     
-    // next.config.js
-    const nextConfig = path.join(TEST_PROJECT_PATH, 'next.config.js')
-    expect(fs.existsSync(nextConfig), 'next.config.js should exist').toBe(true)
+    // next.config.mjs
+    const nextConfig = path.join(TEST_PROJECT_PATH, 'next.config.mjs')
+    expect(fs.existsSync(nextConfig), 'next.config.mjs should exist').toBe(true)
     
     const configContent = fs.readFileSync(nextConfig, 'utf-8')
     expect(configContent).toContain('transpilePackages')
@@ -391,7 +391,7 @@ describe('V3 JSON Runtime E2E', () => {
       name: 'Next.js Configuration',
       status: 'pass',
       duration: Date.now() - start,
-      details: 'next.config.js + app/layout.tsx present'
+      details: 'next.config.mjs + app/layout.tsx present'
     })
   })
 
@@ -417,9 +417,9 @@ describe('V3 JSON Runtime E2E', () => {
   test('Verify PostCSS and environment files', () => {
     const start = Date.now()
     
-    // postcss.config.js
-    const postcssConfig = path.join(TEST_PROJECT_PATH, 'postcss.config.js')
-    expect(fs.existsSync(postcssConfig), 'postcss.config.js should exist').toBe(true)
+    // postcss.config.mjs
+    const postcssConfig = path.join(TEST_PROJECT_PATH, 'postcss.config.mjs')
+    expect(fs.existsSync(postcssConfig), 'postcss.config.mjs should exist').toBe(true)
     
     const postcssContent = fs.readFileSync(postcssConfig, 'utf-8')
     expect(postcssContent).toContain('tailwindcss')
@@ -445,7 +445,7 @@ describe('V3 JSON Runtime E2E', () => {
       name: 'PostCSS & Environment',
       status: 'pass',
       duration: Date.now() - start,
-      details: 'postcss.config.js + .env.local + API route present'
+      details: 'postcss.config.mjs + .env.local + API route present'
     })
   })
 
