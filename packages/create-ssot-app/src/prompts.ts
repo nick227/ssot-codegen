@@ -23,6 +23,7 @@ export interface ProjectConfig {
   selectedPlugins: string[]
   packageManager: 'npm' | 'pnpm' | 'yarn'
   generateUI: boolean
+  uiMode?: 'v3-runtime' | 'v2-codegen'  // NEW: V3 (JSON runtime) or V2 (code generation)
   uiTemplate?: 'data-browser' | 'blog' | 'chatbot' | 'ecommerce' | 'dashboard'
 }
 
@@ -95,11 +96,29 @@ export async function getProjectConfig(): Promise<ProjectConfig> {
       {
         type: 'confirm',
         name: 'generateUI',
-        message: '🎨 Generate UI components (experimental)?',
+        message: '🎨 Generate UI components?',
         initial: false
       },
       {
         type: (prev) => prev ? 'select' : null,
+        name: 'uiMode',
+        message: 'UI Generation Mode:',
+        choices: [
+          {
+            title: '🚀 JSON Runtime (V3) - Recommended',
+            value: 'v3-runtime',
+            description: 'Zero code generation! Pure JSON with instant hot reload'
+          },
+          {
+            title: '📝 Code Generation (V2)',
+            value: 'v2-codegen',
+            description: 'Generate TypeScript files for full customization'
+          }
+        ],
+        initial: 0
+      },
+      {
+        type: (prev, values) => values.generateUI ? 'select' : null,
         name: 'uiTemplate',
         message: 'Choose UI template:',
         choices: [

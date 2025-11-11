@@ -129,14 +129,21 @@ export async function createProject(config: ProjectConfig): Promise<void> {
   if (config.generateUI) {
     console.log()
     console.log(pc.cyan('🎨 Generating UI...'))
+    console.log(pc.dim(`   Mode: ${config.uiMode === 'v3-runtime' ? 'JSON Runtime (V3)' : 'Code Generation (V2)'}`))
     console.log(pc.dim(`   Template: ${config.uiTemplate || 'data-browser'}`))
     console.log()
     
     try {
       const models = parseModelsFromSchema(path.join(projectPath, 'prisma', 'schema.prisma'))
       await generateUI(projectPath, config, models)
-      console.log(pc.green('✓ UI generated successfully'))
-      console.log(pc.dim(`   ${models.length} models → ${models.length * 2} pages`))
+      
+      if (config.uiMode === 'v3-runtime') {
+        console.log(pc.green('✓ V3 JSON templates copied'))
+        console.log(pc.dim(`   0 lines of code generated!`))
+      } else {
+        console.log(pc.green('✓ UI generated successfully'))
+        console.log(pc.dim(`   ${models.length} models → ${models.length * 2} pages`))
+      }
     } catch (error) {
       console.log(pc.yellow('⚠️  UI generation failed (optional):'))
       console.log(pc.dim(`   ${(error as Error).message}`))
@@ -175,16 +182,35 @@ export async function createProject(config: ProjectConfig): Promise<void> {
     console.log()
     console.log(pc.green('━'.repeat(50)))
     console.log()
-    console.log(pc.bold(pc.green('✨ UI Generated!')))
+    console.log(pc.bold(pc.green('✨ UI Ready!')))
     console.log()
-    console.log('Your admin panel is ready at:')
-    console.log(pc.cyan(`  http://localhost:3001/admin`))
-    console.log()
-    console.log('To start the UI dev server:')
-    console.log(pc.dim(`  cd ${config.projectName}`))
-    console.log(pc.cyan(`  ${config.packageManager} run dev:ui`))
-    console.log()
-    console.log('See UI_README.md for customization options.')
+    
+    if (config.uiMode === 'v3-runtime') {
+      console.log(pc.bold('JSON Runtime (V3) - Zero Code Generation!'))
+      console.log()
+      console.log('Your UI is defined in pure JSON at:')
+      console.log(pc.cyan(`  templates/`))
+      console.log()
+      console.log('Edit JSON → Hot reload (instant updates!)')
+      console.log()
+      console.log('Useful commands:')
+      console.log(pc.dim(`  cd ${config.projectName}`))
+      console.log(pc.cyan(`  ${config.packageManager} run validate:templates   # Validate JSON`))
+      console.log(pc.cyan(`  ${config.packageManager} run gen:models:watch     # Auto-update models.json`))
+      console.log(pc.cyan(`  ${config.packageManager} run dev                  # Start dev server`))
+      console.log()
+      console.log('See templates/README.md for details.')
+    } else {
+      console.log('Your admin panel is ready at:')
+      console.log(pc.cyan(`  http://localhost:3001/admin`))
+      console.log()
+      console.log('To start the UI dev server:')
+      console.log(pc.dim(`  cd ${config.projectName}`))
+      console.log(pc.cyan(`  ${config.packageManager} run dev:ui`))
+      console.log()
+      console.log('See UI_README.md for customization options.')
+    }
+    
     console.log()
     console.log(pc.green('━'.repeat(50)))
   }

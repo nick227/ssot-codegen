@@ -29,6 +29,14 @@ export async function generateUI(projectPath: string, config: ProjectConfig, mod
     return
   }
   
+  // V3 Runtime (JSON only, no code generation)
+  if (config.uiMode === 'v3-runtime') {
+    const { generateV3UI } = await import('./v3-ui-generator.js')
+    await generateV3UI(projectPath, config, models)
+    return
+  }
+  
+  // V2 Code Generation (legacy)
   switch (config.uiTemplate) {
     case 'data-browser':
       generateDataBrowser(projectPath, config, models)

@@ -234,6 +234,25 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@22.19.0)(@vitest/ui@2.1.9)(jsdom@27.1.0)
 
+  packages/prisma-to-models:
+    dependencies:
+      '@prisma/internals':
+        specifier: ^5.22.0
+        version: 5.22.0
+      '@ssot-ui/schemas':
+        specifier: workspace:*
+        version: link:../ui-schemas
+    devDependencies:
+      '@types/node':
+        specifier: ^20.11.0
+        version: 20.19.24
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+      vitest:
+        specifier: ^1.2.0
+        version: 1.6.1(@types/node@20.19.24)(jsdom@27.1.0)
+
   packages/schema-lint:
     dependencies:
       '@ssot-codegen/core':
