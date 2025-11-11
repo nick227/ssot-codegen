@@ -9,6 +9,7 @@
 // Export All Schemas
 // ============================================================================
 
+export * from './schemas/expressions.js'
 export * from './schemas/template.js'
 export * from './schemas/data-contract.js'
 export * from './schemas/capabilities.js'
