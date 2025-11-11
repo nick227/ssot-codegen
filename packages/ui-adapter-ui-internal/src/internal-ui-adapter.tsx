@@ -7,8 +7,52 @@
  */
 
 import type { UIAdapter } from '@ssot-ui/adapters'
-import { Avatar, Badge, Button, Card } from '@ssot-ui/shared'
+import {
+  Avatar as SSAvatar,
+  Badge as SSBadge,
+  Button as SSButton,
+  Card as SSCard
+} from '@ssot-ui/shared'
 import { DataTable as SSDataTable } from '@ssot-ui/data-table'
+
+// Adapter wrappers to match UIAdapter interface
+const AvatarWrapper: UIAdapter['Avatar'] = ({ src, alt, size, className }) => (
+  <SSAvatar
+    src={src}
+    alt={alt}
+    size={size === 'xs' ? 'sm' : size as any}
+    className={className}
+  />
+)
+
+const BadgeWrapper: UIAdapter['Badge'] = ({ children, variant, className }) => {
+  const mappedVariant = variant === 'secondary' ? 'neutral' : 
+                        variant === 'destructive' ? 'error' : 
+                        variant as any
+  return <SSBadge variant={mappedVariant} className={className}>{children}</SSBadge>
+}
+
+const ButtonWrapper: UIAdapter['Button'] = ({ children, variant, size, disabled, type, onClick, className }) => {
+  const mappedVariant = variant === 'destructive' ? 'danger' : 
+                        variant === 'default' ? 'primary' : 
+                        variant as any
+  return (
+    <SSButton
+      variant={mappedVariant}
+      size={size as any}
+      disabled={disabled}
+      onClick={onClick}
+      className={className}
+      type={type}
+    >
+      {children}
+    </SSButton>
+  )
+}
+
+const CardWrapper: UIAdapter['Card'] = ({ children, className }) => (
+  <SSCard className={className}>{children}</SSCard>
+)
 
 // Wrapper components to match interface
 const Input: UIAdapter['Input'] = ({ value, onChange, ...props }) => (
@@ -64,7 +108,8 @@ const DataTableWrapper: UIAdapter['DataTable'] = (props) => {
     total: props.total || 0,
     isLoading: props.isLoading || false,
     isFetching: false,
-    error: props.error ? new Error(props.error) : null
+    error: props.error ? { code: 'ERROR', message: props.error } : null,
+    refetch: () => {} // No-op for now
   })
   
   const columns = props.columns.map(col => ({
@@ -134,9 +179,9 @@ const Form: UIAdapter['Form'] = ({ fields, values, errors, isSubmitting, onSubmi
         </div>
       ))}
       
-      <Button type="submit" disabled={isSubmitting}>
+      <ButtonWrapper type="submit" disabled={isSubmitting}>
         {isSubmitting ? 'Saving...' : 'Save'}
-      </Button>
+      </ButtonWrapper>
     </form>
   )
 }
@@ -205,11 +250,11 @@ const Spinner: UIAdapter['Spinner'] = ({ size = 'md' }) => {
 // ============================================================================
 
 export const InternalUIAdapter: UIAdapter = {
-  // Reuse existing components
-  Avatar,
-  Badge,
-  Button,
-  Card,
+  // Wrapped components
+  Avatar: AvatarWrapper,
+  Badge: BadgeWrapper,
+  Button: ButtonWrapper,
+  Card: CardWrapper,
   
   // Simple wrappers
   Input,
