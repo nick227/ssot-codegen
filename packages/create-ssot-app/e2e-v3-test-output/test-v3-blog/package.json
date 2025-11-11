@@ -4,9 +4,10 @@
   "type": "module",
   "description": "Full-stack TypeScript API built with SSOT CodeGen",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "build": "tsc",
-    "start": "node dist/server.js",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "dev:api": "tsx watch src/server.ts",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",

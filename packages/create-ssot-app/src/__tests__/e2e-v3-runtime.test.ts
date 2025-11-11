@@ -366,6 +366,54 @@ describe('V3 JSON Runtime E2E', () => {
     })
   })
 
+  test('Verify Next.js configuration files', () => {
+    const start = Date.now()
+    
+    // next.config.js
+    const nextConfig = path.join(TEST_PROJECT_PATH, 'next.config.js')
+    expect(fs.existsSync(nextConfig), 'next.config.js should exist').toBe(true)
+    
+    const configContent = fs.readFileSync(nextConfig, 'utf-8')
+    expect(configContent).toContain('transpilePackages')
+    expect(configContent).toContain('@ssot-ui/runtime')
+    expect(configContent).toContain('serverComponentsExternalPackages')
+    expect(configContent).toContain('@prisma/client')
+    
+    // app/layout.tsx
+    const layout = path.join(TEST_PROJECT_PATH, 'app', 'layout.tsx')
+    expect(fs.existsSync(layout), 'app/layout.tsx should exist').toBe(true)
+    
+    const layoutContent = fs.readFileSync(layout, 'utf-8')
+    expect(layoutContent).toContain('export const metadata')
+    expect(layoutContent).toContain('RootLayout')
+    
+    addResult({
+      name: 'Next.js Configuration',
+      status: 'pass',
+      duration: Date.now() - start,
+      details: 'next.config.js + app/layout.tsx present'
+    })
+  })
+
+  test('Verify Next.js dev scripts', () => {
+    const start = Date.now()
+    
+    const pkgJsonPath = path.join(TEST_PROJECT_PATH, 'package.json')
+    const pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf-8'))
+    
+    expect(pkgJson.scripts.dev).toBe('next dev')
+    expect(pkgJson.scripts.build).toBe('next build')
+    expect(pkgJson.scripts.start).toBe('next start')
+    expect(pkgJson.scripts['dev:api']).toBe('tsx watch src/server.ts')
+    
+    addResult({
+      name: 'Next.js Scripts',
+      status: 'pass',
+      duration: Date.now() - start,
+      details: 'Correct Next.js scripts (dev/build/start)'
+    })
+  })
+
   test('Count total lines of code (should be minimal)', () => {
     const start = Date.now()
     
@@ -383,14 +431,20 @@ describe('V3 JSON Runtime E2E', () => {
       totalLines += fs.readFileSync(adaptersFile, 'utf-8').split('\n').length
     }
     
-    // Should be under 100 lines
-    expect(totalLines).toBeLessThan(100)
+    // Count root layout
+    const layout = path.join(TEST_PROJECT_PATH, 'app', 'layout.tsx')
+    if (fs.existsSync(layout)) {
+      totalLines += fs.readFileSync(layout, 'utf-8').split('\n').length
+    }
+    
+    // Should be under 120 lines (mount + adapters + layout)
+    expect(totalLines).toBeLessThan(120)
     
     addResult({
       name: 'Code Line Count',
       status: 'pass',
       duration: Date.now() - start,
-      details: `Total: ${totalLines} lines (target: < 100)`
+      details: `Total: ${totalLines} lines (target: < 120)`
     })
   })
 })

@@ -72,7 +72,21 @@ export async function generateV3UI(
     generateV3README(config)
   )
   
+  // Generate root layout (REQUIRED by Next.js App Router)
+  fs.writeFileSync(
+    path.join(projectPath, 'app', 'layout.tsx'),
+    generateRootLayout(config)
+  )
+  
+  // Generate next.config.js
+  fs.writeFileSync(
+    path.join(projectPath, 'next.config.js'),
+    generateNextConfig()
+  )
+  
   console.log('  ✅ Generated mount point (app/[[...slug]]/page.tsx)')
+  console.log('  ✅ Generated root layout (app/layout.tsx)')
+  console.log('  ✅ Generated Next.js configuration')
   console.log('  ✅ Generated adapter configuration')
 }
 
@@ -153,6 +167,55 @@ export const adapters = {
 
 // NOTE: Configure NextAuth in app/api/auth/[...nextauth]/route.ts
 // See: https://next-auth.js.org/configuration/initialization
+`
+}
+
+/**
+ * Generate root layout (REQUIRED by Next.js App Router)
+ */
+function generateRootLayout(config: ProjectConfig): string {
+  return `import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: '${config.projectName}',
+  description: 'Built with SSOT CodeGen V3 JSON Runtime',
+}
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  )
+}
+`
+}
+
+/**
+ * Generate next.config.js
+ */
+function generateNextConfig(): string {
+  return `/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  transpilePackages: [
+    '@ssot-ui/runtime',
+    '@ssot-ui/adapter-data-prisma',
+    '@ssot-ui/adapter-ui-internal',
+    '@ssot-ui/adapter-auth-nextauth',
+    '@ssot-ui/adapter-router-next',
+    '@ssot-ui/adapter-format-intl'
+  ],
+  experimental: {
+    serverComponentsExternalPackages: ['@prisma/client']
+  }
+}
+
+module.exports = nextConfig
 `
 }
 
