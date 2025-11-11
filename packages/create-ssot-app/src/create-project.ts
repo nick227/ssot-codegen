@@ -106,23 +106,28 @@ export async function createProject(config: ProjectConfig): Promise<void> {
     throw new Error('Failed to generate Prisma client')
   }
 
-  // Run ssot-codegen
-  console.log()
-  console.log(pc.cyan('🚀 Generating API code...'))
-  
-  // Show plugin info if any selected
-  if (config.selectedPlugins && config.selectedPlugins.length > 0) {
-    console.log(pc.dim(`   With plugins: ${config.selectedPlugins.length} enabled`))
-  }
-  console.log()
-  
-  try {
-    execSync(getPackageCommand(config.packageManager, 'exec ssot-codegen generate'), {
-      cwd: projectPath,
-      stdio: 'inherit'
-    })
-  } catch (error) {
-    throw new Error('Failed to generate API code')
+  // Generate API code (skip for V3 - it uses adapters directly)
+  if (!config.generateUI || config.uiMode !== 'v3-runtime') {
+    console.log()
+    console.log(pc.cyan('🚀 Generating API code...'))
+    
+    // Show plugin info if any selected
+    if (config.selectedPlugins && config.selectedPlugins.length > 0) {
+      console.log(pc.dim(`   With plugins: ${config.selectedPlugins.length} enabled`))
+    }
+    console.log()
+    
+    try {
+      execSync(getPackageCommand(config.packageManager, 'exec ssot-codegen generate'), {
+        cwd: projectPath,
+        stdio: 'inherit'
+      })
+    } catch (error) {
+      throw new Error('Failed to generate API code')
+    }
+  } else {
+    console.log()
+    console.log(pc.dim('⏭️  Skipping API code generation (V3 uses adapters directly)'))
   }
   
   // Generate UI if requested

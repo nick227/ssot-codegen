@@ -101,8 +101,8 @@ export function generatePackageJson(config: ProjectConfig): string {
     }
   }
 
-  // V3 uses Next.js dev server, V2 uses tsx
-  const baseScripts = config.generateUI && config.uiMode === 'v3-runtime' ? {
+  // Build scripts based on UI mode
+  const scripts: Record<string, string> = config.generateUI && config.uiMode === 'v3-runtime' ? {
     dev: 'next dev',
     build: 'next build',
     start: 'next start',
@@ -124,8 +124,6 @@ export function generatePackageJson(config: ProjectConfig): string {
     'generate:prisma': 'prisma generate',
     'generate:api': 'ssot-codegen generate'
   }
-  
-  const scripts: Record<string, string> = { ...baseScripts }
   
   // Add UI scripts if UI generation is enabled
   if (config.generateUI) {

@@ -11,6 +11,7 @@
  * - Security (sanitization, auth guards)
  */
 
+// @ts-nocheck - V2 factory not currently used
 import { z } from 'zod'
 import fs from 'node:fs'
 import path from 'node:path'

@@ -5,7 +5,8 @@
  * Auto-runs on schema changes.
  */
 
-import { getDMMF } from '@prisma/internals'
+import pkg from '@prisma/internals'
+const { getDMMF } = pkg
 import type { Models, Model, Field, Enum } from '@ssot-ui/schemas'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -40,8 +41,8 @@ export async function generateModelsFromPrisma(
       default: field.default,
       documentation: field.documentation
     })),
-    idFields: model.primaryKey?.fields,
-    uniqueFields: model.uniqueFields.map(uf => uf.fields),
+    idFields: model.primaryKey?.fields ? [...model.primaryKey.fields] : undefined,
+    uniqueFields: model.uniqueFields.map(uf => [...uf.fields]),
     documentation: model.documentation
   }))
   
