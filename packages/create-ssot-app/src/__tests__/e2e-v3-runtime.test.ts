@@ -414,6 +414,41 @@ describe('V3 JSON Runtime E2E', () => {
     })
   })
 
+  test('Verify PostCSS and environment files', () => {
+    const start = Date.now()
+    
+    // postcss.config.js
+    const postcssConfig = path.join(TEST_PROJECT_PATH, 'postcss.config.js')
+    expect(fs.existsSync(postcssConfig), 'postcss.config.js should exist').toBe(true)
+    
+    const postcssContent = fs.readFileSync(postcssConfig, 'utf-8')
+    expect(postcssContent).toContain('tailwindcss')
+    expect(postcssContent).toContain('autoprefixer')
+    
+    // .env.local
+    const envLocal = path.join(TEST_PROJECT_PATH, '.env.local')
+    expect(fs.existsSync(envLocal), '.env.local should exist').toBe(true)
+    
+    const envContent = fs.readFileSync(envLocal, 'utf-8')
+    expect(envContent).toContain('NEXT_PUBLIC_APP_NAME')
+    expect(envContent).toContain('NEXT_PUBLIC_API_URL')
+    
+    // API route
+    const apiRoute = path.join(TEST_PROJECT_PATH, 'app', 'api', 'data', 'route.ts')
+    expect(fs.existsSync(apiRoute), 'API route should exist').toBe(true)
+    
+    const apiContent = fs.readFileSync(apiRoute, 'utf-8')
+    expect(apiContent).toContain('NextRequest')
+    expect(apiContent).toContain('NextResponse')
+    
+    addResult({
+      name: 'PostCSS & Environment',
+      status: 'pass',
+      duration: Date.now() - start,
+      details: 'postcss.config.js + .env.local + API route present'
+    })
+  })
+
   test('Count total lines of code (should be minimal)', () => {
     const start = Date.now()
     

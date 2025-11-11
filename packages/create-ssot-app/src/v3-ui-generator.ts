@@ -96,10 +96,32 @@ export async function generateV3UI(
     generateTailwindConfig()
   )
   
+  // Generate postcss.config.js (REQUIRED for Tailwind)
+  fs.writeFileSync(
+    path.join(projectPath, 'postcss.config.js'),
+    generatePostCSSConfig()
+  )
+  
+  // Generate .env.local for Next.js
+  fs.writeFileSync(
+    path.join(projectPath, '.env.local'),
+    generateEnvLocal(config)
+  )
+  
+  // Generate API integration route (optional, for backend integration)
+  const apiDir = path.join(projectPath, 'app', 'api', 'data')
+  fs.mkdirSync(apiDir, { recursive: true })
+  fs.writeFileSync(
+    path.join(apiDir, 'route.ts'),
+    generateDataAPIRoute()
+  )
+  
   console.log('  ✅ Generated mount point (app/[[...slug]]/page.tsx)')
   console.log('  ✅ Generated root layout (app/layout.tsx)')
   console.log('  ✅ Generated Next.js configuration')
-  console.log('  ✅ Generated global styles and Tailwind config')
+  console.log('  ✅ Generated PostCSS + Tailwind config')
+  console.log('  ✅ Generated environment files')
+  console.log('  ✅ Generated API integration routes')
   console.log('  ✅ Generated adapter configuration')
 }
 
@@ -277,6 +299,79 @@ module.exports = {
 }
 
 /**
+ * Generate PostCSS config (REQUIRED for Tailwind)
+ */
+function generatePostCSSConfig(): string {
+  return `module.exports = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}
+`
+}
+
+/**
+ * Generate .env.local (Next.js convention)
+ */
+function generateEnvLocal(config: ProjectConfig): string {
+  return `# Next.js Environment Variables (Local Development)
+# This file is NOT committed to git
+
+# Database (use same as .env for local dev)
+DATABASE_URL="file:./dev.db"
+
+# Next.js
+NEXT_PUBLIC_APP_NAME="${config.projectName}"
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+
+# API Server (if running separately)
+NEXT_PUBLIC_API_URL="http://localhost:3001"
+
+# Development
+NODE_ENV="development"
+`
+}
+
+/**
+ * Generate API integration route
+ */
+function generateDataAPIRoute(): string {
+  return `/**
+ * Data API Route
+ * 
+ * Optional: Proxy requests to separate API server
+ * or handle data operations directly in Next.js
+ */
+
+import { NextRequest, NextResponse } from 'next/server'
+
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+  const model = searchParams.get('model')
+  
+  // TODO: Either proxy to Express API or handle directly with Prisma
+  
+  return NextResponse.json({
+    message: 'API route ready',
+    model
+  })
+}
+
+export async function POST(request: NextRequest) {
+  const body = await request.json()
+  
+  // TODO: Handle create/update operations
+  
+  return NextResponse.json({
+    message: 'Operation successful',
+    data: body
+  })
+}
+`
+}
+
+/**
  * Generate V3 README
  */
 function generateV3README(config: ProjectConfig): string {
@@ -336,6 +431,20 @@ npm run gen:models:watch
 \`\`\`bash
 npm run validate:templates
 \`\`\`
+
+## 🖥️ **Development**
+
+### **Dual Server Setup**
+V3 projects run TWO servers:
+
+1. **Next.js (UI)**: \`npm run dev\` → http://localhost:3000
+2. **Express (API)**: \`npm run dev:api\` → http://localhost:3001
+
+### **Single Server (Alternative)**
+Use Next.js API routes for everything:
+- Move backend logic to \`app/api/\`
+- Remove Express server
+- Simpler deployment
 
 ---
 

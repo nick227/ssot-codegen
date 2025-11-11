@@ -55,6 +55,20 @@ npm run gen:models:watch
 npm run validate:templates
 ```
 
+## 🖥️ **Development**
+
+### **Dual Server Setup**
+V3 projects run TWO servers:
+
+1. **Next.js (UI)**: `npm run dev` → http://localhost:3000
+2. **Express (API)**: `npm run dev:api` → http://localhost:3001
+
+### **Single Server (Alternative)**
+Use Next.js API routes for everything:
+- Move backend logic to `app/api/`
+- Remove Express server
+- Simpler deployment
+
 ---
 
 ## 🎨 **Hot Reload**
