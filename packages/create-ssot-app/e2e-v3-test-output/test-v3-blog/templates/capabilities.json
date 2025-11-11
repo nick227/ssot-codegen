@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "ui": [],
+  "sanitize": {
+    "policy": "basic"
+  },
+  "security": {
+    "enforceGuards": true
+  }
+}

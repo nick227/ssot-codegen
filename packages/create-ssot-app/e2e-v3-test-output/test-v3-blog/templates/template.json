@@ -1,0 +1,37 @@
+{
+  "version": "1.0.0",
+  "runtimeVersion": "^3.0.0",
+  "name": "basic",
+  "pages": [
+    {
+      "type": "list",
+      "route": "/users",
+      "runtime": "server",
+      "model": "user",
+      "title": "All Users"
+    },
+    {
+      "type": "detail",
+      "route": "/users/[id]",
+      "runtime": "server",
+      "model": "user",
+      "title": "User",
+      "fields": []
+    },
+    {
+      "type": "list",
+      "route": "/posts",
+      "runtime": "server",
+      "model": "post",
+      "title": "All Posts"
+    },
+    {
+      "type": "detail",
+      "route": "/posts/[id]",
+      "runtime": "server",
+      "model": "post",
+      "title": "Post",
+      "fields": []
+    }
+  ]
+}

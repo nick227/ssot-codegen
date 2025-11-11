@@ -1,0 +1,124 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2025-11-11T13:17:08.903Z",
+  "schemaPath": "./prisma/schema.prisma",
+  "models": [
+    {
+      "name": "User",
+      "fields": [
+        {
+          "name": "id",
+          "type": "Int",
+          "isRequired": true,
+          "isList": false,
+          "isRelation": true
+        },
+        {
+          "name": "email",
+          "type": "String",
+          "isRequired": true,
+          "isList": false,
+          "isRelation": true
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "isRequired": true,
+          "isList": false,
+          "isRelation": true
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "isRequired": true,
+          "isList": false,
+          "isRelation": true
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "isRequired": true,
+          "isList": false,
+          "isRelation": true
+        },
+        {
+          "name": "posts",
+          "type": "Post",
+          "isRequired": true,
+          "isList": false,
+          "isRelation": true
+        }
+      ],
+      "idFields": [
+        "id"
+      ],
+      "uniqueFields": []
+    },
+    {
+      "name": "Post",
+      "fields": [
+        {
+          "name": "id",
+          "type": "Int",
+          "isRequired": true,
+          "isList": false,
+          "isRelation": true
+        },
+        {
+          "name": "title",
+          "type": "String",
+          "isRequired": true,
+          "isList": false,
+          "isRelation": true
+        },
+        {
+          "name": "content",
+          "type": "String",
+          "isRequired": true,
+          "isList": false,
+          "isRelation": true
+        },
+        {
+          "name": "published",
+          "type": "Boolean",
+          "isRequired": true,
+          "isList": false,
+          "isRelation": true
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "isRequired": true,
+          "isList": false,
+          "isRelation": true
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "isRequired": true,
+          "isList": false,
+          "isRelation": true
+        },
+        {
+          "name": "authorId",
+          "type": "Int",
+          "isRequired": true,
+          "isList": false,
+          "isRelation": true
+        },
+        {
+          "name": "author",
+          "type": "User",
+          "isRequired": true,
+          "isList": false,
+          "isRelation": true
+        }
+      ],
+      "idFields": [
+        "id"
+      ],
+      "uniqueFields": []
+    }
+  ],
+  "enums": []
+}

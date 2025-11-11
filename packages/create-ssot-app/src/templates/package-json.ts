@@ -73,10 +73,24 @@ export function generatePackageJson(config: ProjectConfig): string {
   
   // Add UI dependencies if UI generation is enabled
   if (config.generateUI) {
-    const uiDeps = getUIDependencies(config)
-    const uiDevDeps = getUIDevDependencies(config)
-    Object.assign(deps, uiDeps)
-    Object.assign(devDeps, uiDevDeps)
+    if (config.uiMode === 'v3-runtime') {
+      // V3: Runtime + adapters only
+      const isDev = isLocalDevelopment()
+      deps['@ssot-ui/runtime'] = isDev ? 'file:../packages/ui-runtime' : '^3.0.0'
+      deps['@ssot-ui/adapter-data-prisma'] = isDev ? 'file:../packages/ui-adapter-data-prisma' : '^3.0.0'
+      deps['@ssot-ui/adapter-ui-internal'] = isDev ? 'file:../packages/ui-adapter-ui-internal' : '^3.0.0'
+      deps['@ssot-ui/adapter-auth-nextauth'] = isDev ? 'file:../packages/ui-adapter-auth-nextauth' : '^3.0.0'
+      deps['@ssot-ui/adapter-router-next'] = isDev ? 'file:../packages/ui-adapter-router-next' : '^3.0.0'
+      deps['@ssot-ui/adapter-format-intl'] = isDev ? 'file:../packages/ui-adapter-format-intl' : '^3.0.0'
+      devDeps['@ssot-ui/prisma-to-models'] = isDev ? 'file:../packages/prisma-to-models' : '^3.0.0'
+      devDeps['@ssot-ui/schemas'] = isDev ? 'file:../packages/ui-schemas' : '^3.0.0'
+    } else {
+      // V2: Generated code dependencies
+      const uiDeps = getUIDependencies(config)
+      const uiDevDeps = getUIDevDependencies(config)
+      Object.assign(deps, uiDeps)
+      Object.assign(devDeps, uiDevDeps)
+    }
   }
 
   const scripts: Record<string, string> = {
@@ -93,8 +107,17 @@ export function generatePackageJson(config: ProjectConfig): string {
   
   // Add UI scripts if UI generation is enabled
   if (config.generateUI) {
-    const uiScripts = getUIScripts(config)
-    Object.assign(scripts, uiScripts)
+    if (config.uiMode === 'v3-runtime') {
+      // V3 scripts
+      scripts['gen:models'] = 'prisma-to-models generate ./prisma/schema.prisma --out ./templates/models.json'
+      scripts['gen:models:watch'] = 'prisma-to-models watch ./prisma/schema.prisma --out ./templates/models.json'
+      scripts['validate:templates'] = 'ssot validate ./templates'
+      scripts['plan:templates'] = 'ssot plan ./templates'
+    } else {
+      // V2 scripts
+      const uiScripts = getUIScripts(config)
+      Object.assign(scripts, uiScripts)
+    }
   }
 
   const pkg = {

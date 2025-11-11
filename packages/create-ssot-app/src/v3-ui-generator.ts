@@ -259,6 +259,30 @@ function generateBasicV3Template(templatesDir: string, models: ParsedModel[]): v
     }, null, 2)
   )
   
+  // models.json (from Prisma schema)
+  fs.writeFileSync(
+    path.join(templatesDir, 'models.json'),
+    JSON.stringify({
+      version: '1.0.0',
+      generatedAt: new Date().toISOString(),
+      schemaPath: './prisma/schema.prisma',
+      models: models.map(m => ({
+        name: m.name,
+        fields: m.fields.map(f => ({
+          name: f.name,
+          type: f.type,
+          isRequired: true,
+          isList: false,
+          isRelation: f.isRelation
+        })),
+        idFields: ['id'],
+        uniqueFields: [],
+        documentation: undefined
+      })),
+      enums: []
+    }, null, 2)
+  )
+  
   // Empty files for others
   fs.writeFileSync(path.join(templatesDir, 'mappings.json'), JSON.stringify({ version: '1.0.0', models: {}, fields: {} }, null, 2))
   fs.writeFileSync(path.join(templatesDir, 'data-contract.json'), JSON.stringify({ version: '1.0.0', models: {} }, null, 2))
