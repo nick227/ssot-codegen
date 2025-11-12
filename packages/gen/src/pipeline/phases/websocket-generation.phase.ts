@@ -10,7 +10,7 @@ import type { WebSocketConfig } from '../../generators/websocket/types.js'
 
 export class WebSocketGenerationPhase implements GenerationPhase {
   readonly name = 'websocket-generation'
-  readonly order = 8  // After SDK generation, before OpenAPI
+  readonly order = 9  // After OpenAPI (08), before Tests (10)
 
   shouldExecute(context: IGenerationContext): boolean {
     // Check if WebSocket is explicitly enabled in config
