@@ -24,50 +24,6 @@ npx create-ssot-app my-soundcloud-clone --ui v3-runtime
 
 ---
 
-## The Scaffolding Architecture
-
-### **V2 (Code Generation) - What We're Moving Away From**
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│ 1. Prisma Schema (schema.prisma)                            │
-└──────────────────────┬──────────────────────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────────────────────┐
-│ 2. Code Generators                                          │
-│    • prisma generate (generates Prisma Client)              │
-│    • ssot-codegen generate (generates API routes)           │
-│    • [MANUAL] Write UI code in TypeScript/React             │
-└──────────────────────┬──────────────────────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────────────────────┐
-│ 3. Generated Code                                           │
-│    • src/generated/prisma-client/                           │
-│    • src/generated/api/routes/                              │
-│    • src/pages/tracks/[id].tsx (MANUAL)                     │
-│    • src/pages/tracks/index.tsx (MANUAL)                    │
-│    • src/pages/tracks/edit.tsx (MANUAL)                     │
-└──────────────────────┬──────────────────────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────────────────────┐
-│ 4. Build & Run                                              │
-│    • tsc (compile TypeScript)                               │
-│    • next build (bundle Next.js)                            │
-│    • next start (run production)                            │
-└─────────────────────────────────────────────────────────────┘
-
-Problems:
-❌ UI is still manual (no scaffolding)
-❌ Changes require rebuild (~30-60s)
-❌ Code generation complexity
-❌ Tight coupling (schema → code → UI)
-```
-
----
-
 ### **V3 (JSON-First Runtime) - Our Vision**
 
 ```
