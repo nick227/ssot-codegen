@@ -5,7 +5,8 @@
  */
 
 import { Command } from 'commander'
-import { generateBulkWebsites, loadBulkConfig, generateBulkReport, validateBulkConfig } from '@ssot-codegen/gen'
+import { generateBulkWebsites, loadBulkConfig, generateBulkReport, validateBulkConfig, type BulkGenerateConfig } from '@ssot-codegen/gen'
+import type { ProjectConfig } from '@ssot-codegen/gen'
 import { resolve, dirname, join } from 'path'
 import { mkdir, writeFile } from 'fs/promises'
 
@@ -50,7 +51,13 @@ export function registerBulkCommand(program: Command): void {
         
         for (const [projectId, result] of results) {
           if (result.success && result.outputDir && result.files) {
-            const project = config.projects.find((p: any) => p.id === projectId)
+            // Find project - handle both string[] and ProjectConfig[] formats
+            const projectsList = Array.isArray(config.projects) && config.projects.length > 0 && typeof config.projects[0] === 'string'
+              ? [] // Simplified format - projectId is the ID
+              : config.projects as ProjectConfig[]
+            const project = projectsList.length > 0 
+              ? projectsList.find((p: any) => p.id === projectId)
+              : { id: projectId, name: projectId }
             if (project && !options.dryRun) {
               // Write files
               for (const [filePath, content] of result.files) {

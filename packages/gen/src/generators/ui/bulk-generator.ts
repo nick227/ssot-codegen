@@ -79,9 +79,14 @@ async function parseSchemaFile(schemaPath: string): Promise<ParsedSchema> {
   let getDMMF: any
   try {
     const prismaInternals = await import('@prisma/internals')
-    getDMMF = prismaInternals.getDMMF
+    // Handle both ESM and CJS exports
+    getDMMF = prismaInternals.getDMMF || (prismaInternals.default && prismaInternals.default.getDMMF)
+    if (!getDMMF || typeof getDMMF !== 'function') {
+      throw new Error('getDMMF is not a function. Check @prisma/internals version.')
+    }
   } catch (error) {
-    throw new Error('@prisma/internals not available. Install it: npm install @prisma/internals')
+    const errorMsg = error instanceof Error ? error.message : String(error)
+    throw new Error(`@prisma/internals not available: ${errorMsg}. Install it: pnpm add @prisma/internals`)
   }
   
   const schemaContent = readFileSync(schemaPath, 'utf-8')

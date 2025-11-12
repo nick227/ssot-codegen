@@ -1,0 +1,13 @@
+Bulk Generation Report
+=====================
+Generated: 2025-11-12T20:02:22.844Z
+Projects: 0
+Total Files: 0
+Successful: 0
+Failed: 3
+
+Projects:
+
+  ❌ ai-chat: getDMMF is not a function
+  ❌ blog: getDMMF is not a function
+  ❌ ecommerce: getDMMF is not a function

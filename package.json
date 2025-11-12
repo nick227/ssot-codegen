@@ -48,5 +48,8 @@
     "prisma": "^5.0.0",
     "rimraf": "^5.0.0",
     "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "@prisma/internals": "^6.19.0"
   }
 }
