@@ -132,18 +132,26 @@ Edit `websites/config/bulk-generate.json`:
 ### 3. Generate Websites
 
 ```bash
+# Build CLI first (if not already built)
+pnpm build
+
 # Generate all projects
-npx ssot-gen bulk
+pnpm ssot bulk
 
 # Use custom config file
-npx ssot-gen bulk --config websites/config/my-config.json
+pnpm ssot bulk --config websites/config/my-config.json
 
 # Preview without writing files
-npx ssot-gen bulk --dry-run
+pnpm ssot bulk --dry-run
 
 # Generate sequentially (not parallel)
-npx ssot-gen bulk --no-parallel
+pnpm ssot bulk --no-parallel
+
+# Or run CLI directly
+node packages/cli/dist/cli.js bulk --config websites/config/bulk-generate.json
 ```
+
+**Note:** The CLI package (`@ssot-codegen/cli`) is not published to npm, so use `pnpm ssot` (workspace script) instead of `npx ssot-gen`.
 
 ---
 
