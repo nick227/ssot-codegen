@@ -418,6 +418,7 @@ function generateSmartForm(): string {
  * - Validates on submit
  * - Calls SDK (create/update)
  * - Shows errors inline
+ * - Expression-enabled fields (visibleWhen, readOnly)
  */
 
 'use client'
@@ -425,6 +426,7 @@ function generateSmartForm(): string {
 import { useState, useEffect } from 'react'
 import { getSdk } from './sdk-client'
 import { Button } from './Button'
+import { useExpression } from '@ssot-ui/expressions'
 
 export interface FieldDef {
   name: string
@@ -433,6 +435,8 @@ export interface FieldDef {
   required?: boolean
   options?: string[]  // For select
   placeholder?: string
+  visibleWhen?: any  // Expression for conditional visibility
+  readOnlyWhen?: any  // Expression for read-only state
 }
 
 export interface FormProps {
@@ -448,6 +452,13 @@ export function Form({ model, fields, id, onSuccess, onCancel }: FormProps) {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(!!id)
   const [saving, setSaving] = useState(false)
+  const evaluateExpression = useExpression()
+  
+  // Filter visible fields
+  const visibleFields = fields.filter(field => {
+    if (!field.visibleWhen) return true
+    return evaluateExpression(field.visibleWhen, formData)
+  })
   
   // Fetch existing data if editing
   useEffect(() => {
@@ -524,7 +535,12 @@ export function Form({ model, fields, id, onSuccess, onCancel }: FormProps) {
   
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {fields.map(field => (
+      {visibleFields.map(field => {
+        const isReadOnly = field.readOnlyWhen 
+          ? evaluateExpression(field.readOnlyWhen, formData)
+          : false
+        
+        return (
         <div key={field.name}>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             {field.label}
@@ -537,7 +553,8 @@ export function Form({ model, fields, id, onSuccess, onCancel }: FormProps) {
               onChange={(e) => handleChange(field.name, e.target.value)}
               placeholder={field.placeholder}
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              readOnly={isReadOnly}
+              className={\`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent \${isReadOnly ? 'bg-gray-100 cursor-not-allowed' : ''}\`}
             />
           ) : field.type === 'select' ? (
             <select
@@ -563,7 +580,8 @@ export function Form({ model, fields, id, onSuccess, onCancel }: FormProps) {
               value={formData[field.name] || ''}
               onChange={(e) => handleChange(field.name, e.target.value)}
               placeholder={field.placeholder}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              readOnly={isReadOnly}
+              className={\`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent \${isReadOnly ? 'bg-gray-100 cursor-not-allowed' : ''}\`}
             />
           )}
           
@@ -571,7 +589,8 @@ export function Form({ model, fields, id, onSuccess, onCancel }: FormProps) {
             <p className="mt-1 text-sm text-red-600">{errors[field.name]}</p>
           )}
         </div>
-      ))}
+        )
+      })}
       
       {errors.submit && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
