@@ -18,7 +18,6 @@
   },
   "dependencies": {
     "@ssot-ui/schemas": "workspace:*",
-    "@ssot-ui/loader": "workspace:*",
     "@ssot-ui/adapters": "workspace:*",
     "react": "^18.2.0"
   },
