@@ -45,3 +45,6 @@ export * from './search/full-text-search.plugin.js'
 // AI provider interface
 export * from './ai/ai-provider.interface.js'
 
+// Security
+export * from './rls/index.js'
+
