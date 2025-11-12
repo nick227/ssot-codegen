@@ -1,0 +1,66 @@
+// Example Schema: Marketplace (E-commerce)
+// Use this schema to test marketplace preset generation
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      String   @default("user")
+  createdAt DateTime @default(now())
+  
+  products  Product[]
+  orders    Order[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  stock       Int      @default(0)
+  vendorId    String
+  isPublic    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  
+  vendor      User     @relation(fields: [vendorId], references: [id])
+  orderItems  OrderItem[]
+  
+  @@index([vendorId])
+  @@index([isPublic])
+}
+
+model Order {
+  id         String   @id @default(cuid())
+  customerId String
+  status     String   @default("pending")
+  total      Float
+  createdAt  DateTime @default(now())
+  
+  customer   User       @relation(fields: [customerId], references: [id])
+  items      OrderItem[]
+  
+  @@index([customerId])
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Float
+  
+  order     Order   @relation(fields: [orderId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+  
+  @@unique([orderId, productId])
+}
+

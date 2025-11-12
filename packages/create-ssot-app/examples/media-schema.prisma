@@ -1,0 +1,65 @@
+// Example Schema: Media (SoundCloud-like)
+// Use this schema to test media preset generation
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      String   @default("user")
+  createdAt DateTime @default(now())
+  
+  tracks    Track[]
+  playlists Playlist[]
+  likes     Like[]
+}
+
+model Track {
+  id         String   @id @default(cuid())
+  title      String
+  artist     String?
+  duration   Int      // seconds
+  plays      Int      @default(0)
+  isPublic   Boolean  @default(false)
+  uploadedBy String
+  createdAt  DateTime @default(now())
+  
+  uploader   User     @relation(fields: [uploadedBy], references: [id])
+  likes      Like[]
+  
+  @@index([uploadedBy])
+  @@index([isPublic])
+}
+
+model Playlist {
+  id        String   @id @default(cuid())
+  name      String
+  userId    String
+  isPublic  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id])
+  
+  @@index([userId])
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  trackId   String
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id])
+  track     Track    @relation(fields: [trackId], references: [id])
+  
+  @@unique([userId, trackId])
+}
+

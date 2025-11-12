@@ -1,5 +1,30 @@
-dist
-node_modules
-test-output
-e2e-ui-test-output
+# Dependencies
+node_modules/
+dist/
 
+# Test outputs (generated projects)
+generated/*
+!generated/.gitkeep
+
+# Legacy test outputs (clean these up)
+real-world-v3-test/
+e2e-ui-test-output/
+e2e-v3-test-output/
+e2e-test-output/
+test-output/
+*-test-output/
+
+# Build artifacts
+*.tsbuildinfo
+.turbo/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

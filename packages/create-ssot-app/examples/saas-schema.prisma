@@ -1,0 +1,56 @@
+// Example Schema: SaaS (Multi-tenant)
+// Use this schema to test saas preset generation
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Org {
+  id        String   @id @default(cuid())
+  name      String
+  plan      String   @default("free")
+  createdAt DateTime @default(now())
+  
+  members   OrgMember[]
+  projects  Project[]
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  
+  memberships OrgMember[]
+}
+
+model OrgMember {
+  id        String   @id @default(cuid())
+  orgId     String
+  userId    String
+  role      String   @default("member")
+  createdAt DateTime @default(now())
+  
+  org       Org      @relation(fields: [orgId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  
+  @@unique([orgId, userId])
+  @@index([userId])
+}
+
+model Project {
+  id        String   @id @default(cuid())
+  name      String
+  orgId     String
+  createdAt DateTime @default(now())
+  
+  org       Org      @relation(fields: [orgId], references: [id])
+  
+  @@index([orgId])
+}
+
