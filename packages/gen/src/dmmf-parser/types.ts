@@ -106,6 +106,7 @@ export interface ParsedModel {
   }
   readonly uniqueFields: readonly (readonly string[])[]  // Frozen to prevent accidental mutations
   documentation?: string
+  annotations?: readonly any[]  // Parsed annotations (@@service, @@auth, @@policy, @@realtime, @@search)
   // Derived properties
   idField?: ParsedField
   readonly scalarFields: readonly ParsedField[]  // Frozen to prevent accidental mutations

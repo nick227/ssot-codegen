@@ -3,7 +3,7 @@
  * Generates server-side WebSocket gateway for real-time updates
  */
 
-import type { ParsedModel } from '../../types/schema.js'
+import type { ParsedModel } from '../../dmmf-parser/types.js'
 import type { WebSocketConfig } from './types.js'
 
 export function generateWebSocketGateway(

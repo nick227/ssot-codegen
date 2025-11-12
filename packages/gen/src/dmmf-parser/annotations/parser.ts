@@ -66,7 +66,8 @@ function parseAnnotationType(type: string, argsString: string): ModelAnnotation 
  * Parse service annotation
  */
 function parseServiceAnnotation(args: Record<string, unknown>): ServiceAnnotation {
-  const provider = args._positional?.[0] as string
+  const positional = args._positional as unknown[] | undefined
+  const provider = positional?.[0] as string
   if (!provider) {
     throw new Error('@@service requires provider name as first argument')
   }
@@ -84,12 +85,13 @@ function parseServiceAnnotation(args: Record<string, unknown>): ServiceAnnotatio
  * Parse auth annotation
  */
 function parseAuthAnnotation(args: Record<string, unknown>): AuthAnnotation {
-  const strategy = args._positional?.[0] as string
+  const positional = args._positional as unknown[] | undefined
+  const strategy = positional?.[0] as string
   if (!strategy) {
     throw new Error('@@auth requires strategy name as first argument')
   }
   
-  const { _positional, ...config } = args
+  const { _positional, ...config} = args
   
   return {
     type: 'auth',
@@ -102,7 +104,8 @@ function parseAuthAnnotation(args: Record<string, unknown>): AuthAnnotation {
  * Parse policy annotation
  */
 function parsePolicyAnnotation(args: Record<string, unknown>): PolicyAnnotation {
-  const operation = args._positional?.[0] as string
+  const positional = args._positional as unknown[] | undefined
+  const operation = positional?.[0] as string
   if (!operation || !['read', 'write', 'delete', '*'].includes(operation)) {
     throw new Error('@@policy requires operation (read/write/delete/*) as first argument')
   }

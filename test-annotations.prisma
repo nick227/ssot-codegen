@@ -1,0 +1,68 @@
+// Test schema with annotations
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  name      String
+  role      String    @default("user")
+  createdAt DateTime  @default(now())
+  
+  posts     Post[]
+  messages  Message[]
+  
+  /// @@auth("JWT", expiry: "7d", refresh: true)
+  /// @@policy("read", rule: "isOwner || isAdmin", fields: ["email"])
+  /// @@search(fields: ["name", "email"], weights: [2, 1])
+}
+
+model Post {
+  id        String   @id @default(uuid())
+  title     String
+  content   String
+  authorId  String
+  published Boolean  @default(false)
+  createdAt DateTime @default(now())
+  
+  author    User     @relation(fields: [authorId], references: [id])
+  images    Image[]
+  
+  /// @@policy("read", rule: "published || isOwner")
+  /// @@policy("write", rule: "isOwner")
+  /// @@policy("delete", rule: "isOwner || isAdmin")
+  /// @@search(fields: ["title", "content"], weights: [3, 1])
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  text      String
+  senderId  String
+  roomId    String
+  createdAt DateTime @default(now())
+  
+  sender    User     @relation(fields: [senderId], references: [id])
+  
+  /// @@realtime(subscribe: ["list", "item"], broadcast: ["created", "updated", "deleted"])
+  /// @@policy("read", rule: "authenticated")
+  /// @@policy("write", rule: "isOwner")
+}
+
+model Image {
+  id        String   @id @default(uuid())
+  filename  String
+  url       String
+  postId    String
+  createdAt DateTime @default(now())
+  
+  post      Post     @relation(fields: [postId], references: [id])
+  
+  /// @@service("Cloudinary", folder: "uploads", quality: "auto")
+}
+

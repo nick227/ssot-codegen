@@ -3,7 +3,7 @@
  * Generates client-side SDK with WebSocket support
  */
 
-import type { ParsedModel } from '../../types/schema.js'
+import type { ParsedModel } from '../../dmmf-parser/types.js'
 import type { WebSocketConfig } from './types.js'
 
 export function generateWebSocketClient(

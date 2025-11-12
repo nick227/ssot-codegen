@@ -6,6 +6,7 @@
 
 import type { ParsedSchema, SchemaValidationResult } from '../types.js'
 import { detectCircularRelations } from './circular-detection.js'
+import { validateAnnotations } from '../annotations/validator.js'
 
 /**
  * Validate parsed schema
@@ -41,6 +42,16 @@ export function validateSchemaDetailed(schema: ParsedSchema, throwOnError = fals
   }
   
   for (const model of schema.models) {
+    // Validate annotations
+    if (model.annotations && model.annotations.length > 0) {
+      const fieldNames = model.fields.map(f => f.name)
+      const annotationResult = validateAnnotations(model.name, model.annotations as any, fieldNames)
+      
+      if (!annotationResult.valid) {
+        errors.push(...annotationResult.errors)
+      }
+    }
+    
     // Check for ID field or composite primary key
     const hasIdField = !!model.idField
     const hasCompositePrimaryKey = model.primaryKey && model.primaryKey.fields.length > 0

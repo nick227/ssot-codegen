@@ -11,6 +11,7 @@ import { safeStringify } from '../utils/string-utils.js'
 import { sanitizeDocumentation } from '../security/sanitization.js'
 import { conditionalFreeze } from '../utils/freezing.js'
 import { parseFields } from './field-parser.js'
+import { parseAnnotations } from '../annotations/parser.js'
 
 /**
  * Parse models with type guards
@@ -39,6 +40,9 @@ export function parseModels(
       fields: conditionalFreeze(validateStringArray(model.primaryKey.fields, `${model.name}.primaryKey.fields`), shouldFreeze) as readonly string[]
     } : undefined
     
+    // Parse annotations from documentation
+    const annotations = parseAnnotations(model.documentation)
+    
     return {
       name: model.name,
       // Use toLowerCase() for consistent ASCII lowercasing
@@ -55,6 +59,7 @@ export function parseModels(
         shouldFreeze
       ) as readonly (readonly string[])[],
       documentation: sanitizeDocumentation(model.documentation),
+      annotations: annotations.length > 0 ? conditionalFreeze(annotations, shouldFreeze) : undefined,
       // These will be filled by enhanceModel
       scalarFields: [],
       relationFields: [],
