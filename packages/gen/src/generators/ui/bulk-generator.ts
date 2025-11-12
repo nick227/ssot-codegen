@@ -9,9 +9,12 @@ import type { BulkGenerateConfig, ProjectConfig } from './website-schema-types.j
 import { generateUI } from './ui-generator.js'
 import { generateSite } from './site-builder.js'
 import { parseDMMF } from '../../dmmf-parser.js'
-import { readFileSync } from 'fs'
-import { dirname, resolve } from 'path'
+import { readFileSync, writeFileSync, mkdirSync } from 'fs'
+import { dirname, resolve, join } from 'path'
 import { fileURLToPath } from 'url'
+import { validateBulkConfig, validateModelReferences } from './bulk-validator.js'
+import { mergeCustomizations } from './config-merger.js'
+import { generateManifest, generateBulkManifest, type ProjectManifest } from './manifest-generator.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -38,15 +41,15 @@ async function parseSchemaFile(schemaPath: string): Promise<ParsedSchema> {
  */
 export async function generateBulkWebsites(
   config: BulkGenerateConfig,
-  options?: { verbose?: boolean; parallel?: boolean }
+  options?: { verbose?: boolean; parallel?: boolean; baseDir?: string }
 ): Promise<Map<string, BulkGenerateResult>> {
   const results = new Map<string, BulkGenerateResult>()
   const { projects, options: configOptions } = config
-  const { parallel = configOptions?.parallel ?? false, verbose = configOptions?.verbose ?? false } = options || {}
+  const { parallel = configOptions?.parallel ?? false, verbose = configOptions?.verbose ?? false, baseDir = process.cwd() } = options || {}
   
   if (parallel) {
     // Generate in parallel
-    const promises = projects.map(project => generateProject(project, verbose))
+    const promises = projects.map(project => generateProject(project, verbose, baseDir))
     const projectResults = await Promise.allSettled(promises)
     
     for (let i = 0; i < projects.length; i++) {
@@ -67,12 +70,13 @@ export async function generateBulkWebsites(
     // Generate sequentially
     for (const project of projects) {
       try {
-        const result = await generateProject(project, verbose)
+        const result = await generateProject(project, verbose, baseDir)
         results.set(project.id, {
           success: result.success,
           filesGenerated: result.filesGenerated,
           outputDir: result.outputDir,
-          files: result.files
+          files: result.files,
+          manifest: result.manifest
         })
       } catch (error) {
         results.set(project.id, {
@@ -159,45 +163,22 @@ async function generateProject(
     console.log(`✅ Generated ${allFiles.size} files for ${config.name}`)
   }
   
+  // Generate manifest
+  const manifest = generateManifest(config, schemaContent, configContent, allFiles.size)
+  
+  // Add manifest to files
+  const manifestPath = '.ssot/manifest.json'
+  allFiles.set(manifestPath, JSON.stringify(manifest, null, 2))
+  
   return {
     success: true,
     filesGenerated: allFiles.size,
     outputDir: config.outputDir,
-    files: allFiles
+    files: allFiles,
+    manifest
   }
 }
 
-/**
- * Apply customizations to UI config
- */
-function applyCustomizations(
-  baseConfig: any,
-  customizations: any
-): any {
-  const result = { ...baseConfig }
-  
-  if (customizations.theme) {
-    result.theme = { ...result.theme, ...customizations.theme }
-  }
-  
-  if (customizations.site) {
-    result.site = { ...result.site, ...customizations.site }
-  }
-  
-  if (customizations.navigation) {
-    result.navigation = { ...result.navigation, ...customizations.navigation }
-  }
-  
-  if (customizations.pages) {
-    result.pages = [...(result.pages || []), ...customizations.pages]
-  }
-  
-  if (customizations.components) {
-    result.components = { ...result.components, ...customizations.components }
-  }
-  
-  return result
-}
 
 /**
  * Convert UiConfig to SiteConfig
@@ -232,13 +213,81 @@ export interface BulkGenerateResult {
   outputDir?: string
   error?: string
   files?: Map<string, string>
+  manifest?: ProjectManifest
 }
 
 /**
  * Load bulk generation config from file
+ * Supports both JSON and TypeScript config files
  */
-export function loadBulkConfig(configPath: string): BulkGenerateConfig {
-  const content = readFileSync(configPath, 'utf-8')
-  return JSON.parse(content)
+export async function loadBulkConfig(configPath: string): Promise<BulkGenerateConfig> {
+  const resolvedPath = resolve(configPath)
+  
+  if (resolvedPath.endsWith('.ts') || resolvedPath.endsWith('.tsx')) {
+    // Dynamic import for TypeScript configs
+    const configModule = await import(resolvedPath)
+    return configModule.default || configModule
+  } else {
+    // JSON config
+    const content = readFileSync(resolvedPath, 'utf-8')
+    return JSON.parse(content)
+  }
+}
+
+/**
+ * Generate bulk report
+ */
+export function generateBulkReport(
+  results: Map<string, BulkGenerateResult>,
+  outputPath?: string
+): string {
+  const manifests: ProjectManifest[] = []
+  let totalFiles = 0
+  let successful = 0
+  let failed = 0
+
+  for (const [projectId, result] of results) {
+    if (result.success) {
+      successful++
+      totalFiles += result.filesGenerated
+      if (result.manifest) {
+        manifests.push(result.manifest)
+      }
+    } else {
+      failed++
+    }
+  }
+
+  const bulkManifest = generateBulkManifest(manifests, {
+    totalFiles,
+    successful,
+    failed
+  })
+
+  const report = `Bulk Generation Report
+=====================
+Generated: ${bulkManifest.generatedAt}
+Projects: ${bulkManifest.summary.totalProjects}
+Total Files: ${bulkManifest.summary.totalFiles}
+Successful: ${bulkManifest.summary.successful}
+Failed: ${bulkManifest.summary.failed}
+
+Projects:
+${manifests.map(m => `  ✅ ${m.name} (${m.filesGenerated} files)`).join('\n')}
+${Array.from(results.entries())
+  .filter(([_, r]) => !r.success)
+  .map(([id, r]) => `  ❌ ${id}: ${r.error || 'Unknown error'}`)
+  .join('\n')}
+`
+
+  if (outputPath) {
+    writeFileSync(outputPath, report, 'utf-8')
+    // Also write JSON manifest
+    const manifestPath = join(dirname(outputPath), 'bulk-manifest.json')
+    mkdirSync(dirname(manifestPath), { recursive: true })
+    writeFileSync(manifestPath, JSON.stringify(bulkManifest, null, 2), 'utf-8')
+  }
+
+  return report
 }
 

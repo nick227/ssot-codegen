@@ -21,8 +21,22 @@ export function registerBulkCommand(program: Command): void {
         const configPath = resolve(process.cwd(), options.config)
         console.log(`📋 Loading bulk config: ${configPath}\n`)
         
-        const config = loadBulkConfig(configPath)
+        const config = await loadBulkConfig(configPath)
         console.log(`📦 Found ${config.projects.length} projects to generate\n`)
+        
+        // Validate configuration
+        const validation = validateBulkConfig(config)
+        if (validation.warnings.length > 0) {
+          console.warn('\n⚠️  Validation warnings:')
+          validation.warnings.forEach(w => console.warn(`  - ${w}`))
+          console.log('')
+        }
+        
+        if (!validation.valid) {
+          console.error('❌ Configuration validation failed:\n')
+          validation.errors.forEach(e => console.error(`  - ${e}`))
+          process.exit(1)
+        }
         
         const results = await generateBulkWebsites(config, {
           verbose: true,
@@ -61,7 +75,46 @@ export function registerBulkCommand(program: Command): void {
         console.log(`   ❌ Failed: ${errorCount}`)
         console.log(`   📄 Total files: ${totalFiles}`)
         
+        // Generate report
+        if (!options.dryRun) {
+          const reportPath = join(process.cwd(), 'bulk-report.txt')
+          const report = generateBulkReport(results, reportPath)
+          console.log(`\n📄 Report saved to: ${reportPath}`)
+        }
+        
         if (errorCount > 0) {
+          process.exit(1)
+        }
+      } catch (error) {
+        console.error('❌ Error:', error instanceof Error ? error.message : String(error))
+        process.exit(1)
+      }
+    })
+  
+  bulkCommand
+    .command('validate')
+    .description('Validate bulk generation configuration without generating')
+    .option('-c, --config <path>', 'Path to bulk generation config', 'websites/config/bulk-generate.json')
+    .action(async (options) => {
+      try {
+        const configPath = resolve(process.cwd(), options.config)
+        console.log(`📋 Validating bulk config: ${configPath}\n`)
+        
+        const config = await loadBulkConfig(configPath)
+        const validation = validateBulkConfig(config)
+        
+        if (validation.warnings.length > 0) {
+          console.warn('⚠️  Warnings:')
+          validation.warnings.forEach((w: string) => console.warn(`  - ${w}`))
+          console.log('')
+        }
+        
+        if (validation.valid) {
+          console.log('✅ Configuration is valid!')
+          console.log(`   Projects: ${config.projects.length}`)
+        } else {
+          console.error('❌ Configuration validation failed:\n')
+          validation.errors.forEach((e: string) => console.error(`  - ${e}`))
           process.exit(1)
         }
       } catch (error) {

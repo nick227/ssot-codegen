@@ -62,6 +62,17 @@ export { generateHookLinkers } from './hook-linker-generator.js'
 export { generateLightweightComponents } from './lightweight-component-generator.js'
 
 // Bulk Generation
-export { generateBulkWebsites, loadBulkConfig } from './bulk-generator.js'
+export { generateBulkWebsites, loadBulkConfig, generateBulkReport } from './bulk-generator.js'
 export type { BulkGenerateResult } from './bulk-generator.js'
+
+// Bulk Validation
+export { validateBulkConfig, validateProject, validateModelReferences } from './bulk-validator.js'
+export type { ValidationResult as BulkValidationResult, ProjectValidationResult } from './bulk-validator.js'
+
+// Config Merger
+export { deepMerge, mergeCustomizations } from './config-merger.js'
+
+// Manifest Generator
+export { generateManifest, generateBulkManifest, generateChecksum } from './manifest-generator.js'
+export type { ProjectManifest, BulkManifest } from './manifest-generator.js'
 
