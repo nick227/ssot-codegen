@@ -1,0 +1,40 @@
+{
+  "name": "@ssot-ui/policy-engine",
+  "version": "3.0.0",
+  "description": "Policy engine for row-level security (RLS) and field-level permissions",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "dev": "tsc --watch"
+  },
+  "keywords": [
+    "policy",
+    "authorization",
+    "security",
+    "rls",
+    "rbac",
+    "abac"
+  ],
+  "author": "SSOT Team",
+  "license": "MIT",
+  "dependencies": {
+    "@ssot-ui/expressions": "workspace:*",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.6.0"
+  }
+}
+
