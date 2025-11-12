@@ -24,6 +24,7 @@ export { GenerateCICDPhase } from './10-generate-ci-cd.phase.js'
 export { WriteManifestPhase } from './09-write-manifest.phase.js'
 export { GenerateTsConfigPhase } from './10-generate-tsconfig.phase.js'
 export { WriteStandalonePhase } from './11-write-standalone.phase.js'
+export { UiGenerationPhase } from './ui-generation.phase.js'
 export { WriteTestsPhase } from './12-write-tests.phase.js'
 export { FormatCodePhase } from './13-format-code.phase.js'
 
