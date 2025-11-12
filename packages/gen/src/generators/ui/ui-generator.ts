@@ -8,11 +8,13 @@
 import type { ParsedSchema, ParsedModel } from '../../dmmf-parser.js'
 import { generateSmartComponents } from './smart-components.js'
 import { generatePageStubs } from './page-stub-generator.js'
+import { generateHookLinkers } from './hook-linker-generator.js'
 
 export interface UiGeneratorConfig {
   outputDir: string
   generateComponents: boolean
   generatePages: boolean
+  generateHookLinkers?: boolean  // Generate hook adapters (default: true)
   models?: string[]  // If undefined, generate for all models
 }
 
@@ -20,6 +22,7 @@ export interface UiGeneratorResult {
   files: Map<string, string>
   componentsGenerated: number
   pagesGenerated: number
+  hookAdaptersGenerated: number
 }
 
 /**
@@ -34,6 +37,18 @@ export function generateUI(
   const files = new Map<string, string>()
   let componentsGenerated = 0
   let pagesGenerated = 0
+  let hookAdaptersGenerated = 0
+  
+  // Generate hook linkers (lightweight adapters for connecting components to hooks)
+  if (config.generateHookLinkers !== false) {
+    const hookLinkerFiles = generateHookLinkers(schema, `${config.outputDir}/hooks`)
+    
+    // Fuse into main map (single pass)
+    for (const [path, content] of hookLinkerFiles) {
+      files.set(path, content)
+      hookAdaptersGenerated++
+    }
+  }
   
   // Generate smart component library (once per project)
   if (config.generateComponents) {
@@ -52,7 +67,7 @@ export function generateUI(
     : schema.models
   
   if (targetModels.length === 0) {
-    return { files, componentsGenerated, pagesGenerated: 0 }
+    return { files, componentsGenerated, pagesGenerated: 0, hookAdaptersGenerated }
   }
   
   // Generate pages per model (single pass, no intermediate arrays)
@@ -73,7 +88,7 @@ export function generateUI(
     }
   }
   
-  return { files, componentsGenerated, pagesGenerated }
+  return { files, componentsGenerated, pagesGenerated, hookAdaptersGenerated }
 }
 
 /**
