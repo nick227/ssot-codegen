@@ -86,6 +86,14 @@ export class BaseCRUDController<T, CreateDTO, UpdateDTO, QueryDTO> {
   }
 
   private handleError(error: unknown, operation: string, context: Record<string, any>, res: Response): void {
+    // Handle Prisma P2025 (record not found) errors
+    if (error && typeof error === 'object' && 'code' in error && (error as { code: string }).code === 'P2025') {
+      const idKey = \`\${this.config.modelName.toLowerCase()}Id\`
+      logger.debug({ [idKey]: context.id || context[idKey] }, \`\${this.config.modelName} not found\`)
+      res.status(404).json({ error: \`\${this.config.modelName} not found\` })
+      return
+    }
+    
     logger.error({ error, ...context, operation }, \`Error in \${operation}\`)
     res.status(500).json({ error: 'Internal Server Error' })
   }
@@ -166,12 +174,6 @@ export class BaseCRUDController<T, CreateDTO, UpdateDTO, QueryDTO> {
       const data = this.schemas.update.parse(req.body)
       const item = await this.service.update(id, data)
       
-      if (!item) {
-        const idKey = \`\${this.config.modelName.toLowerCase()}Id\`
-        logger.debug({ [idKey]: id }, \`\${this.config.modelName} not found for update\`)
-        return res.status(404).json({ error: \`\${this.config.modelName} not found\` })
-      }
-      
       return res.json(item)
     } catch (error) {
       if (error instanceof ZodError) {
@@ -188,13 +190,7 @@ export class BaseCRUDController<T, CreateDTO, UpdateDTO, QueryDTO> {
       const id = this.parseId(req, res)
       if (id === null) return
       
-      const deleted = await this.service.delete(id)
-      
-      if (!deleted) {
-        const idKey = \`\${this.config.modelName.toLowerCase()}Id\`
-        logger.debug({ [idKey]: id }, \`\${this.config.modelName} not found for delete\`)
-        return res.status(404).json({ error: \`\${this.config.modelName} not found\` })
-      }
+      await this.service.delete(id)
       
       return res.status(204).send()
     } catch (error) {

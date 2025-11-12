@@ -181,6 +181,12 @@ function handleError(
     return res.status(400).json({ error: 'Validation Error', details: error.errors })
   }
   
+  // Handle Prisma P2025 (record not found) errors
+  if (error && typeof error === 'object' && 'code' in error && (error as { code: string }).code === 'P2025') {
+    logger.debug({ ...sanitized }, \`Resource not found: \${context}\`)
+    return res.status(404).json({ error: 'Resource not found' })
+  }
+  
   // Include error type and stack trace for debugging
   const errorInfo = error instanceof Error ? {
     message: error.message,
@@ -364,6 +370,12 @@ function handleError(
   if (error instanceof ZodError) {
     logger.warn({ ...sanitized, validationErrors: error.errors }, \`Validation error: \${context}\`)
     return reply.code(400).send({ error: 'Validation Error', details: error.errors })
+  }
+  
+  // Handle Prisma P2025 (record not found) errors
+  if (error && typeof error === 'object' && 'code' in error && (error as { code: string }).code === 'P2025') {
+    logger.debug({ ...sanitized }, \`Resource not found: \${context}\`)
+    return reply.code(404).send({ error: 'Resource not found' })
   }
   
   // Include error type and stack trace for debugging

@@ -347,11 +347,6 @@ export const update${model.name} = async (
     const data = ${model.name}UpdateSchema.parse(req.body)
     const item = await ${modelCamel}Service.update(parsedId, data)
     
-    if (!item) {
-      logger.info({ ${modelCamel}Id: parsedId }, 'Resource not found for update')
-      return res.status(404).json({ error: 'Resource not found' })
-    }
-    
     return res.json(item)
   } catch (error) {
     return handleError(error, res, 'updating resource', { operation: 'update', id: req.params.id })
@@ -374,12 +369,7 @@ export const delete${model.name} = async (
     }
     
     const parsedId = idResult.id
-    const deleted = await ${modelCamel}Service.delete(parsedId)
-    
-    if (!deleted) {
-      logger.info({ ${modelCamel}Id: parsedId }, 'Resource not found for delete')
-      return res.status(404).json({ error: 'Resource not found' })
-    }
+    await ${modelCamel}Service.delete(parsedId)
     
     return res.status(204).send()
   } catch (error) {
@@ -783,11 +773,6 @@ export const update${model.name} = async (req: FastifyRequest<{ Params: { id: st
     const data = ${model.name}UpdateSchema.parse(req.body)
     const item = await ${modelCamel}Service.update(parsedId, data)
     
-    if (!item) {
-      logger.info({ ${modelCamel}Id: parsedId }, 'Resource not found for update')
-      return reply.code(404).send({ error: 'Resource not found' })
-    }
-    
     return reply.send(item)
   } catch (error) {
     return handleError(error, reply, 'updating resource', { operation: 'update', id: req.params.id })
@@ -807,12 +792,7 @@ export const delete${model.name} = async (req: FastifyRequest<{ Params: { id: st
     }
     
     const parsedId = idResult.id
-    const deleted = await ${modelCamel}Service.delete(parsedId)
-    
-    if (!deleted) {
-      logger.info({ ${modelCamel}Id: parsedId }, 'Resource not found for delete')
-      return reply.code(404).send({ error: 'Resource not found' })
-    }
+    await ${modelCamel}Service.delete(parsedId)
     
     return reply.code(204).send()
   } catch (error) {

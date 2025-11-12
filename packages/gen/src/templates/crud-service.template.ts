@@ -152,16 +152,11 @@ export function generateCreateMethod(config: CRUDServiceConfig): string {
    * Create ${modelName}
    */
   async create(data: ${modelName}CreateDTO) {
-    try {
-      const item = await prisma.${modelLower}.create({
-        data${includeStatement ? includeStatement : ''}
-      })${enableLogging ? `
-      logger.info({ ${modelLower}Id: item.id }, '${modelName} created')` : ''}
-      return item
-    } catch (error) {${enableLogging ? `
-      logger.error({ error, data }, 'Failed to create ${modelName}')` : ''}
-      throw error
-    }
+    const item = await prisma.${modelLower}.create({
+      data${includeStatement ? includeStatement : ''}
+    })${enableLogging ? `
+    logger.info({ ${modelLower}Id: item.id }, '${modelName} created')` : ''}
+    return item
   }`
 }
 
@@ -175,21 +170,12 @@ export function generateUpdateMethod(config: CRUDServiceConfig): string {
    * Update ${modelName}
    */
   async update(id: ${idType}, data: ${modelName}UpdateDTO) {
-    try {
-      const item = await prisma.${modelLower}.update({
-        where: { id },
-        data${includeStatement ? includeStatement : ''}
-      })${enableLogging ? `
-      logger.info({ ${modelLower}Id: id }, '${modelName} updated')` : ''}
-      return item
-    } catch (error: any) {
-      if (error.code === 'P2025') {${enableLogging ? `
-        logger.warn({ ${modelLower}Id: id }, '${modelName} not found for update')` : ''}
-        return null  // Not found
-      }${enableLogging ? `
-      logger.error({ error, ${modelLower}Id: id, data }, 'Failed to update ${modelName}')` : ''}
-      throw error
-    }
+    const item = await prisma.${modelLower}.update({
+      where: { id },
+      data${includeStatement ? includeStatement : ''}
+    })${enableLogging ? `
+    logger.info({ ${modelLower}Id: id }, '${modelName} updated')` : ''}
+    return item
   }`
 }
 
@@ -203,20 +189,11 @@ export function generateDeleteMethod(config: CRUDServiceConfig): string {
    * Delete ${modelName}
    */
   async delete(id: ${idType}) {
-    try {
-      await prisma.${modelLower}.delete({
-        where: { id }
-      })${enableLogging ? `
-      logger.info({ ${modelLower}Id: id }, '${modelName} deleted')` : ''}
-      return true
-    } catch (error: any) {
-      if (error.code === 'P2025') {${enableLogging ? `
-        logger.warn({ ${modelLower}Id: id }, '${modelName} not found for delete')` : ''}
-        return false  // Not found
-      }${enableLogging ? `
-      logger.error({ error, ${modelLower}Id: id }, 'Failed to delete ${modelName}')` : ''}
-      throw error
-    }
+    await prisma.${modelLower}.delete({
+      where: { id }
+    })${enableLogging ? `
+    logger.info({ ${modelLower}Id: id }, '${modelName} deleted')` : ''}
+    return true
   }`
 }
 
