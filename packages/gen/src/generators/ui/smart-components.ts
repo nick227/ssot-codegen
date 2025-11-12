@@ -10,6 +10,8 @@
  * NO handler abstraction layer - components are smart!
  */
 
+import { generateExpressionProvider } from './expression-provider-generator.js'
+
 export function generateSmartComponents(outputDir: string): Map<string, string> {
   const files = new Map<string, string>()
   
@@ -17,6 +19,9 @@ export function generateSmartComponents(outputDir: string): Map<string, string> 
   files.set(`${outputDir}/Button.tsx`, generateSmartButton())
   files.set(`${outputDir}/DataTable.tsx`, generateSmartDataTable())
   files.set(`${outputDir}/Form.tsx`, generateSmartForm())
+  
+  // Expression provider wrapper
+  files.set(`${outputDir}/ExpressionProvider.tsx`, generateExpressionProvider())
   
   // Helper utilities
   files.set(`${outputDir}/sdk-client.ts`, generateSdkClient())
@@ -751,11 +756,13 @@ function generateComponentsIndex(): string {
  * Smart Components
  * 
  * Self-contained components that integrate directly with SDK
+ * Expression-enabled for dynamic logic
  */
 
 export { Button, type ButtonProps, type ButtonAction, type ButtonVariant, type ButtonSize } from './Button.js'
 export { DataTable, type DataTableProps, type ColumnDef, type ActionDef } from './DataTable.js'
 export { Form, type FormProps, type FieldDef } from './Form.js'
+export { ExpressionProvider, type ExpressionProviderProps } from './ExpressionProvider.js'
 export { getSdk, setSdk, type Sdk, type SdkMethod } from './sdk-client.js'
 export { toast } from './toast.js'
 `
