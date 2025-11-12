@@ -232,6 +232,7 @@ function generateSmartDataTable(): string {
  * - Shows loading state
  * - Handles row clicks
  * - Supports inline actions
+ * - Expression-enabled columns (visibleWhen)
  */
 
 'use client'
@@ -239,11 +240,13 @@ function generateSmartDataTable(): string {
 import { useState, useEffect } from 'react'
 import { getSdk } from './sdk-client'
 import { Button } from './Button'
+import { useExpression } from '@ssot-ui/expressions'
 
 export interface ColumnDef<T = any> {
   key: string
   label: string
   render?: (value: any, row: T) => React.ReactNode
+  visibleWhen?: any  // Expression for conditional visibility
 }
 
 export interface ActionDef {
@@ -276,6 +279,13 @@ export function DataTable<T extends { id: string }>({
   const [data, setData] = useState<T[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const evaluateExpression = useExpression()
+  
+  // Filter visible columns based on expressions
+  const visibleColumns = columns.filter(col => {
+    if (!col.visibleWhen) return true
+    return evaluateExpression(col.visibleWhen, {})
+  })
   
   const fetchData = async () => {
     setLoading(true)
@@ -335,7 +345,7 @@ export function DataTable<T extends { id: string }>({
       <table className="w-full">
         <thead className="bg-gray-50 border-b border-gray-300">
           <tr>
-            {columns.map(col => (
+            {visibleColumns.map(col => (
               <th 
                 key={col.key}
                 className="px-4 py-3 text-left text-sm font-semibold text-gray-700"
@@ -360,7 +370,7 @@ export function DataTable<T extends { id: string }>({
                 \${onRowClick ? 'cursor-pointer hover:bg-gray-50' : ''}
               \`.trim()}
             >
-              {columns.map(col => (
+              {visibleColumns.map(col => (
                 <td key={col.key} className="px-4 py-3 text-sm">
                   {col.render 
                     ? col.render(row[col.key], row)
