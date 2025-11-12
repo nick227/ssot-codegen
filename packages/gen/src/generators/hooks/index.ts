@@ -7,7 +7,7 @@
 import type { ParsedModel, ParsedSchema } from '../../dmmf-parser.js'
 import type { ModelAnalysis } from '@/utils/relationship-analyzer.js'
 import { analyzeModel } from '@/utils/relationship-analyzer.js'
-import { generateCoreQueries, generateCoreQueriesIndex } from './core-queries-generator.js'
+import { generateCoreQueries, generateCoreQueriesIndex, generateQueryHelpers } from './core-queries-generator.js'
 import { 
   generateReactHooks, 
   generateReactHooksIndex, 
@@ -67,6 +67,9 @@ export function generateAllHooks(
     const analysis = analysisCache?.get(model.name) || analyzeModel(model, schema)
     generateModelHooks(model, schema, hooks, frameworks, config, analysis)  // Pass analysis
   }
+  
+  // Generate shared query helpers (stableKey utility)
+  hooks.core.set('shared/query-helpers.ts', generateQueryHelpers())
   
   // Generate index barrels
   hooks.core.set('index.ts', generateCoreQueriesIndex(schema.models, schema))
