@@ -28,13 +28,13 @@ export function registerBulkCommand(program: Command): void {
         const validation = validateBulkConfig(config)
         if (validation.warnings.length > 0) {
           console.warn('\n⚠️  Validation warnings:')
-          validation.warnings.forEach(w => console.warn(`  - ${w}`))
+          validation.warnings.forEach((w: string) => console.warn(`  - ${w}`))
           console.log('')
         }
         
         if (!validation.valid) {
           console.error('❌ Configuration validation failed:\n')
-          validation.errors.forEach(e => console.error(`  - ${e}`))
+          validation.errors.forEach((e: string) => console.error(`  - ${e}`))
           process.exit(1)
         }
         

@@ -100,25 +100,28 @@ export async function generateBulkWebsites(
  */
 async function generateProject(
   config: ProjectConfig,
-  verbose: boolean
-): Promise<BulkGenerateResult & { files?: Map<string, string> }> {
+  verbose: boolean,
+  baseDir: string = process.cwd()
+): Promise<BulkGenerateResult & { files?: Map<string, string>; manifest?: ProjectManifest }> {
   if (verbose) {
     console.log(`📦 Generating project: ${config.name} (${config.id})`)
   }
   
   // Load schema
   const schemaPath = typeof config.schema === 'string' 
-    ? config.schema 
-    : config.schema.schemaPath
+    ? resolve(baseDir, config.schema)
+    : resolve(baseDir, config.schema.schemaPath)
   
+  const schemaContent = readFileSync(schemaPath, 'utf-8')
   const schema = await parseSchemaFile(schemaPath)
   
   // Load UI config
   const uiConfigPath = typeof config.schema === 'string'
     ? resolve(dirname(schemaPath), 'ui.config.ts')
-    : config.schema.uiConfigPath
+    : resolve(baseDir, config.schema.uiConfigPath)
   
   let uiConfig: any = {}
+  let configContent = '{}'
   try {
     // Try to load UI config (may not exist)
     const uiConfigModule = await import(uiConfigPath)
@@ -129,10 +132,19 @@ async function generateProject(
     }
   }
   
-  // Apply customizations
-  if (config.customizations) {
-    uiConfig = applyCustomizations(uiConfig, config.customizations)
+  // Validate model references
+  const modelValidation = validateModelReferences(uiConfig, schema)
+  if (modelValidation.errors.length > 0) {
+    throw new Error(`Model validation failed: ${modelValidation.errors.join(', ')}`)
   }
+  
+  // Apply customizations using deep merge
+  if (config.customizations) {
+    uiConfig = mergeCustomizations(uiConfig, config.customizations)
+  }
+  
+  // Capture config content for manifest (after customizations)
+  configContent = JSON.stringify(uiConfig)
   
   // Generate UI
   const uiResult = generateUI(schema, {
