@@ -4,6 +4,7 @@
 
 import type { ParsedModel, ParsedSchema } from '../dmmf-parser.js'
 import { analyzeModel } from '@/utils/relationship-analyzer.js'
+import { getModelRoutePath, getDefaultBaseUrl } from '@/utils/integration-helpers.js'
 
 /**
  * Generate SDK client for a single model - THIN FACADE PATTERN
@@ -107,7 +108,7 @@ export class ${model.name}Client extends BaseModelClient<
   ${model.name}QueryDTO
 > {
   constructor(client: BaseAPIClient) {
-    super(client, '/api/${modelLower}s')
+    super(client, '${getModelRoutePath(model.name)}')
   }
 
   // ============================================
@@ -343,9 +344,9 @@ export interface SDKConfig {
  * \`\`\`
  */
 export function createSDK(config: SDKConfig) {
-  // Create base client
+  // Create base client with environment-aware defaults
   const client = new BaseAPIClient({
-    baseUrl: config.baseUrl,
+    baseUrl: config.baseUrl || getDefaultBaseUrl(),
     timeout: config.timeout,
     retries: config.retries,
     headers: config.headers,

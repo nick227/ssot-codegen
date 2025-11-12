@@ -6,6 +6,7 @@
 
 import type { ParsedModel, ParsedSchema } from '../../dmmf-parser.js'
 import { analyzeModel } from '@/utils/relationship-analyzer.js'
+import { getDefaultBaseUrl } from '@/utils/integration-helpers.js'
 
 /**
  * Generate React hooks for a model
@@ -486,8 +487,11 @@ export function SDKProvider({
   queryConfig,
   showDevtools = process.env.NODE_ENV === 'development'
 }: SDKProviderProps) {
-  // Create SDK instance (memoized by config)
-  const sdk = useMemo(() => createSDK(config), [
+  // Create SDK instance (memoized by config) with environment-aware defaults
+  const sdk = useMemo(() => createSDK({
+    ...config,
+    baseUrl: config.baseUrl || getDefaultBaseUrl()
+  }), [
     config.baseUrl,
     config.timeout,
     config.retries,

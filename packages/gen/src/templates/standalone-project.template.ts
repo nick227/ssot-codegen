@@ -359,7 +359,7 @@ export const notFoundHandler = (req: Request, res: Response) => {
 /**
  * Convert PascalCase to camelCase for variable names
  */
-import { toKebabCase } from '@/utils/naming.js'
+import { toKebabCase, pluralize } from '@/utils/naming.js'
 
 const toCamelCase = (str: string): string => {
   return str.charAt(0).toLowerCase() + str.slice(1)
@@ -370,8 +370,13 @@ export const appTemplate = (models: string[], serviceNames?: string[], hasPlugin
     .map(m => `import { ${toCamelCase(m)}Router } from './routes/${toKebabCase(m)}/index.js'`)
     .join('\n')
   
+  // Import integration helper for consistent path generation
   const routeRegistrations = models
-    .map(m => `  app.use(\`\${config.api.prefix}/${toKebabCase(m)}s\`, ${toCamelCase(m)}Router)`)
+    .map(m => {
+      const modelKebab = toKebabCase(m)
+      const modelPlural = pluralize(modelKebab)
+      return `  app.use(\`\${config.api.prefix}/${modelPlural}\`, ${toCamelCase(m)}Router)`
+    })
     .join('\n')
   
   // Add service route imports
@@ -408,6 +413,17 @@ import 'express-async-errors'
 import config from './config.js'
 import { errorHandler, notFoundHandler } from './middleware.js'
 import { httpLogger, logger } from './logger.js'
+
+// CORS configuration with environment-aware defaults
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'development' 
+    ? true  // Allow all origins in development (Express accepts boolean)
+    : process.env.CORS_ORIGIN?.split(',') || '*',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  exposedHeaders: ['X-Total-Count', 'X-Page-Count', 'X-Current-Page']
+}
 ${routeImports}${serviceImports ? '\n' + serviceImports : ''}${pluginImports ? '\n' + pluginImports : ''}
 
 // Configure rate limiting
@@ -427,7 +443,7 @@ export const createApp = async (): Promise<express.Application> => {
 
   // Security & parsing
   app.use(helmet())
-  app.use(cors({ origin: config.cors.origin }))
+  app.use(cors(corsOptions))
   app.use(express.json())
   app.use(express.urlencoded({ extended: true }))
   
