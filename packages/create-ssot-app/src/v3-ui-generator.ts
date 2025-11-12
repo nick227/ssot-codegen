@@ -1,8 +1,12 @@
 /**
  * V3 UI Generator
  * 
+ * @deprecated - V3 runtime approach is being phased out in favor of V2 code generation
+ * 
  * Generates JSON templates + mount point for V3 runtime.
  * NO CODE GENERATION - Just copies JSON files!
+ * 
+ * TODO: Remove after migrating all V3 tests to V2 smart components approach
  */
 
 import fs from 'node:fs'

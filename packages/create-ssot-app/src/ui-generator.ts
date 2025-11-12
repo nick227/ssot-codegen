@@ -258,15 +258,6 @@ export default function AdminLayout({
 }) {
   return (
     <div className="flex flex-col h-screen bg-neutral-50">
-      {/* Auth warning (dev only) */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="bg-yellow-50 border-b border-yellow-200 px-4 py-3">
-          <p className="text-sm text-yellow-800">
-            ⚠️ <strong>No authentication</strong> - Add auth logic in <code>middleware.ts</code>
-          </p>
-        </div>
-      )}
-      
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
         <aside className="w-64 bg-white border-r border-neutral-200 overflow-y-auto">
@@ -278,7 +269,7 @@ export default function AdminLayout({
         <nav className="p-4">
           <Link
             href="/admin"
-            className="block px-4 py-2 rounded-md hover:bg-neutral-100 text-neutral-700 hover:text-neutral-900"
+            className="block px-4 py-2 rounded-md hover:bg-neutral-100 text-neutral-700 hover:text-neutral-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
             📊 Dashboard
           </Link>
@@ -290,16 +281,16 @@ export default function AdminLayout({
             ${models.map(model => `
             <Link
               href="/admin/${model.namePlural}"
-              className="block px-4 py-2 rounded-md hover:bg-neutral-100 text-neutral-700 hover:text-neutral-900"
+              className="block px-4 py-2 rounded-md hover:bg-neutral-100 text-neutral-700 hover:text-neutral-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
-              📝 ${model.name}s
+              📝 ${model.namePlural}
             </Link>`).join('')}
           </div>
         </nav>
       </aside>
       
         {/* Main content */}
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-auto" role="main">
           {children}
         </main>
       </div>
