@@ -15,6 +15,19 @@ export { TemplateRuntime, type RuntimeConfig, type TemplateRuntimeProps } from '
 export { ErrorBoundary } from './components/error-boundary.js'
 export { LoadingFallback } from './components/loading-fallback.js'
 
+// Page Renderers (M0)
+export {
+  ListPageRenderer,
+  DetailPageRenderer,
+  FormPageRenderer,
+  type ListPageConfig,
+  type DetailPageConfig,
+  type FormPageConfig,
+  type ListPageRendererProps,
+  type DetailPageRendererProps,
+  type FormPageRendererProps
+} from './renderers/index.js'
+
 // Expression Context Provider (NEW)
 export {
   ExpressionContextProvider,
