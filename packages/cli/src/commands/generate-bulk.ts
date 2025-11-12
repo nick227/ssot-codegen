@@ -40,7 +40,7 @@ export function registerBulkCommand(program: Command): void {
             if (project && !options.dryRun) {
               // Write files
               for (const [filePath, content] of result.files) {
-                const fullPath = resolve(result.outputDir, filePath)
+                const fullPath = join(result.outputDir, filePath)
                 await mkdir(dirname(fullPath), { recursive: true })
                 await writeFile(fullPath, content, 'utf-8')
               }
