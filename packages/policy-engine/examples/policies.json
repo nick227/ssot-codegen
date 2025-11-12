@@ -1,0 +1,138 @@
+{
+  "policies": [
+    {
+      "model": "Track",
+      "action": "read",
+      "allow": {
+        "type": "operation",
+        "op": "or",
+        "args": [
+          {
+            "type": "condition",
+            "op": "eq",
+            "left": { "type": "field", "path": "isPublic" },
+            "right": { "type": "literal", "value": true }
+          },
+          {
+            "type": "condition",
+            "op": "eq",
+            "left": { "type": "field", "path": "uploadedBy" },
+            "right": { "type": "field", "path": "user.id" }
+          },
+          {
+            "type": "permission",
+            "check": "hasRole",
+            "args": ["admin"]
+          }
+        ]
+      }
+    },
+    {
+      "model": "Track",
+      "action": "update",
+      "allow": {
+        "type": "operation",
+        "op": "or",
+        "args": [
+          {
+            "type": "condition",
+            "op": "eq",
+            "left": { "type": "field", "path": "uploadedBy" },
+            "right": { "type": "field", "path": "user.id" }
+          },
+          {
+            "type": "permission",
+            "check": "hasRole",
+            "args": ["admin"]
+          }
+        ]
+      },
+      "fields": {
+        "read": ["id", "title", "description", "audioUrl", "coverUrl", "uploadedBy", "plays", "isPublic"],
+        "write": ["title", "description", "coverUrl", "isPublic"],
+        "deny": ["uploadedBy", "plays"]
+      }
+    },
+    {
+      "model": "Track",
+      "action": "delete",
+      "allow": {
+        "type": "operation",
+        "op": "or",
+        "args": [
+          {
+            "type": "condition",
+            "op": "eq",
+            "left": { "type": "field", "path": "uploadedBy" },
+            "right": { "type": "field", "path": "user.id" }
+          },
+          {
+            "type": "permission",
+            "check": "hasRole",
+            "args": ["admin"]
+          }
+        ]
+      }
+    },
+    {
+      "model": "Track",
+      "action": "create",
+      "allow": {
+        "type": "permission",
+        "check": "hasAnyRole",
+        "args": ["user", "artist", "admin"]
+      },
+      "fields": {
+        "write": ["title", "description", "audioUrl", "coverUrl", "isPublic"],
+        "deny": ["uploadedBy", "plays"]
+      }
+    },
+    {
+      "model": "User",
+      "action": "read",
+      "allow": {
+        "type": "literal",
+        "value": true
+      },
+      "fields": {
+        "read": ["id", "name", "email", "avatar", "createdAt"],
+        "deny": ["passwordHash", "apiKeys"]
+      }
+    },
+    {
+      "model": "User",
+      "action": "update",
+      "allow": {
+        "type": "operation",
+        "op": "or",
+        "args": [
+          {
+            "type": "condition",
+            "op": "eq",
+            "left": { "type": "field", "path": "id" },
+            "right": { "type": "field", "path": "user.id" }
+          },
+          {
+            "type": "permission",
+            "check": "hasRole",
+            "args": ["admin"]
+          }
+        ]
+      },
+      "fields": {
+        "write": ["name", "email", "avatar"],
+        "deny": ["role", "permissions", "passwordHash", "apiKeys"]
+      }
+    },
+    {
+      "model": "User",
+      "action": "delete",
+      "allow": {
+        "type": "permission",
+        "check": "hasRole",
+        "args": ["admin"]
+      }
+    }
+  ]
+}
+
