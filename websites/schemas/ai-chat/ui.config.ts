@@ -5,9 +5,7 @@
  * with WebSocket real-time updates and OpenAI integration
  */
 
-import type { UiConfig } from '@ssot-codegen/gen'
-
-const config: UiConfig = {
+const config = {
   site: {
     name: 'AI Chat',
     description: 'AI-powered chat interface with real-time streaming',
