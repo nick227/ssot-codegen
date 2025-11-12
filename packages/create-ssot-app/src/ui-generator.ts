@@ -14,11 +14,53 @@ export interface ParsedModel {
   name: string
   nameLower: string
   namePlural: string
+  idField: {
+    name: string
+    type: string  // 'String' | 'Int' | 'BigInt'
+  }
   fields: Array<{
     name: string
     type: string
     isRelation: boolean
+    isId?: boolean
   }>
+}
+
+/**
+ * Generate ID parameter access
+ */
+function generateIdParam(idField: { name: string; type: string }): string {
+  switch (idField.type) {
+    case 'String':
+      return 'params.id'
+    case 'Int':
+      return 'Number(params.id)'
+    case 'BigInt':
+      return 'BigInt(params.id)'
+    default:
+      return 'params.id'  // String-like (cuid, uuid)
+  }
+}
+
+/**
+ * Safe file writer
+ */
+function writeFileSafe(filepath: string, content: string, skipIfExists = false): void {
+  if (skipIfExists && fs.existsSync(filepath)) {
+    console.log(`  ⏭️  Skipping ${path.basename(filepath)} (already exists)`)
+    return
+  }
+  
+  // Check for user edits before overwriting
+  if (fs.existsSync(filepath)) {
+    const existing = fs.readFileSync(filepath, 'utf-8')
+    if (existing.includes('USER EDIT') || existing.includes('// Custom:')) {
+      console.log(`  ⏭️  Preserving ${path.basename(filepath)} (user edits detected)`)
+      return
+    }
+  }
+  
+  fs.writeFileSync(filepath, content, 'utf-8')
 }
 
 /**
@@ -28,6 +70,9 @@ export async function generateUI(projectPath: string, config: ProjectConfig, mod
   if (!config.generateUI || !config.uiTemplate) {
     return
   }
+  
+  // Generate auth middleware for admin routes
+  generateAuthMiddleware(projectPath)
   
   // V3 Runtime (JSON only, no code generation)
   if (config.uiMode === 'v3-runtime') {
@@ -77,9 +122,10 @@ function generateDataBrowser(projectPath: string, config: ProjectConfig, models:
   )
   
   // Generate admin layout with navigation
-  fs.writeFileSync(
+  writeFileSafe(
     path.join(adminDir, 'layout.tsx'),
-    generateAdminLayout(models)
+    generateAdminLayout(models),
+    false
   )
   
   // Generate admin dashboard (home)
@@ -114,17 +160,22 @@ function generateDataBrowser(projectPath: string, config: ProjectConfig, models:
     generateGlobalCSS()
   )
   
-  // Generate tailwind.config.js
-  fs.writeFileSync(
-    path.join(projectPath, 'tailwind.config.js'),
-    generateTailwindConfig()
+  // Generate tailwind.config.ts (ESM)
+  writeFileSafe(
+    path.join(projectPath, 'tailwind.config.ts'),
+    generateTailwindConfig(),
+    true  // Skip if exists
   )
   
-  // Generate next.config.js
-  fs.writeFileSync(
-    path.join(projectPath, 'next.config.js'),
-    generateNextConfig()
+  // Generate next.config.mjs (ESM)
+  writeFileSafe(
+    path.join(projectPath, 'next.config.mjs'),
+    generateNextConfig(),
+    true  // Skip if exists
   )
+  
+  // Generate auth middleware
+  generateAuthMiddleware(projectPath)
   
   // Generate tsconfig.json for Next.js
   fs.writeFileSync(
@@ -191,9 +242,19 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="flex h-screen bg-neutral-50">
-      {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-neutral-200">
+    <div className="flex flex-col h-screen bg-neutral-50">
+      {/* Auth warning (dev only) */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="bg-yellow-50 border-b border-yellow-200 px-4 py-3">
+          <p className="text-sm text-yellow-800">
+            ⚠️ <strong>No authentication</strong> - Add auth logic in <code>middleware.ts</code>
+          </p>
+        </div>
+      )}
+      
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <aside className="w-64 bg-white border-r border-neutral-200 overflow-y-auto">
         <div className="p-6 border-b border-neutral-200">
           <h1 className="text-xl font-bold">Admin Panel</h1>
           <p className="text-sm text-neutral-600">Data Browser</p>
@@ -222,10 +283,11 @@ export default function AdminLayout({
         </nav>
       </aside>
       
-      {/* Main content */}
-      <main className="flex-1 overflow-auto">
-        {children}
-      </main>
+        {/* Main content */}
+        <main className="flex-1 overflow-auto">
+          {children}
+        </main>
+      </div>
     </div>
   )
 }
@@ -325,7 +387,7 @@ export default function ${model.name}ListPage() {
             sortable: ${!f.isRelation},${f.name === 'id' ? '' : `
             cellRender: (value, row) => (
               <Link 
-                href={\`/admin/${model.namePlural}/\${row.id}\`}
+                href={\`/admin/${model.namePlural}/\${row.${model.idField.name}}\`}
                 className="text-primary-600 hover:underline"
               >
                 {${f.isRelation ? `value?.name || value?.title || '[${f.type}]'` : 'value'}}
@@ -367,7 +429,7 @@ export default function ${model.name}DetailPage({
 }: {
   params: { id: string }
 }) {
-  const { data: ${model.nameLower}, isLoading, error } = use${model.name}(Number(params.id))
+  const { data: ${model.nameLower}, isLoading, error } = use${model.name}(${generateIdParam(model.idField)})
   
   if (isLoading) {
     return (
@@ -400,7 +462,7 @@ export default function ${model.name}DetailPage({
           ← Back to ${model.name}s
         </Link>
         <h1 className="text-3xl font-bold">
-          ${model.name} #{${model.nameLower}.id}
+          ${model.name} #{${model.nameLower}.${model.idField.name}}
         </h1>
       </div>
       
@@ -450,7 +512,7 @@ body {
 }
 
 /**
- * Generate tailwind.config.js
+ * Generate tailwind.config.ts (ESM)
  */
 function generateTailwindConfig(): string {
   return `/**
@@ -458,21 +520,26 @@ function generateTailwindConfig(): string {
  * Tailwind configuration using @ssot-ui/tokens
  */
 
-const tokens = require('@ssot-ui/tokens/tailwind')
+import type { Config } from 'tailwindcss'
 
-module.exports = {
-  ...tokens,
+const config: Config = {
   content: [
     './app/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
     './node_modules/@ssot-ui/**/*.{js,ts,jsx,tsx}'
-  ]
+  ],
+  theme: {
+    extend: {}
+  },
+  plugins: []
 }
+
+export default config
 `
 }
 
 /**
- * Generate next.config.js
+ * Generate next.config.mjs (ESM)
  */
 function generateNextConfig(): string {
   return `/** @type {import('next').NextConfig} */
@@ -481,7 +548,7 @@ const nextConfig = {
   transpilePackages: ['@ssot-ui/data-table', '@ssot-ui/tokens']
 }
 
-module.exports = nextConfig
+export default nextConfig
 `
 }
 
