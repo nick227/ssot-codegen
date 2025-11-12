@@ -14,10 +14,9 @@ import {
   validateSiteConfig,
   getTemplate,
   listTemplates,
-  type UiConfig,
-  type SiteConfig
-} from '@ssot/gen'
-import { parsePrismaSchema } from '@ssot/gen'
+  parseDMMF
+} from '@ssot-codegen/gen'
+import type { UiConfig, SiteConfig } from '@ssot-codegen/gen'
 
 export function registerUiCommand(program: Command) {
   program
@@ -38,7 +37,7 @@ export function registerUiCommand(program: Command) {
         if (options.listTemplates) {
           const templates = listTemplates()
           console.log('\n📦 Available Templates:\n')
-          templates.forEach(t => {
+          templates.forEach((t: { name: string; description: string }) => {
             console.log(`  ${t.name.padEnd(12)} - ${t.description}`)
           })
           console.log('')
@@ -54,12 +53,31 @@ export function registerUiCommand(program: Command) {
         let schemaContent: string
         try {
           schemaContent = await fs.readFile(schemaPath, 'utf-8')
-        } catch (err) {
+        } catch (err: unknown) {
           console.error(`❌ Error: Could not read schema file at ${schemaPath}`)
           process.exit(1)
         }
 
-        const schema = parsePrismaSchema(schemaContent)
+        // Parse schema using DMMF parser  
+        let schema: any
+        try {
+          // Try to import @prisma/internals
+          let getDMMF: any
+          try {
+            const internals = await import('@prisma/internals')
+            getDMMF = internals.getDMMF || (internals as any).default?.getDMMF
+          } catch {
+            console.error(`❌ Error: @prisma/internals not found. Install with: pnpm add @prisma/internals`)
+            process.exit(1)
+          }
+          
+          const dmmf = await getDMMF({ datamodel: schemaContent })
+          schema = parseDMMF(dmmf)
+        } catch (parseErr: unknown) {
+          console.error(`❌ Error: Failed to parse schema`)
+          console.error(parseErr)
+          process.exit(1)
+        }
         console.log(`✓ Parsed ${schema.models.length} models\n`)
 
         const outputDir = path.resolve(process.cwd(), options.output)
@@ -180,12 +198,50 @@ async function writeFiles(
  * Convert UiConfig to SiteConfig format
  */
 function uiConfigToSiteConfig(uiConfig: UiConfig): SiteConfig {
+  // Map navigation settings to site config format
+  const navigation: any = {}
+  
+  if (uiConfig.navigation?.header) {
+    navigation.header = {
+      logo: uiConfig.navigation.header.logo,
+      title: uiConfig.navigation.header.title,
+      links: (uiConfig.navigation.header.links || []).map(link => ({
+        label: link.label,
+        href: link.href
+      }))
+    }
+  }
+  
+  if (uiConfig.navigation?.sidebar) {
+    navigation.sidebar = {
+      sections: (uiConfig.navigation.sidebar.sections || []).map(section => ({
+        title: section.title,
+        links: section.links.map(link => ({
+          label: link.label,
+          href: link.href,
+          icon: link.icon
+        }))
+      }))
+    }
+  }
+  
+  if (uiConfig.navigation?.footer) {
+    navigation.footer = {
+      sections: uiConfig.navigation.footer.sections || [],
+      copyright: uiConfig.navigation.footer.copyright
+    }
+  }
+  
   return {
     name: uiConfig.site?.name || 'SSOT App',
     version: '1.0.0',
-    theme: uiConfig.theme,
-    navigation: uiConfig.navigation,
-    pages: (uiConfig.pages || []).map(page => ({
+    theme: {
+      colors: uiConfig.theme?.colors,
+      fonts: uiConfig.theme?.fonts,
+      darkMode: uiConfig.theme?.darkMode
+    },
+    navigation: Object.keys(navigation).length > 0 ? navigation : undefined,
+    pages: (uiConfig.pages || []).map((page: any) => ({
       path: page.path,
       spec: {
         layout: page.layout || 'custom',

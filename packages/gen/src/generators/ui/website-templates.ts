@@ -376,6 +376,49 @@ export function createLandingTemplate(): SiteConfig {
 }
 
 /**
+ * Chat template
+ */
+export function createChatTemplate(): SiteConfig {
+  return {
+    name: 'AI Chat Application',
+    version: '1.0.0',
+    
+    theme: {
+      colors: {
+        primary: '#7c3aed',
+        secondary: '#3b82f6',
+        success: '#10b981',
+        warning: '#f59e0b',
+        error: '#ef4444',
+      },
+      fonts: {
+        heading: 'Inter',
+        body: 'Inter'
+      },
+      darkMode: true
+    },
+    
+    navigation: {
+      header: {
+        title: 'AI Chat',
+        links: [
+          { label: 'Chats', href: '/chats' },
+          { label: 'New Chat', href: '/chats/new' }
+        ]
+      }
+    },
+    
+    pages: [],  // Pages defined in chat-template.ts
+    
+    features: {
+      auth: true,
+      search: false,
+      darkMode: true
+    }
+  }
+}
+
+/**
  * Get template by name
  */
 export function getTemplate(name: string): SiteConfig | null {
@@ -383,7 +426,8 @@ export function getTemplate(name: string): SiteConfig | null {
     blog: createBlogTemplate,
     dashboard: createDashboardTemplate,
     ecommerce: createEcommerceTemplate,
-    landing: createLandingTemplate
+    landing: createLandingTemplate,
+    chat: createChatTemplate
   }
   
   const template = templates[name.toLowerCase()]
@@ -398,7 +442,8 @@ export function listTemplates(): Array<{ name: string; description: string }> {
     { name: 'blog', description: 'Blog website with posts and categories' },
     { name: 'dashboard', description: 'Admin dashboard with sidebar navigation' },
     { name: 'ecommerce', description: 'E-commerce site with products and cart' },
-    { name: 'landing', description: 'Marketing landing page' }
+    { name: 'landing', description: 'Marketing landing page' },
+    { name: 'chat', description: 'AI-powered chat with real-time messaging' }
   ]
 }
 

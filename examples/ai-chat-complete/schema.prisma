@@ -1,0 +1,73 @@
+// AI Chat Example - Complete Integration
+// Uses: WebSockets, AI Plugins, React Hooks, UI Templates
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// User model
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String
+  avatar        String?
+  conversations Conversation[]
+  messages      Message[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+// Conversation (Chat Room)
+model Conversation {
+  id          String    @id @default(cuid())
+  title       String
+  type        ConversationType @default(DIRECT)
+  participants User[]
+  messages    Message[]
+  systemPrompt String?  // Custom system prompt for AI
+  model       String?   // AI model to use (gpt-4, claude-3, etc.)
+  temperature Float?    // AI temperature setting
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  /// @realtime(subscribe: ["list", "get"], broadcast: ["created", "updated", "deleted"])
+  /// Enable real-time updates for conversations
+}
+
+// Message (Chat Message)
+model Message {
+  id             String       @id @default(cuid())
+  content        String
+  role           MessageRole  @default(USER)
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId String
+  author         User?        @relation(fields: [authorId], references: [id])
+  authorId       String?
+  metadata       Json?        // Usage stats, tokens, cost, etc.
+  createdAt      DateTime     @default(now())
+  
+  @@index([conversationId])
+  @@index([authorId])
+  
+  /// @realtime(subscribe: ["list"], broadcast: ["created", "updated", "deleted"])
+  /// Real-time messages - new messages broadcast instantly
+}
+
+enum ConversationType {
+  DIRECT    // 1-on-1 conversation
+  GROUP     // Group chat
+  AI        // AI-only conversation
+}
+
+enum MessageRole {
+  USER      // User message
+  ASSISTANT // AI assistant message
+  SYSTEM    // System message
+  FUNCTION  // Function call result
+}
+

@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@gen/*": [
+        "C:\\wamp64\\www\\ssot-codegen\\generated\\ai-chat-complete-1\\src/*"
+      ]
+    }
+  }
+}

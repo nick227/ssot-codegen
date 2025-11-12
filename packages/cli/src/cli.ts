@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander'
-import { generateFromSchema } from '@ssot-codegen/gen'
-import type { LogLevel } from '@ssot-codegen/gen'
+import { generate } from '@ssot-codegen/gen/api'
+import type { LogLevel } from '@ssot-codegen/gen/api'
 import { resolve } from 'path'
 import { existsSync, readdirSync, statSync } from 'fs'
 import { createRequire } from 'module'
@@ -69,15 +69,13 @@ program
       else if (options.verbose) verbosity = 'verbose'
       
       // Generate project with logging configuration
-      const result = await generateFromSchema({
-        schemaPath,
+      const result = await generate({
+        schema: schemaPath,
         output: options.output,
         framework: options.framework as 'express' | 'fastify',
         standalone: options.standalone,
         projectName: options.name,
-        verbosity,
-        colors: options.color,
-        timestamps: options.timestamps
+        verbosity
       })
       
       console.log(chalk.green('\n✅ Generation complete!'))

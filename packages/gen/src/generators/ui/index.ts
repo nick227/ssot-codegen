@@ -34,12 +34,24 @@ export type {
   FeatureConfig 
 } from './site-builder.js'
 
+export type { 
+  UiConfig,
+  SiteSettings,
+  ThemeSettings,
+  NavigationSettings,
+  PageConfig,
+  PageSection,
+  ComponentConfig,
+  GenerationSettings
+} from './ui-config-schema.js'
+
 export {
   getTemplate,
   listTemplates,
   createBlogTemplate,
   createDashboardTemplate,
   createEcommerceTemplate,
-  createLandingTemplate
+  createLandingTemplate,
+  createChatTemplate
 } from './website-templates.js'
 

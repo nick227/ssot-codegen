@@ -21,6 +21,7 @@ export * from './ai/grok.plugin.js'
 export * from './ai/openrouter.plugin.js'
 export * from './ai/lmstudio.plugin.js'
 export * from './ai/ollama.plugin.js'
+export * from './ai/chat.plugin.js'
 
 // Voice AI providers
 export * from './voice/deepgram.plugin.js'

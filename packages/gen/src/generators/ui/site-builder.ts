@@ -34,6 +34,7 @@ export interface ThemeConfig {
     heading?: string
     body?: string
   }
+  darkMode?: boolean
 }
 
 export interface NavigationConfig {
