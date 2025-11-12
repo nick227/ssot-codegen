@@ -46,17 +46,20 @@ export function validateBulkConfig(
   }
 
   // Handle simplified config format (array of strings)
-  const projectsList: ProjectConfig[] = Array.isArray(config.projects) && config.projects.length > 0 && typeof config.projects[0] === 'string'
-    ? config.projects.map((id: string) => ({
-        id,
-        name: id,
-        schema: {
-          schemaPath: resolve(baseDir, 'websites', id, 'schema.prisma'),
-          uiConfigPath: resolve(baseDir, 'websites', id, 'ui.config.ts')
-        },
-        outputDir: resolve(baseDir, 'websites', id, 'generated')
-      }))
-    : config.projects as ProjectConfig[]
+  let projectsList: ProjectConfig[]
+  if (Array.isArray(config.projects) && config.projects.length > 0 && typeof config.projects[0] === 'string') {
+    projectsList = (config.projects as string[]).map((id: string) => ({
+      id,
+      name: id,
+      schema: {
+        schemaPath: resolve(baseDir, 'websites', id, 'schema.prisma'),
+        uiConfigPath: resolve(baseDir, 'websites', id, 'ui.config.ts')
+      } as any, // Type assertion needed because schema can be string | WebsiteSchema | { schemaPath, uiConfigPath }
+      outputDir: resolve(baseDir, 'websites', id, 'generated')
+    }))
+  } else {
+    projectsList = config.projects as ProjectConfig[]
+  }
   
   // Validate each project
   const projectIds = new Set<string>()
