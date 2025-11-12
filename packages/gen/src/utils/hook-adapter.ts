@@ -230,8 +230,8 @@ export function generateHookAdapter(model: ParsedModel): string {
  * Provides consistent API regardless of hook implementation.
  */
 
-import { useModel, type HookAdapter } from '@/utils/hook-adapter'
-import { use${modelName}, use${modelName}s, useCreate${modelName}, useUpdate${modelName}, useDelete${modelName} } from '@/gen/sdk/react/models/use-${modelLower}'
+import { useModel, type HookAdapter } from '@ssot-codegen/gen/utils/hook-adapter'
+import { use${modelName}, use${modelName}s, useCreate${modelName}, useUpdate${modelName}, useDelete${modelName} } from '../../sdk/react/models/use-${modelLower}'
 
 /**
  * Use ${modelName} model with consistent API

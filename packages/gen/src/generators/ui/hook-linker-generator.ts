@@ -66,7 +66,7 @@ ${imports}
 function generateHookRegistry(models: readonly ParsedModel[]): string {
   const imports = models.map(m => {
     const modelLower = m.name.toLowerCase()
-    return `import { use${m.name}, use${m.name}s, useCreate${m.name}, useUpdate${m.name}, useDelete${m.name} } from '@/gen/sdk/react/models/use-${modelLower}'`
+    return `import { use${m.name}, use${m.name}s, useCreate${m.name}, useUpdate${m.name}, useDelete${m.name} } from '../../sdk/react/models/use-${modelLower}'`
   }).join('\n')
   
   const registryEntries = models.map(m => {
@@ -97,7 +97,7 @@ ${registryEntries}
 /**
  * Create hook adapter registry
  */
-import { createHookRegistry } from '@/utils/hook-adapter'
+import { createHookRegistry } from '@ssot-codegen/gen/utils/hook-adapter'
 
 export const hooks = createHookRegistry(hookRegistry)
 `
