@@ -16,6 +16,9 @@ export * from './types/index.js'
 // Search
 export * from './search/index.js'
 
+// Transport layer (HTTP + WebSocket)
+export * from './transport/index.js'
+
 // Legacy export for backwards compatibility
 export type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
 export interface ClientConfig {
