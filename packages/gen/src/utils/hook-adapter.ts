@@ -221,51 +221,29 @@ export function createModelAdapter<T = any>(
 export function generateHookAdapter(model: ParsedModel): string {
   const modelName = model.name
   const modelLower = model.name.toLowerCase()
-  const modelPlural = modelLower + 's'
   
   return `/**
  * Hook Adapter for ${modelName}
  * 
  * Lightweight adapter that connects components to hooks.
- * Provides consistent API regardless of hook implementation.
  */
 
 import { useModel, type HookAdapter } from '@ssot-codegen/gen/utils/hook-adapter'
 import { use${modelName}, use${modelName}s, useCreate${modelName}, useUpdate${modelName}, useDelete${modelName} } from '../../sdk/react/models/use-${modelLower}'
 
-/**
- * Use ${modelName} model with consistent API
- * 
- * @example
- * const { data, isLoading } = use${modelName}Model({ take: 20 })
- */
+/** Use ${modelName} model with consistent API */
 export function use${modelName}Model(params?: any) {
   return useModel('${modelLower}', params, {
-    use${modelName},
-    use${modelName}s,
-    useCreate${modelName},
-    useUpdate${modelName},
-    useDelete${modelName}
+    use${modelName}, use${modelName}s, useCreate${modelName}, useUpdate${modelName}, useDelete${modelName}
   })
 }
 
-/**
- * Direct hook access (for advanced use cases)
- */
+/** Direct hook access */
 export const ${modelLower}Hooks = {
-  get: use${modelName},
-  list: use${modelName}s,
-  create: useCreate${modelName},
-  update: useUpdate${modelName},
-  delete: useDelete${modelName}
+  get: use${modelName}, list: use${modelName}s, create: useCreate${modelName}, update: useUpdate${modelName}, delete: useDelete${modelName}
 }
 
-/**
- * Hook adapter for component props
- * 
- * @example
- * <DataTable hook={${modelLower}Adapter} />
- */
+/** Hook adapter for component props */
 export const ${modelLower}Adapter: HookAdapter = '${modelLower}'
 `
 }
