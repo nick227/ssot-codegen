@@ -36,6 +36,10 @@ function generateSmartButton(): string {
  * - delete: Confirms, calls SDK, shows toast, triggers callback
  * - save: Calls SDK (create/update), shows toast
  * - custom: Your own onClick logic
+ * 
+ * Expression support:
+ * - enabledWhen: Show/hide based on expression
+ * - visibleWhen: Enable/disable based on expression
  */
 
 'use client'
@@ -43,12 +47,18 @@ function generateSmartButton(): string {
 import { useState } from 'react'
 import { getSdk } from './sdk-client'
 import { toast } from './toast'
+import { useExpression } from '@ssot-ui/expressions'
 
 export type ButtonAction = 'delete' | 'save' | 'custom'
 export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost'
 export type ButtonSize = 'sm' | 'md' | 'lg'
 
 export interface ButtonProps {
+  // Expression support
+  visibleWhen?: any  // Expression
+  enabledWhen?: any  // Expression
+  data?: any  // Context data for expressions
+  
   // Built-in action (delete, save)
   action?: ButtonAction
   model?: string
@@ -90,9 +100,22 @@ export function Button({
   size = 'md',
   disabled = false,
   children,
-  type = 'button'
+  type = 'button',
+  visibleWhen,
+  enabledWhen
 }: ButtonProps) {
   const [loading, setLoading] = useState(false)
+  const evaluateExpression = useExpression()
+  
+  // Check visibility
+  if (visibleWhen && !evaluateExpression(visibleWhen, data || {})) {
+    return null
+  }
+  
+  // Check enabled state
+  const isExpressionEnabled = enabledWhen 
+    ? evaluateExpression(enabledWhen, data || {})
+    : true
   
   const handleClick = async () => {
     // Custom onClick
@@ -185,7 +208,7 @@ export function Button({
     <button
       type={type}
       onClick={handleClick}
-      disabled={disabled || loading}
+      disabled={disabled || loading || !isExpressionEnabled}
       className={\`
         rounded font-medium transition-colors
         disabled:opacity-50 disabled:cursor-not-allowed
