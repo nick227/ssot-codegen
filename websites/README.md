@@ -21,18 +21,23 @@ websites/
 
 ## Generating Projects
 
-### Single Project
+**Important:** The CLI package is not published to npm. Use `pnpm ssot` instead of `npx ssot-gen`.
+
+### Build CLI First (First Time Only)
 
 ```bash
-# Generate a specific project
-npx ssot-gen bulk --config websites/config/bulk-generate.json
+# From project root
+pnpm build
 ```
 
-### All Projects
+### Generate Projects
 
 ```bash
 # Generate all projects listed in bulk-generate.json
-npx ssot-gen bulk
+pnpm ssot bulk --config websites/config/bulk-generate.json
+
+# Or run CLI directly
+node packages/cli/dist/cli.js bulk --config websites/config/bulk-generate.json
 ```
 
 ## Adding a New Project
