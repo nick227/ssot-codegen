@@ -45,3 +45,4 @@ export function parseEnums(enums: readonly DMMF.DatamodelEnum[], logger: DMMFPar
 
 
 
+

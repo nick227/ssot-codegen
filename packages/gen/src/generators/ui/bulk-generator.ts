@@ -19,6 +19,59 @@ import { generateManifest, generateBulkManifest, type ProjectManifest } from './
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 /**
+ * Expand project IDs to full ProjectConfig objects
+ */
+async function expandProjectIds(
+  projectIds: string[],
+  baseDir: string,
+  verbose: boolean
+): Promise<ProjectConfig[]> {
+  const expanded: ProjectConfig[] = []
+  
+  for (const projectId of projectIds) {
+    const projectDir = resolve(baseDir, 'websites', projectId)
+    const starterPath = resolve(projectDir, 'starter.json')
+    
+    if (!existsSync(starterPath)) {
+      if (verbose) {
+        console.warn(`⚠️  No starter.json found for project: ${projectId}`)
+      }
+      // Fallback to default structure
+      expanded.push({
+        id: projectId,
+        name: projectId,
+        schema: {
+          schemaPath: resolve(projectDir, 'schema.prisma'),
+          uiConfigPath: resolve(projectDir, 'ui.config.ts')
+        },
+        outputDir: resolve(projectDir, 'generated')
+      })
+      continue
+    }
+    
+    try {
+      const starter = JSON.parse(readFileSync(starterPath, 'utf-8'))
+      expanded.push({
+        id: starter.id || projectId,
+        name: starter.name || projectId,
+        schema: {
+          schemaPath: resolve(projectDir, starter.schema || 'schema.prisma'),
+          uiConfigPath: resolve(projectDir, starter.uiConfig || 'ui.config.ts')
+        },
+        outputDir: resolve(projectDir, starter.outputDir || 'generated'),
+        customizations: starter.customizations
+      })
+    } catch (error) {
+      if (verbose) {
+        console.warn(`⚠️  Error loading starter.json for ${projectId}:`, error)
+      }
+    }
+  }
+  
+  return expanded
+}
+
+/**
  * Parse Prisma schema file and return ParsedSchema
  */
 async function parseSchemaFile(schemaPath: string): Promise<ParsedSchema> {
@@ -47,6 +100,11 @@ export async function generateBulkWebsites(
   const { projects, options: configOptions } = config
   const { parallel = configOptions?.parallel ?? false, verbose = configOptions?.verbose ?? false, baseDir = process.cwd() } = options || {}
   
+  // Handle simplified config format (array of project IDs)
+  const projectsList: ProjectConfig[] = Array.isArray(projects) && projects.length > 0 && typeof projects[0] === 'string'
+    ? await expandProjectIds(projects as string[], baseDir, verbose)
+    : projects as ProjectConfig[]
+  
   if (parallel) {
     // Generate in parallel
     const promises = projects.map(project => generateProject(project, verbose, baseDir))
@@ -68,7 +126,7 @@ export async function generateBulkWebsites(
     }
   } else {
     // Generate sequentially
-    for (const project of projects) {
+    for (const project of projectsList) {
       try {
         const result = await generateProject(project, verbose, baseDir)
         results.set(project.id, {

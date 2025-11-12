@@ -1,0 +1,17 @@
+{
+  "id": "blog",
+  "name": "Blog Website",
+  "description": "Content management system for blog websites",
+  "schema": "schema.prisma",
+  "uiConfig": "ui.config.ts",
+  "outputDir": "generated",
+  "features": [
+    "crud-pages",
+    "dashboard",
+    "authentication"
+  ],
+  "requiredEnvVars": [
+    "DATABASE_URL"
+  ]
+}
+

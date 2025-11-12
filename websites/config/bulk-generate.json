@@ -1,63 +1,8 @@
 {
   "projects": [
-    {
-      "id": "ai-chat-spa",
-      "name": "AI Chat SPA",
-      "schema": {
-        "schemaPath": "websites/schemas/ai-chat/schema.prisma",
-        "uiConfigPath": "websites/schemas/ai-chat/ui.config.ts"
-      },
-      "outputDir": "websites/projects/ai-chat-spa",
-      "customizations": {
-        "theme": {
-          "mode": "dark",
-          "primaryColor": "#10b981"
-        },
-        "features": {
-          "streaming": {
-            "enabled": true
-          },
-          "websocket": {
-            "enabled": true
-          }
-        }
-      }
-    },
-    {
-      "id": "blog-example",
-      "name": "Blog Example",
-      "schema": {
-        "schemaPath": "websites/schemas/blog/schema.prisma",
-        "uiConfigPath": "websites/schemas/blog/ui.config.ts"
-      },
-      "outputDir": "websites/projects/blog-example",
-      "customizations": {
-        "site": {
-          "name": "Blog Example",
-          "title": "Welcome to My Blog"
-        }
-      }
-    },
-    {
-      "id": "ecommerce-example",
-      "name": "E-commerce Example",
-      "schema": {
-        "schemaPath": "websites/schemas/ecommerce/schema.prisma",
-        "uiConfigPath": "websites/schemas/ecommerce/ui.config.ts"
-      },
-      "outputDir": "websites/projects/ecommerce-example",
-      "customizations": {
-        "site": {
-          "name": "E-commerce Store",
-          "title": "My Store"
-        },
-        "theme": {
-          "colors": {
-            "primary": "#dc2626"
-          }
-        }
-      }
-    }
+    "ai-chat",
+    "blog",
+    "ecommerce"
   ],
   "options": {
     "parallel": true,

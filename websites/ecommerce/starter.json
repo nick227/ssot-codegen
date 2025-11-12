@@ -1,0 +1,18 @@
+{
+  "id": "ecommerce",
+  "name": "E-commerce Store",
+  "description": "Full-featured e-commerce website",
+  "schema": "schema.prisma",
+  "uiConfig": "ui.config.ts",
+  "outputDir": "generated",
+  "features": [
+    "crud-pages",
+    "dashboard",
+    "authentication",
+    "payments"
+  ],
+  "requiredEnvVars": [
+    "DATABASE_URL"
+  ]
+}
+

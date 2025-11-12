@@ -41,14 +41,27 @@ export function validateBulkConfig(
     return { valid: false, errors, warnings }
   }
 
-  if (config.projects.length === 0) {
+  if (projectsList.length === 0) {
     warnings.push('No projects defined in configuration')
   }
 
+  // Handle simplified config format (array of strings)
+  const projectsList: ProjectConfig[] = Array.isArray(config.projects) && config.projects.length > 0 && typeof config.projects[0] === 'string'
+    ? config.projects.map((id: string) => ({
+        id,
+        name: id,
+        schema: {
+          schemaPath: resolve(baseDir, 'websites', id, 'schema.prisma'),
+          uiConfigPath: resolve(baseDir, 'websites', id, 'ui.config.ts')
+        },
+        outputDir: resolve(baseDir, 'websites', id, 'generated')
+      }))
+    : config.projects as ProjectConfig[]
+  
   // Validate each project
   const projectIds = new Set<string>()
-  for (let i = 0; i < config.projects.length; i++) {
-    const project = config.projects[i]
+  for (let i = 0; i < projectsList.length; i++) {
+    const project = projectsList[i]
     const projectResult = validateProject(project, baseDir, i)
     
     if (!projectResult.valid) {

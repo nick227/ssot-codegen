@@ -1,0 +1,22 @@
+{
+  "id": "ai-chat",
+  "name": "AI Chat SPA",
+  "description": "AI-powered chat interface with real-time streaming via WebSocket",
+  "schema": "schema.prisma",
+  "uiConfig": "ui.config.ts",
+  "ssotConfig": "ssot.config.ts",
+  "outputDir": "generated",
+  "features": [
+    "openai",
+    "websocket",
+    "streaming",
+    "token-tracking",
+    "cost-estimation"
+  ],
+  "requiredEnvVars": [
+    "DATABASE_URL",
+    "OPENAI_API_KEY",
+    "JWT_SECRET"
+  ]
+}
+

@@ -144,8 +144,8 @@ export interface SchematicVariant {
  * Bulk Generation Configuration
  */
 export interface BulkGenerateConfig {
-  /** Projects to generate */
-  projects: ProjectConfig[]
+  /** Projects to generate - can be array of ProjectConfig or array of project IDs (strings) */
+  projects: ProjectConfig[] | string[]
   
   /** Generation options */
   options?: BulkGenerateOptions
