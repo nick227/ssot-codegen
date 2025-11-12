@@ -11,118 +11,123 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
+  id            String    @id @default(cuid())
+  email         String    @unique
   name          String?
   image         String?
   emailVerified DateTime?
-  role          UserRole @default(USER)
-  
+  role          UserRole  @default(USER)
+
   // Chat relationships
   conversations Conversation[]
   messages      Message[]
   chatSettings  ChatSettings?
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([email])
   @@map("users")
 }
 
 model Conversation {
-  id          String   @id @default(cuid())
-  title       String?
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id     String  @id @default(cuid())
+  title  String?
+  userId String
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   // AI provider settings
-  provider    String   @default("openai") // openai, claude, gemini
-  model       String   @default("gpt-4-turbo")
-  temperature Float    @default(0.7)
-  maxTokens   Int      @default(2000)
-  
+  provider    String @default("openai") // openai, claude, gemini
+  model       String @default("gpt-4-turbo")
+  temperature Float  @default(0.7)
+  maxTokens   Int    @default(2000)
+
   // Conversation metadata
-  messageCount Int     @default(0)
-  totalTokens  Int     @default(0)
-  estimatedCost Float  @default(0)
-  
+  messageCount  Int   @default(0)
+  totalTokens   Int   @default(0)
+  estimatedCost Float @default(0)
+
   // Messages
-  messages    Message[]
-  
+  messages Message[]
+
   // Timestamps
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
   lastMessageAt DateTime?
-  
+
   @@index([userId])
   @@index([userId, updatedAt])
   @@map("conversations")
 }
 
 model Message {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  
+
+  // User relation (for user messages)
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
   // Message content
-  role           MessageRole
-  content        String   @db.Text
-  contentHtml    String?  @db.Text // Rendered markdown/HTML
-  
+  role        MessageRole
+  content     String      @db.Text
+  contentHtml String?     @db.Text // Rendered markdown/HTML
+
   // AI-specific fields
-  model          String?  // Model used for this message
-  finishReason   String?  // stop, length, content_filter, etc.
-  
+  model        String? // Model used for this message
+  finishReason String? // stop, length, content_filter, etc.
+
   // Token usage
-  promptTokens   Int      @default(0)
-  completionTokens Int    @default(0)
-  totalTokens    Int      @default(0)
-  
+  promptTokens     Int @default(0)
+  completionTokens Int @default(0)
+  totalTokens      Int @default(0)
+
   // Cost tracking
-  estimatedCost  Float    @default(0)
-  
+  estimatedCost Float @default(0)
+
   // Streaming status
-  isStreaming    Boolean  @default(false)
-  streamChunks   Json?    // Array of stream chunks
-  
+  isStreaming  Boolean @default(false)
+  streamChunks Json? // Array of stream chunks
+
   // Metadata
-  metadata       Json?    // Additional data (function calls, etc.)
-  
+  metadata Json? // Additional data (function calls, etc.)
+
   // Timestamps
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([conversationId, createdAt])
   @@index([conversationId])
+  @@index([userId])
   @@map("messages")
 }
 
 model ChatSettings {
-  id       String   @id @default(cuid())
-  userId  String   @unique
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   // Default AI settings
-  defaultProvider  String   @default("openai")
-  defaultModel     String   @default("gpt-4-turbo")
+  defaultProvider    String @default("openai")
+  defaultModel       String @default("gpt-4-turbo")
   defaultTemperature Float  @default(0.7)
-  defaultMaxTokens Int      @default(2000)
-  
+  defaultMaxTokens   Int    @default(2000)
+
   // UI preferences
-  theme            String   @default("light") // light, dark, auto
-  fontSize         String   @default("medium") // small, medium, large
-  showTokenCount   Boolean  @default(true)
-  showCostEstimate Boolean  @default(true)
-  
+  theme            String  @default("light") // light, dark, auto
+  fontSize         String  @default("medium") // small, medium, large
+  showTokenCount   Boolean @default(true)
+  showCostEstimate Boolean @default(true)
+
   // Advanced settings
-  enableStreaming  Boolean  @default(true)
-  enableMarkdown  Boolean  @default(true)
+  enableStreaming     Boolean @default(true)
+  enableMarkdown      Boolean @default(true)
   enableCodeHighlight Boolean @default(true)
-  
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@map("chat_settings")
 }
 
@@ -137,4 +142,3 @@ enum MessageRole {
   ASSISTANT
   SYSTEM
 }
-
