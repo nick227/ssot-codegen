@@ -662,5 +662,574 @@ Generate different versions for dev/staging/prod:
 
 ---
 
+## ⚙️ Implementation Notes & Improvements
+
+**Current implementation status and planned enhancements**
+
+---
+
+### 1. Config Handling
+
+**Current:** Basic JSON config loading
+
+**Improvements:**
+- ✅ Validate schema and output paths before launching any parallel jobs
+- ✅ Support both `.json` and `.ts` configs to allow typed imports for complex logic
+- ✅ Add a checksum or manifest (`.ssot/bulk-manifest.json`) for repeatable builds and detecting drift
+
+**Example:**
+```typescript
+// websites/configs/clients/client-a.ts
+import type { BulkGenerateConfig } from '@ssot-codegen/gen'
+
+export default {
+  projects: [
+    {
+      id: 'client-a-blog',
+      name: 'Client A Blog',
+      schema: '../../schemas/blog/schema.prisma',
+      outputDir: '../../projects/client-a-blog',
+      customizations: {
+        site: { name: 'Client A Blog' }
+      }
+    }
+  ]
+} satisfies BulkGenerateConfig
+```
+
+---
+
+### 2. Parallel Generation
+
+**Current:** Full parallel execution with `Promise.allSettled`
+
+**Improvements:**
+- ✅ Limit concurrency (use `p-limit` or a pool) instead of full parallel spawn for memory safety
+- ✅ Stream logs tagged by project ID for readable console output
+- ✅ Add progress indicators for long-running generations
+
+**Example:**
+```bash
+[client-a-blog] 📦 Generating project: Client A Blog
+[client-b-store] 📦 Generating project: Client B Store
+[client-a-blog] ✅ Generated 45 files
+[client-b-store] ✅ Generated 52 files
+```
+
+---
+
+### 3. Schema / UI Sync
+
+**Current:** Basic schema and UI config loading
+
+**Improvements:**
+- ✅ Ensure UI config path auto-detection: if no explicit `ui.config.ts` next to schema, default to base template
+- ✅ Validate that models referenced in `crudPages.models` exist in schema
+- ✅ Warn on missing models or invalid references
+- ✅ Auto-generate minimal UI config if missing
+
+**Example:**
+```typescript
+// Auto-detection logic
+const uiConfigPath = config.uiConfigPath || 
+  resolve(dirname(schemaPath), 'ui.config.ts')
+
+if (!existsSync(uiConfigPath)) {
+  console.warn(`⚠️  UI config not found, using defaults`)
+  uiConfig = createDefaultUiConfig(schema)
+}
+```
+
+---
+
+### 4. Customization Merge Logic
+
+**Current:** Shallow merge of customizations
+
+**Improvements:**
+- ✅ Implement a deep merge that preserves arrays (override, not concatenate, for predictable behavior)
+- ✅ Resolve theme tokens (like color aliases) before write
+- ✅ Validate customization structure against `UiConfig` type
+- ✅ Support nested overrides (e.g., `theme.colors.primary`)
+
+**Example:**
+```typescript
+// Deep merge with array override
+function deepMerge(base: any, override: any): any {
+  if (Array.isArray(override)) return override // Override arrays
+  if (typeof override !== 'object' || override === null) return override
+  if (typeof base !== 'object' || base === null) return override
+  
+  const result = { ...base }
+  for (const key in override) {
+    result[key] = deepMerge(base[key], override[key])
+  }
+  return result
+}
+```
+
+---
+
+### 5. Error Recovery
+
+**Current:** Basic error handling with `continueOnError` option
+
+**Improvements:**
+- ✅ If one project fails in parallel mode:
+  - Log clean summary per project
+  - Optionally re-run only failed ones (`--retry-failed` future flag)
+- ✅ Collect all errors and report at end
+- ✅ Generate error report file (`bulk-errors.json`)
+
+**Example:**
+```bash
+# After failed generation
+npx ssot-gen bulk --retry-failed
+
+# Retries only projects that failed:
+# - client-a-blog (schema parse error)
+# - client-c-dashboard (UI config error)
+```
+
+---
+
+### 6. Output Management
+
+**Current:** Basic file writing
+
+**Improvements:**
+- ✅ Always include `.ssot.json` manifest inside each generated site:
+  ```json
+  {
+    "projectId": "client-a-blog",
+    "schema": "../../schemas/blog/schema.prisma",
+    "generatedAt": "2024-01-15T10:30:00Z",
+    "checksum": "abc123...",
+    "version": "1.0.0"
+  }
+  ```
+- ✅ Optionally emit `bulk-report.txt` summarizing all generated sites
+- ✅ Track generation metadata (files count, size, duration)
+
+**Example:**
+```
+Bulk Generation Report
+=====================
+Generated: 2024-01-15 10:30:00
+Projects: 3
+Total Files: 142
+Total Size: 2.3 MB
+
+Projects:
+  ✅ client-a-blog (45 files, 0.8 MB)
+  ✅ client-b-store (52 files, 1.1 MB)
+  ✅ client-c-dashboard (45 files, 0.4 MB)
+```
+
+---
+
+### 7. CLI Enhancements
+
+**Current:** Basic `bulk` command
+
+**Planned Subcommands:**
+
+#### `bulk diff`
+Compare current vs regenerated output (detect drift)
+
+```bash
+npx ssot-gen bulk diff --config websites/config/bulk-generate.json
+```
+
+**Output:**
+```
+Comparing generated projects...
+  client-a-blog: No changes
+  client-b-store: 3 files changed
+    - src/app/home/page.tsx (modified)
+    - src/components/Header.tsx (modified)
+    - src/config/theme.ts (modified)
+```
+
+#### `bulk clean`
+Remove all generated projects safely
+
+```bash
+npx ssot-gen bulk clean --config websites/config/bulk-generate.json
+# Prompts for confirmation
+# Removes only projects listed in config
+```
+
+#### `bulk validate`
+Schema + config dry validation only
+
+```bash
+npx ssot-gen bulk validate --config websites/config/bulk-generate.json
+```
+
+**Output:**
+```
+Validating bulk configuration...
+  ✅ Schema paths valid
+  ✅ UI configs found
+  ✅ Output directories writable
+  ✅ Models referenced exist in schemas
+  ✅ Customizations valid
+```
+
+---
+
+### 8. Future Hooks
+
+**Planned:** Post-generation hooks for programmatic post-processing
+
+**Example:**
+```json
+{
+  "projects": [
+    {
+      "id": "client-a-blog",
+      "schema": "...",
+      "outputDir": "...",
+      "hooks": {
+        "postGenerate": [
+          "git add .",
+          "git commit -m 'Generated client-a-blog'",
+          "npm run deploy"
+        ]
+      }
+    }
+  ]
+}
+```
+
+**Or programmatic:**
+```typescript
+// websites/configs/hooks.ts
+export async function postGenerate(projectId: string, outputDir: string) {
+  // Custom logic
+  await gitCommit(outputDir)
+  await deploy(outputDir)
+}
+```
+
+---
+
+### 9. Testing
+
+**Current:** Manual testing
+
+**Planned:**
+- ✅ Unit-test merging and file write paths with temporary directories
+- ✅ Validate schema parsing + UI generation for at least one sample per schema type
+- ✅ Integration tests for bulk generation pipeline
+- ✅ Snapshot testing for generated output
+
+**Example:**
+```typescript
+describe('Bulk Generation', () => {
+  it('should merge customizations correctly', () => {
+    const base = { theme: { colors: { primary: '#000' } } }
+    const custom = { theme: { colors: { primary: '#fff' } } }
+    expect(deepMerge(base, custom)).toEqual({
+      theme: { colors: { primary: '#fff' } }
+    })
+  })
+  
+  it('should generate all projects', async () => {
+    const config = loadBulkConfig('test-config.json')
+    const results = await generateBulkWebsites(config)
+    expect(results.size).toBe(config.projects.length)
+  })
+})
+```
+
+---
+
+## 🧩 Next Logical Extensions
+
+**Future enhancements and architectural improvements**
+
+---
+
+### 1. Schematics System
+
+**JSON/YAML-driven component templates** for partial overrides
+
+**Purpose:** Reusable templates for layouts, themes, components
+
+**Structure:**
+```
+websites/schematics/
+├── layouts/
+│   ├── admin-dashboard.json
+│   └── marketing-site.json
+├── pages/
+│   ├── blog-home.json
+│   └── product-catalog.json
+├── components/
+│   ├── hero-sections.json
+│   └── pricing-tables.json
+└── themes/
+    ├── modern-blue.json
+    └── dark-minimal.json
+```
+
+**Usage:**
+```json
+{
+  "id": "client-a-blog",
+  "schema": "...",
+  "schematics": {
+    "layout": "admin-dashboard",
+    "pages": ["blog-home"],
+    "theme": "modern-blue"
+  }
+}
+```
+
+---
+
+### 2. Manifest Linking
+
+**Store references** between generated projects and their base schemas for update propagation
+
+**Purpose:** Track dependencies and enable incremental updates
+
+**Example:**
+```json
+// .ssot/manifest.json in generated project
+{
+  "projectId": "client-a-blog",
+  "baseSchema": "../../schemas/blog/schema.prisma",
+  "baseConfig": "../../schemas/blog/ui.config.ts",
+  "customizations": { ... },
+  "generatedAt": "2024-01-15T10:30:00Z",
+  "schemaHash": "abc123...",
+  "configHash": "def456..."
+}
+```
+
+**Benefits:**
+- Detect when base schema changes
+- Regenerate only affected projects
+- Track customization history
+
+---
+
+### 3. Diff-Based Regeneration
+
+**Regenerate only changed files** per schema/config hash
+
+**Purpose:** Faster regeneration by skipping unchanged files
+
+**Process:**
+1. Calculate hash of schema + config + customizations
+2. Compare with previous hash (from manifest)
+3. Regenerate only if hash changed
+4. Use file-level diffing for partial regeneration
+
+**Example:**
+```bash
+npx ssot-gen bulk --incremental
+# Only regenerates projects with changed schemas/configs
+```
+
+---
+
+### 4. Remote Mode
+
+**Accept remote schemas/configs** via URL or Git repo
+
+**Purpose:** Share schemas across teams or organizations
+
+**Example:**
+```json
+{
+  "projects": [
+    {
+      "id": "remote-blog",
+      "schema": "https://example.com/schemas/blog.prisma",
+      "uiConfig": "git+https://github.com/org/schemas#blog/ui.config.ts"
+    }
+  ]
+}
+```
+
+**Features:**
+- Support HTTP/HTTPS URLs
+- Support Git repositories (with branch/tag)
+- Cache remote resources locally
+- Validate remote resources before use
+
+---
+
+### 5. Template Registry
+
+**Central registry** of available templates and schemas
+
+**Purpose:** Discover and share templates
+
+**Example:**
+```json
+// websites/schematics/registry.json
+{
+  "templates": {
+    "blog": {
+      "schema": "../schemas/blog/schema.prisma",
+      "description": "Blog website template",
+      "tags": ["blog", "content", "cms"],
+      "preview": "https://example.com/previews/blog.png"
+    }
+  }
+}
+```
+
+**CLI:**
+```bash
+npx ssot-gen bulk templates list
+npx ssot-gen bulk templates use blog --output my-blog
+```
+
+---
+
+### 6. Multi-Schema Projects
+
+**Support projects** that combine multiple schemas
+
+**Purpose:** Generate websites from multiple schema sources
+
+**Example:**
+```json
+{
+  "id": "multi-schema-project",
+  "schemas": [
+    "schemas/blog/schema.prisma",
+    "schemas/ecommerce/schema.prisma"
+  ],
+  "uiConfig": "configs/multi-schema.config.ts"
+}
+```
+
+---
+
+### 7. Environment Variables
+
+**Support environment variables** in configs for dynamic values
+
+**Purpose:** Different values per environment without config duplication
+
+**Example:**
+```json
+{
+  "id": "env-aware-project",
+  "schema": "...",
+  "customizations": {
+    "site": {
+      "name": "${SITE_NAME}",
+      "url": "${SITE_URL}"
+    }
+  }
+}
+```
+
+---
+
+### 8. Validation Rules
+
+**Custom validation rules** for schemas and configs
+
+**Purpose:** Enforce project-specific constraints
+
+**Example:**
+```json
+{
+  "projects": [
+    {
+      "id": "validated-project",
+      "schema": "...",
+      "validation": {
+        "requiredModels": ["Post", "User"],
+        "maxModels": 10,
+        "requiredThemes": ["primary", "secondary"]
+      }
+    }
+  ]
+}
+```
+
+---
+
+### 9. Batch Operations
+
+**Batch operations** across multiple projects
+
+**Purpose:** Apply operations to multiple projects at once
+
+**Examples:**
+```bash
+# Regenerate all projects
+npx ssot-gen bulk regenerate --all
+
+# Update dependencies in all projects
+npx ssot-gen bulk update-deps --all
+
+# Build all projects
+npx ssot-gen bulk build --all
+```
+
+---
+
+### 10. CI/CD Integration
+
+**CI/CD friendly** output and reporting
+
+**Purpose:** Integrate with CI/CD pipelines
+
+**Features:**
+- JSON output for programmatic parsing
+- Exit codes for success/failure
+- Artifact generation
+- Test result reporting
+
+**Example:**
+```bash
+npx ssot-gen bulk --json-output report.json
+# Exit code 0 = success, 1 = failure
+# report.json contains detailed results
+```
+
+---
+
+## 📊 Implementation Priority
+
+**Suggested order of implementation:**
+
+1. **Phase 1: Core Improvements** (High Priority)
+   - Config validation and path checking
+   - Deep merge for customizations
+   - Error recovery and reporting
+   - Manifest generation
+
+2. **Phase 2: CLI Enhancements** (Medium Priority)
+   - `bulk validate` command
+   - `bulk diff` command
+   - `bulk clean` command
+   - Improved logging
+
+3. **Phase 3: Advanced Features** (Lower Priority)
+   - Schematics system
+   - Diff-based regeneration
+   - Remote mode
+   - Template registry
+
+4. **Phase 4: Enterprise Features** (Future)
+   - Multi-schema projects
+   - Batch operations
+   - CI/CD integration
+   - Advanced validation
+
+---
+
 **Ready to generate websites at scale! 🎉**
 
