@@ -1,0 +1,41 @@
+{
+  "projects": [
+    {
+      "id": "blog-example",
+      "name": "Blog Example",
+      "schema": "websites/schemas/blog/schema.prisma",
+      "outputDir": "websites/projects/blog-example",
+      "customizations": {
+        "site": {
+          "name": "Blog Example",
+          "title": "Welcome to My Blog"
+        }
+      }
+    },
+    {
+      "id": "ecommerce-example",
+      "name": "E-commerce Example",
+      "schema": "websites/schemas/ecommerce/schema.prisma",
+      "outputDir": "websites/projects/ecommerce-example",
+      "customizations": {
+        "site": {
+          "name": "E-commerce Store",
+          "title": "My Store"
+        },
+        "theme": {
+          "colors": {
+            "primary": "#dc2626"
+          }
+        }
+      }
+    }
+  ],
+  "options": {
+    "parallel": true,
+    "skipExisting": false,
+    "validate": true,
+    "continueOnError": false,
+    "verbose": true
+  }
+}
+

@@ -9,6 +9,7 @@ import { createRequire } from 'module'
 import chalk from 'chalk'
 import { resolveSchemaArg, runPostGenSetup } from './cli-helpers.js'
 import { registerUiCommand } from './commands/generate-ui.js'
+import { registerBulkCommand } from './commands/generate-bulk.js'
 
 const require = createRequire(import.meta.url)
 const packageJson = require('../package.json')
@@ -153,6 +154,7 @@ program
 
 // Register UI generation command
 registerUiCommand(program)
+registerBulkCommand(program)
 
 program.parse()
 
