@@ -41,7 +41,7 @@ export function generateUI(
   
   // Generate hook linkers (lightweight adapters for connecting components to hooks)
   if (config.generateHookLinkers !== false) {
-    const hookLinkerFiles = generateHookLinkers(schema, `${config.outputDir}/hooks`)
+    const hookLinkerFiles = generateHookLinkers(schema, 'hooks')
     
     // Fuse into main map (single pass)
     for (const [path, content] of hookLinkerFiles) {
@@ -52,7 +52,7 @@ export function generateUI(
   
   // Generate smart component library (once per project)
   if (config.generateComponents) {
-    const componentFiles = generateSmartComponents(`${config.outputDir}/components/ssot`)
+    const componentFiles = generateSmartComponents('components/ssot')
     
     // Fuse into main map (single pass)
     for (const [path, content] of componentFiles) {
@@ -72,13 +72,11 @@ export function generateUI(
   
   // Generate pages per model (single pass, no intermediate arrays)
   if (config.generatePages) {
-    const appDir = `${config.outputDir}/app`
-    
     for (const model of targetModels) {
       // Skip internal models (convention-based)
       if (isInternalModel(model.name)) continue
       
-      const pageFiles = generatePageStubs(model, appDir)
+      const pageFiles = generatePageStubs(model, 'app')
       
       // Fuse into main map
       for (const [path, content] of pageFiles) {
