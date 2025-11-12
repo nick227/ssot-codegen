@@ -95,8 +95,14 @@ export class PolicyEngine {
   private async evaluatePolicy(policy: PolicyRule, context: PolicyContext): Promise<boolean> {
     try {
       // Build expression context
+      // Merge where clause into data for row-level checks
+      const contextData = {
+        ...context.where,
+        ...context.data
+      }
+      
       const expressionContext: ExpressionContext = {
-        data: context.data || {},
+        data: contextData,
         user: context.user,
         params: {},
         globals: {

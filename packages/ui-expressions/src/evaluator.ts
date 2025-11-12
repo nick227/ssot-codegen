@@ -88,15 +88,38 @@ export class ExpressionEvaluator {
    * Evaluate field access
    * DRY: Single implementation for all field access
    * Supports deep paths: 'user.profile.name'
+   * Supports context properties: 'user.id', 'params.slug', 'globals.theme'
    */
   private evaluateFieldAccess(
     expr: FieldAccessExpression,
     context: ExpressionContext
   ): any {
     const parts = expr.path.split('.')
-    let value: any = context.data
+    
+    // Check if first part is a context property (user, params, globals)
+    const firstPart = parts[0]
+    let value: any
+    let startIndex = 0
+    
+    if (firstPart === 'user' && parts.length > 1) {
+      value = context.user
+      startIndex = 1
+    } else if (firstPart === 'params' && parts.length > 1) {
+      value = context.params
+      startIndex = 1
+    } else if (firstPart === 'globals' && parts.length > 1) {
+      value = context.globals
+      startIndex = 1
+    } else {
+      // Default to context.data
+      value = context.data
+      startIndex = 0
+    }
 
-    for (const part of parts) {
+    // Navigate through remaining parts
+    for (let i = startIndex; i < parts.length; i++) {
+      const part = parts[i]
+      
       if (value == null) {
         return null
       }

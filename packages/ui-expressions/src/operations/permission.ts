@@ -57,13 +57,13 @@ export const permissionOperations: OperationRegistry = {
     
     // Handle nested fields
     const parts = ownerField.split('.')
-    let value = context.data
+    let value: any = context.data
     for (const part of parts) {
       if (value == null) return false
       value = value[part]
     }
     
-    return value === context.user.id
+    return String(value) === context.user.id
   },
 
   /**

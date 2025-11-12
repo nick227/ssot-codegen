@@ -234,6 +234,25 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@22.19.0)(@vitest/ui@2.1.9)(jsdom@27.1.0)
 
+  packages/policy-engine:
+    dependencies:
+      '@ssot-ui/expressions':
+        specifier: workspace:*
+        version: link:../ui-expressions
+      zod:
+        specifier: ^3.22.0
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.24
+      typescript:
+        specifier: ^5.3.0
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.1(@types/node@20.19.24)(jsdom@27.1.0)
+
   packages/prisma-to-models:
     dependencies:
       '@prisma/internals':
@@ -480,6 +499,22 @@ importers:
         version: 5.4.21(@types/node@20.19.24)
       vitest:
         specifier: ^1.2.0
+        version: 1.6.1(@types/node@20.19.24)(jsdom@27.1.0)
+
+  packages/ui-expressions:
+    dependencies:
+      date-fns:
+        specifier: ^2.30.0
+        version: 2.30.0
+    devDependencies:
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.19.24
+      typescript:
+        specifier: ^5.3.0
+        version: 5.9.3
+      vitest:
+        specifier: ^1.0.0
         version: 1.6.1(@types/node@20.19.24)(jsdom@27.1.0)
 
   packages/ui-loader:
@@ -3857,6 +3892,10 @@ packages:
   data-urls@6.0.0:
     resolution: {integrity: sha512-BnBS08aLUM+DKamupXs3w2tJJoqU+AkaE/+6vQxi/G/DPmIZFJJp9Dkb1kM03AZx8ADehDUZgsNxju3mPXZYIA==}
     engines: {node: '>=20'}
+
+  date-fns@2.30.0:
+    resolution: {integrity: sha512-fnULvOpxnC5/Vg3NCiWelDsLiUc9bRwAPs/+LfTLNvetFCtCTN+yQz15C/fs4AwX1R9K5GLtLfn8QW+dWisaAw==}
+    engines: {node: '>=0.11'}
 
   debug@2.6.9:
     resolution: {integrity: sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA==}
@@ -10489,6 +10528,10 @@ snapshots:
     dependencies:
       whatwg-mimetype: 4.0.0
       whatwg-url: 15.1.0
+
+  date-fns@2.30.0:
+    dependencies:
+      '@babel/runtime': 7.28.4
 
   debug@2.6.9:
     dependencies:
