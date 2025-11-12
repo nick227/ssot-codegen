@@ -7,6 +7,7 @@ import type { ProjectConfig } from './prompts.js'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { generateAuthMiddleware } from './ui-generator-auth.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
