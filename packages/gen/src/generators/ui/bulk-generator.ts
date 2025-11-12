@@ -9,7 +9,7 @@ import type { BulkGenerateConfig, ProjectConfig } from './website-schema-types.j
 import { generateUI } from './ui-generator.js'
 import { generateSite } from './site-builder.js'
 import { parseDMMF } from '../../dmmf-parser.js'
-import { readFileSync, writeFileSync, mkdirSync } from 'fs'
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs'
 import { dirname, resolve, join } from 'path'
 import { fileURLToPath } from 'url'
 import { validateBulkConfig, validateModelReferences } from './bulk-validator.js'
