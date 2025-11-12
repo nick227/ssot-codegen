@@ -159,6 +159,10 @@ CREATE DATABASE ai_chat;
 ### 5.2 Run Prisma Migrations
 
 ```bash
+# Note: The schema.prisma file should be in prisma/schema.prisma
+# If it's missing, copy it from the parent directory:
+# cp ../schema.prisma prisma/schema.prisma
+
 # Generate Prisma Client
 npx prisma generate
 
@@ -168,6 +172,8 @@ npx prisma migrate dev --name init
 # Or push schema without migrations (dev only)
 npx prisma db push
 ```
+
+**Note:** The bulk generator now automatically copies the schema to `prisma/schema.prisma` in the generated project. If you're using an older generation, you may need to copy it manually.
 
 **Expected Output:**
 ```

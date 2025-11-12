@@ -238,6 +238,10 @@ async function generateProject(
     allFiles.set(path, content)
   }
   
+  // Copy Prisma schema to generated project (required for prisma generate)
+  const prismaSchemaPath = 'prisma/schema.prisma'
+  allFiles.set(prismaSchemaPath, schemaContent)
+  
   if (verbose) {
     console.log(`✅ Generated ${allFiles.size} files for ${config.name}`)
   }
