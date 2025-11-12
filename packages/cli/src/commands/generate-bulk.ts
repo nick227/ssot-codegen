@@ -5,9 +5,9 @@
  */
 
 import { Command } from 'commander'
-import { generateBulkWebsites, loadBulkConfig } from '@ssot-codegen/gen'
-import { writeFiles } from '../../utils/file-writer.js'
-import { resolve } from 'path'
+import { generateBulkWebsites, loadBulkConfig, generateBulkReport, validateBulkConfig } from '@ssot-codegen/gen'
+import { resolve, dirname, join } from 'path'
+import { mkdir, writeFile } from 'fs/promises'
 
 export function registerBulkCommand(program: Command): void {
   const bulkCommand = program
