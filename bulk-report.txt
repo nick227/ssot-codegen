@@ -1,13 +1,13 @@
 Bulk Generation Report
 =====================
-Generated: 2025-11-12T20:02:22.844Z
-Projects: 0
-Total Files: 0
-Successful: 0
-Failed: 3
+Generated: 2025-11-12T20:04:33.429Z
+Projects: 3
+Total Files: 105
+Successful: 3
+Failed: 0
 
 Projects:
+  ✅ AI Chat SPA (29 files)
+  ✅ Blog Website (34 files)
+  ✅ E-commerce Store (39 files)
 
-  ❌ ai-chat: getDMMF is not a function
-  ❌ blog: getDMMF is not a function
-  ❌ ecommerce: getDMMF is not a function

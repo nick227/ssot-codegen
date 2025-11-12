@@ -5,10 +5,18 @@
  */
 
 import { Command } from 'commander'
-import { generateBulkWebsites, loadBulkConfig, generateBulkReport, validateBulkConfig, type BulkGenerateConfig } from '@ssot-codegen/gen'
-import type { ProjectConfig } from '@ssot-codegen/gen'
+import { generateBulkWebsites, loadBulkConfig, generateBulkReport, validateBulkConfig } from '@ssot-codegen/gen'
 import { resolve, dirname, join } from 'path'
 import { mkdir, writeFile } from 'fs/promises'
+
+// Type definitions (not exported from gen package)
+type ProjectConfig = {
+  id: string
+  name: string
+  schema: string | { schemaPath: string; uiConfigPath?: string }
+  outputDir: string
+  customizations?: any
+}
 
 export function registerBulkCommand(program: Command): void {
   const bulkCommand = program

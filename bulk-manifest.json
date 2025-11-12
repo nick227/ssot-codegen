@@ -1,10 +1,53 @@
 {
-  "generatedAt": "2025-11-12T20:02:22.844Z",
-  "projects": [],
+  "generatedAt": "2025-11-12T20:04:33.429Z",
+  "projects": [
+    {
+      "projectId": "ai-chat",
+      "name": "AI Chat SPA",
+      "schema": "C:\\wamp64\\www\\ssot-codegen\\websites\\ai-chat\\schema.prisma",
+      "baseConfig": "C:\\wamp64\\www\\ssot-codegen\\websites\\ai-chat\\ui.config.ts",
+      "generatedAt": "2025-11-12T20:04:33.340Z",
+      "checksum": "4bb6003b8a867dbd",
+      "version": "1.0.0",
+      "filesGenerated": 29,
+      "metadata": {
+        "schemaHash": "7dce62d843ec5a57",
+        "configHash": "44136fa355b3678a"
+      }
+    },
+    {
+      "projectId": "blog",
+      "name": "Blog Website",
+      "schema": "C:\\wamp64\\www\\ssot-codegen\\websites\\blog\\schema.prisma",
+      "baseConfig": "C:\\wamp64\\www\\ssot-codegen\\websites\\blog\\ui.config.ts",
+      "generatedAt": "2025-11-12T20:04:33.341Z",
+      "checksum": "175a38ae405ce12b",
+      "version": "1.0.0",
+      "filesGenerated": 34,
+      "metadata": {
+        "schemaHash": "7ed1543cebb11161",
+        "configHash": "44136fa355b3678a"
+      }
+    },
+    {
+      "projectId": "ecommerce",
+      "name": "E-commerce Store",
+      "schema": "C:\\wamp64\\www\\ssot-codegen\\websites\\ecommerce\\schema.prisma",
+      "baseConfig": "C:\\wamp64\\www\\ssot-codegen\\websites\\ecommerce\\ui.config.ts",
+      "generatedAt": "2025-11-12T20:04:33.341Z",
+      "checksum": "55eefec8cfa2a0e0",
+      "version": "1.0.0",
+      "filesGenerated": 39,
+      "metadata": {
+        "schemaHash": "84936653b164b5fc",
+        "configHash": "44136fa355b3678a"
+      }
+    }
+  ],
   "summary": {
-    "totalProjects": 0,
-    "totalFiles": 0,
-    "successful": 0,
-    "failed": 3
+    "totalProjects": 3,
+    "totalFiles": 105,
+    "successful": 3,
+    "failed": 0
   }
 }

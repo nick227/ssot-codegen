@@ -75,12 +75,16 @@ async function expandProjectIds(
  * Parse Prisma schema file and return ParsedSchema
  */
 async function parseSchemaFile(schemaPath: string): Promise<ParsedSchema> {
-  // Try dynamic import of @prisma/internals
+  // Use the same pattern as 01-parse-schema.phase.ts
+  async function getPrismaDMMF() {
+    const prismaInternals = await import('@prisma/internals')
+    // Handle both default and named exports
+    return prismaInternals.getDMMF || prismaInternals.default?.getDMMF
+  }
+  
   let getDMMF: any
   try {
-    const prismaInternals = await import('@prisma/internals')
-    // Handle both ESM and CJS exports
-    getDMMF = prismaInternals.getDMMF || (prismaInternals.default && prismaInternals.default.getDMMF)
+    getDMMF = await getPrismaDMMF()
     if (!getDMMF || typeof getDMMF !== 'function') {
       throw new Error('getDMMF is not a function. Check @prisma/internals version.')
     }
