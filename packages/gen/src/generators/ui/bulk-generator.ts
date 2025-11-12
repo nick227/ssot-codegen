@@ -43,7 +43,7 @@ async function expandProjectIds(
         schema: {
           schemaPath: resolve(projectDir, 'schema.prisma'),
           uiConfigPath: resolve(projectDir, 'ui.config.ts')
-        },
+        } as any, // Type assertion: schema can be string | WebsiteSchema | { schemaPath, uiConfigPath }
         outputDir: resolve(projectDir, 'generated')
       })
       continue
@@ -57,7 +57,7 @@ async function expandProjectIds(
         schema: {
           schemaPath: resolve(projectDir, starter.schema || 'schema.prisma'),
           uiConfigPath: resolve(projectDir, starter.uiConfig || 'ui.config.ts')
-        },
+        } as any, // Type assertion: schema can be string | WebsiteSchema | { schemaPath, uiConfigPath }
         outputDir: resolve(projectDir, starter.outputDir || 'generated'),
         customizations: starter.customizations
       })
@@ -107,18 +107,17 @@ export async function generateBulkWebsites(
   
   if (parallel) {
     // Generate in parallel
-    const promises = projects.map(project => generateProject(project, verbose, baseDir))
+    const promises = projectsList.map(project => generateProject(project, verbose, baseDir))
     const projectResults = await Promise.allSettled(promises)
     
-    for (let i = 0; i < projects.length; i++) {
-      const project = projects[i]
+    for (let i = 0; i < projectsList.length; i++) {
+      const project = projectsList[i]
       const result = projectResults[i]
       
       if (result.status === 'fulfilled') {
         results.set(project.id, result.value)
       } else {
-        const projectId = typeof project === 'string' ? project : project.id
-        results.set(projectId, {
+        results.set(project.id, {
           success: false,
           error: result.reason instanceof Error ? result.reason.message : String(result.reason),
           filesGenerated: 0
