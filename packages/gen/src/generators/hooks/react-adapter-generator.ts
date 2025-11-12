@@ -49,138 +49,53 @@ import type {
 // QUERY HOOKS - Read operations
 // ============================================
 
-/**
- * Get single ${modelName} by ID
- * 
- * @example
- * \`\`\`typescript
- * const { data: ${modelLower}, isPending, isError } = use${modelName}(123)
- * 
- * if (isPending) return <Spinner />
- * return <div>{${modelLower}?.title}</div>
- * \`\`\`
- */
+/** Get single ${modelName} by ID */
 export function use${modelName}(
   id: ${idType},
   options?: UseQueryOptions<${modelName} | null, Error>
 ) {
-  return useQuery({
-    ...${modelLower}Queries.all.get(id),
-    ...options
-  })
+  return useQuery({ ...${modelLower}Queries.all.get(id), ...options })
 }
 
-/**
- * List ${modelName} records
- * 
- * @example
- * \`\`\`typescript
- * const { data, isPending } = use${modelName}s({ take: 20 })
- * 
- * return data?.data.map(item => <Card key={item.id} item={item} />)
- * \`\`\`
- */
+/** List ${modelName} records */
 export function use${modelName}s(
   query?: ${modelName}Query,
   options?: UseQueryOptions<ListResponse<${modelName}>, Error>
 ) {
-  return useQuery({
-    ...${modelLower}Queries.all.list(query),
-    ...options
-  })
+  return useQuery({ ...${modelLower}Queries.all.list(query), ...options })
 }
 
-/**
- * Infinite scroll ${modelName} records
- * 
- * @example
- * \`\`\`typescript
- * const { data, fetchNextPage, hasNextPage } = useInfinite${modelName}s()
- * 
- * return (
- *   <>
- *     {data?.pages.flatMap(page => page.data).map(item => <Card item={item} />)}
- *     {hasNextPage && <button onClick={() => fetchNextPage()}>Load More</button>}
- *   </>
- * )
- * \`\`\`
- */
+/** Infinite scroll ${modelName} records */
 export function useInfinite${modelName}s(
   query?: Omit<${modelName}Query, 'skip'>,
   options?: UseInfiniteQueryOptions<ListResponse<${modelName}>, Error>
 ) {
-  return useInfiniteQuery({
-    ...${modelLower}Infinite.list(query),
-    ...options
-  })
+  return useInfiniteQuery({ ...${modelLower}Infinite.list(query), ...options })
 }
 
 // ============================================
 // MUTATION HOOKS - Write operations
 // ============================================
 
-/**
- * Create ${modelName} mutation
- * 
- * @example
- * \`\`\`typescript
- * const { mutate, isPending } = useCreate${modelName}({
- *   onSuccess: (${modelLower}) => toast.success('Created!'),
- *   onError: (error) => toast.error(error.message)
- * })
- * 
- * mutate({ title: 'New ${modelName}', ... })
- * \`\`\`
- */
+/** Create ${modelName} mutation */
 export function useCreate${modelName}(
   options?: UseMutationOptions<${modelName}, Error, ${modelName}Create>
 ) {
-  return useMutation({
-    ...${modelLower}Mutations.create(),
-    ...options
-  })
+  return useMutation({ ...${modelLower}Mutations.create(), ...options })
 }
 
-/**
- * Update ${modelName} mutation
- * 
- * @example
- * \`\`\`typescript
- * const { mutate } = useUpdate${modelName}({
- *   onSuccess: () => toast.success('Updated!')
- * })
- * 
- * mutate({ id: 123, data: { title: 'New Title' } })
- * \`\`\`
- */
+/** Update ${modelName} mutation */
 export function useUpdate${modelName}(
   options?: UseMutationOptions<${modelName} | null, Error, { id: ${idType}; data: ${modelName}Update }>
 ) {
-  return useMutation({
-    ...${modelLower}Mutations.update(),
-    ...options
-  })
+  return useMutation({ ...${modelLower}Mutations.update(), ...options })
 }
 
-/**
- * Delete ${modelName} mutation
- * 
- * @example
- * \`\`\`typescript
- * const { mutate } = useDelete${modelName}({
- *   onSuccess: () => navigate('/list')
- * })
- * 
- * mutate(123)
- * \`\`\`
- */
+/** Delete ${modelName} mutation */
 export function useDelete${modelName}(
   options?: UseMutationOptions<boolean, Error, ${idType}>
 ) {
-  return useMutation({
-    ...${modelLower}Mutations.delete(),
-    ...options
-  })
+  return useMutation({ ...${modelLower}Mutations.delete(), ...options })
 }
 ${helperHooks}
 `
