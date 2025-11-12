@@ -67,7 +67,7 @@ function writeFileSafe(filepath: string, content: string, skipIfExists = false):
 /**
  * Generate UI files based on template selection
  */
-export async function generateUI(projectPath: string, config: ProjectConfig, models: ParsedModel[], mappings?: any): Promise<void> {
+export async function generateUI(projectPath: string, config: ProjectConfig, models: ParsedModel[], mappings?: Record<string, unknown>): Promise<void> {
   if (!config.generateUI || !config.uiTemplate) {
     return
   }
