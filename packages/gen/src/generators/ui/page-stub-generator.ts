@@ -33,7 +33,7 @@ function generateListPage(model: ParsedModel): string {
   
   // Get display fields (first 5 non-relation fields)
   const displayFields = model.fields
-    .filter(f => !f.isRelation && f.name !== 'id')
+    .filter(f => f.kind !== 'object' && f.name !== 'id')
     .slice(0, 5)
   
   return `/**
@@ -92,7 +92,7 @@ function generateDetailPage(model: ParsedModel): string {
   const modelLower = modelName.toLowerCase()
   
   // Get all non-relation fields
-  const displayFields = model.fields.filter(f => !f.isRelation)
+  const displayFields = model.fields.filter(f => f.kind !== 'object')
   
   return `/**
  * ${modelName} Detail Page
@@ -180,7 +180,7 @@ function generateCreatePage(model: ParsedModel): string {
   
   // Get editable fields (exclude id, createdAt, updatedAt)
   const editableFields = model.fields.filter(f => 
-    !f.isRelation && 
+    f.kind !== 'object' && 
     f.name !== 'id' && 
     !f.name.match(/^(createdAt|updatedAt)$/i)
   )
@@ -232,7 +232,7 @@ function generateEditPage(model: ParsedModel): string {
   
   // Get editable fields
   const editableFields = model.fields.filter(f => 
-    !f.isRelation && 
+    f.kind !== 'object' && 
     f.name !== 'id' && 
     !f.name.match(/^(createdAt|updatedAt)$/i)
   )

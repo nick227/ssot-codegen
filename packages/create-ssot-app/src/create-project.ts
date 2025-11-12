@@ -239,15 +239,16 @@ function parseModelsFromSchema(schemaPath: string): ParsedModel[] {
     // Skip internal Prisma models
     if (modelName.startsWith('_')) continue
     
-    const fields: Array<{ name: string; type: string; isRelation: boolean }> = []
+    const fields: Array<{ name: string; type: string; isRelation: boolean; isId?: boolean }> = []
     
     // Parse fields
-    const fieldRegex = /^\s*(\w+)\s+(\w+)/gm
+    const fieldRegex = /^\s*(\w+)\s+(\w+)(.*)$/gm
     let fieldMatch
     
     while ((fieldMatch = fieldRegex.exec(modelBody)) !== null) {
       const fieldName = fieldMatch[1]
       const fieldType = fieldMatch[2]
+      const fieldAttributes = fieldMatch[3] || ''
       
       // Skip Prisma directives and attributes
       if (fieldName.startsWith('@') || fieldName === 'model') continue
@@ -255,17 +256,28 @@ function parseModelsFromSchema(schemaPath: string): ParsedModel[] {
       // Check if it's a relation (type is another model, starts with uppercase)
       const isRelation = /^[A-Z]/.test(fieldType) && !['String', 'Int', 'Float', 'Boolean', 'DateTime', 'Json', 'Decimal', 'BigInt', 'Bytes'].includes(fieldType)
       
+      // Check if it's an ID field
+      const isId = fieldAttributes.includes('@id') || fieldAttributes.includes('@default(autoincrement())') || fieldAttributes.includes('@default(cuid())') || fieldAttributes.includes('@default(uuid())')
+      
       fields.push({
         name: fieldName,
         type: fieldType,
-        isRelation
+        isRelation,
+        isId
       })
     }
+    
+    // Find ID field (default to 'id' if not found)
+    const idField = fields.find(f => f.isId) || fields.find(f => f.name === 'id') || { name: 'id', type: 'String' }
     
     models.push({
       name: modelName,
       nameLower: modelName.toLowerCase(),
       namePlural: modelName.toLowerCase() + 's', // Simple pluralization
+      idField: {
+        name: idField.name,
+        type: idField.type
+      },
       fields
     })
   }

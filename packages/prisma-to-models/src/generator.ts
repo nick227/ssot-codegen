@@ -42,7 +42,7 @@ export async function generateModelsFromPrisma(
       documentation: field.documentation
     })),
     idFields: model.primaryKey?.fields ? [...model.primaryKey.fields] : undefined,
-    uniqueFields: model.uniqueFields.map(uf => [...uf.fields]),
+    uniqueFields: model.uniqueFields.map(uf => [...uf]),
     documentation: model.documentation
   }))
   

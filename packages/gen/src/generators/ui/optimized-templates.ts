@@ -33,7 +33,7 @@ export function generateColumns(fields: ParsedField[]): string {
   // Single pass: filter + transform
   for (const field of fields) {
     // Skip relations (inline check)
-    if (field.isRelation || field.name === 'id') continue
+    if (field.kind === 'object' || field.name === 'id') continue
     
     // Format label (inline, no function call)
     const label = field.name
@@ -60,7 +60,7 @@ export function generateFormFields(fields: ParsedField[]): string {
   
   for (const field of fields) {
     // Guard clauses (early continue)
-    if (field.isRelation) continue
+    if (field.kind === 'object') continue
     if (field.name === 'id') continue
     if (field.name.match(/^(createdAt|updatedAt)$/i)) continue
     
@@ -104,7 +104,7 @@ export function generateDetailFields(fields: ParsedField[]): string {
   
   for (const field of fields) {
     // Skip relations
-    if (field.isRelation) continue
+    if (field.kind === 'object') continue
     
     // Format label (inline, cached in loop)
     const label = field.name
@@ -130,7 +130,7 @@ export function generateDetailFields(fields: ParsedField[]): string {
  */
 export function isEditableField(field: ParsedField): boolean {
   // Guard clauses (early return)
-  if (field.isRelation) return false
+  if (field.kind === 'object') return false
   if (field.name === 'id') return false
   if (field.name === 'createdAt' || field.name === 'updatedAt') return false
   
@@ -142,7 +142,7 @@ export function isEditableField(field: ParsedField): boolean {
  * Pure predicate
  */
 export function isDisplayableField(field: ParsedField): boolean {
-  return !field.isRelation
+  return field.kind !== 'object'
 }
 
 /**

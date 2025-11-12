@@ -127,7 +127,7 @@ export class WebSocketTransport<T> implements DataClient<T> {
         break
       case 'updated':
         if (update.data && update.id) {
-          const index = cached.items.findIndex((item: T & { id?: unknown }) => item.id === update.id)
+          const index = cached.items.findIndex((item: any) => (item as Record<string, unknown>).id === update.id)
           if (index !== -1) {
             cached.items[index] = update.data
           }
@@ -135,7 +135,7 @@ export class WebSocketTransport<T> implements DataClient<T> {
         break
       case 'deleted':
         if (update.id) {
-          cached.items = cached.items.filter((item: T & { id?: unknown }) => item.id !== update.id)
+          cached.items = cached.items.filter((item: any) => (item as Record<string, unknown>).id !== update.id)
           cached.total--
         }
         break
@@ -158,7 +158,7 @@ export class WebSocketTransport<T> implements DataClient<T> {
         reject(new Error('Request timeout'))
       }, 30000)
       
-      this.pendingRequests.set(id, { resolve, reject, timeout })
+      this.pendingRequests.set(id, { resolve: resolve as (data: unknown) => void, reject, timeout })
       
       this.send({
         type: 'request',

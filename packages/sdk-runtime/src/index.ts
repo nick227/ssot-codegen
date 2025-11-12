@@ -16,8 +16,11 @@ export * from './types/index.js'
 // Search
 export * from './search/index.js'
 
-// Transport layer (HTTP + WebSocket)
-export * from './transport/index.js'
+// Transport layer (HTTP + WebSocket) - export individually to avoid ListResponse conflict
+export type { DataClient, Unsubscribe, QueryParams, UpdateMessage } from './transport/data-client.js'
+export { HTTPTransport } from './transport/http-transport.js'
+export { WebSocketTransport } from './transport/websocket-transport.js'
+export { HybridDataClient } from './transport/hybrid-client.js'
 
 // Legacy export for backwards compatibility
 export type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'

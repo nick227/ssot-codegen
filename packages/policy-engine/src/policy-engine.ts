@@ -112,6 +112,11 @@ export class PolicyEngine {
         }
       }
       
+      // If no allow expression, deny by default (fail-closed)
+      if (!policy.allow) {
+        return false
+      }
+      
       // Evaluate "allow" expression
       const result = evaluate(policy.allow, expressionContext)
       
@@ -138,6 +143,11 @@ export class PolicyEngine {
     // Extract row filters from the "allow" expression
     // For simple cases, we can infer filters from the expression
     // For complex cases, policies should specify filters explicitly
+    
+    // If no allow expression, no filters
+    if (!policy.allow) {
+      return {}
+    }
     
     // This is a simplified implementation
     // Real implementation would analyze the expression AST
@@ -198,6 +208,12 @@ export class PolicyEngine {
     // Apply row filters from first matching policy
     // In a real implementation, we'd combine filters from all policies
     const policy = matchingPolicies[0]
+    
+    // If no allow expression, deny all
+    if (!policy.allow) {
+      return { id: '__never__' }
+    }
+    
     const rowFilters = applyRowFilters(policy.allow, context)
     
     // Merge with existing WHERE clause

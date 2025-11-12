@@ -5,7 +5,8 @@
 
 export type Unsubscribe = () => void
 
-export interface ListResponse<T> {
+// Internal ListResponse for data client (different from API response)
+interface ListResponse<T> {
   items: T[]
   total: number
   page?: number
@@ -25,6 +26,9 @@ export interface UpdateMessage<T> {
   id?: string | number
   timestamp: number
 }
+
+// Export the ListResponse for use in this module only
+export type { ListResponse }
 
 /**
  * Transport-agnostic client interface

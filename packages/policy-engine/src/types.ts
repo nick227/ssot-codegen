@@ -19,8 +19,8 @@ export interface PolicyRule {
   /** Action (CRUD operation) */
   action: 'create' | 'read' | 'update' | 'delete'
   
-  /** Expression that evaluates to boolean (allow/deny) */
-  allow: Expression
+  /** Expression that evaluates to boolean (allow/deny) - optional for default policies */
+  allow?: Expression
   
   /** Field-level permissions (optional) */
   fields?: {
@@ -99,7 +99,7 @@ export interface AllowedFields {
 export const PolicyRuleSchema = z.object({
   model: z.string(),
   action: z.enum(['create', 'read', 'update', 'delete']),
-  allow: z.any(), // Expression (validated separately)
+  allow: z.any().optional(), // Expression (validated separately), optional for default policies
   fields: z.object({
     read: z.array(z.string()).optional(),
     write: z.array(z.string()).optional(),
