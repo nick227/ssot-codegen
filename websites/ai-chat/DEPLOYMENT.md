@@ -11,16 +11,38 @@ Step-by-step guide to build, deploy, and test the AI Chat SPA in your browser.
 
 ---
 
-## Step 1: Generate the Project
+## Step 1: Build the CLI (First Time Only)
 
-Generate the AI Chat SPA from the schema and configuration:
+The CLI needs to be built before use:
 
 ```bash
 # From project root
 cd C:\wamp64\www\ssot-codegen
 
-# Generate the AI Chat project
-npx ssot-gen bulk --config websites/config/bulk-generate.json
+# Build all packages (including CLI)
+pnpm build
+
+# Or build just the CLI
+cd packages/cli
+pnpm build
+cd ../..
+```
+
+---
+
+## Step 2: Generate the Project
+
+Generate the AI Chat SPA from the schema and configuration:
+
+```bash
+# Option 1: Use workspace script (recommended)
+pnpm ssot bulk --config websites/config/bulk-generate.json
+
+# Option 2: Run CLI directly
+node packages/cli/dist/cli.js bulk --config websites/config/bulk-generate.json
+
+# Option 3: Use pnpm exec (if CLI is built)
+pnpm exec ssot-gen bulk --config websites/config/bulk-generate.json
 ```
 
 This will:
@@ -43,7 +65,7 @@ This will:
 
 ---
 
-## Step 2: Navigate to Generated Project
+## Step 3: Navigate to Generated Project
 
 ```bash
 cd websites/ai-chat/generated
@@ -51,7 +73,7 @@ cd websites/ai-chat/generated
 
 ---
 
-## Step 3: Install Dependencies
+## Step 4: Install Dependencies
 
 ```bash
 # Install all dependencies
@@ -71,7 +93,7 @@ npm install
 
 ---
 
-## Step 4: Set Up Environment Variables
+## Step 5: Set Up Environment Variables
 
 Create a `.env` file in the generated project:
 
@@ -119,7 +141,7 @@ CORS_ORIGIN="http://localhost:3000"
 
 ---
 
-## Step 5: Set Up Database
+## Step 6: Set Up Database
 
 ### 5.1 Create Database
 
@@ -168,7 +190,7 @@ This opens http://localhost:5555 - verify tables are created:
 
 ---
 
-## Step 6: Build the Project
+## Step 7: Build the Project
 
 ### 6.1 Build Backend
 
@@ -191,7 +213,7 @@ pnpm build:frontend
 
 ---
 
-## Step 7: Start the Server
+## Step 8: Start the Server
 
 ### 7.1 Development Mode
 
@@ -226,7 +248,7 @@ npm start
 
 ---
 
-## Step 8: Open in Browser
+## Step 9: Open in Browser
 
 1. **Open browser:** Navigate to `http://localhost:3000`
 
@@ -242,7 +264,7 @@ npm start
 
 ---
 
-## Step 9: Test the Chat Interface
+## Step 10: Test the Chat Interface
 
 ### 9.1 Create a Conversation
 
@@ -275,7 +297,7 @@ npm start
 
 ---
 
-## Step 10: Verify Backend Logs
+## Step 11: Verify Backend Logs
 
 Check server console for:
 
