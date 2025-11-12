@@ -35,10 +35,15 @@ export function registerBulkCommand(program: Command): void {
         let errorCount = 0
         
         for (const [projectId, result] of results) {
-          if (result.success && result.outputDir && 'files' in result && result.files) {
-            const project = config.projects.find(p => p.id === projectId)
+          if (result.success && result.outputDir && result.files) {
+            const project = config.projects.find((p: any) => p.id === projectId)
             if (project && !options.dryRun) {
-              await writeFiles(result.files, result.outputDir, false)
+              // Write files
+              for (const [filePath, content] of result.files) {
+                const fullPath = resolve(result.outputDir, filePath)
+                await mkdir(dirname(fullPath), { recursive: true })
+                await writeFile(fullPath, content, 'utf-8')
+              }
               console.log(`✅ ${project.name}: ${result.filesGenerated} files written to ${result.outputDir}`)
             } else if (project && options.dryRun) {
               console.log(`📄 ${project.name}: Would generate ${result.filesGenerated} files`)
