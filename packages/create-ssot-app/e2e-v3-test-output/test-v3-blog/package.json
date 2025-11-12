@@ -1,0 +1,59 @@
+{
+  "name": "test-v3-blog",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Full-stack TypeScript API built with SSOT CodeGen",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "dev:api": "tsx watch src/server.ts",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio",
+    "generate": "prisma generate && ssot-codegen generate",
+    "generate:prisma": "prisma generate",
+    "generate:api": "ssot-codegen generate",
+    "gen:models": "prisma-to-models generate ./prisma/schema.prisma --out ./templates/models.json",
+    "gen:models:watch": "prisma-to-models watch ./prisma/schema.prisma --out ./templates/models.json",
+    "validate:templates": "ssot validate ./templates",
+    "plan:templates": "ssot plan ./templates"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.0.0",
+    "dotenv": "^16.4.0",
+    "express": "^4.18.0",
+    "cors": "^2.8.5",
+    "next": "^14.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "@ssot-ui/runtime": "file:../packages/ui-runtime",
+    "@ssot-ui/adapter-data-prisma": "file:../packages/ui-adapter-data-prisma",
+    "@ssot-ui/adapter-ui-internal": "file:../packages/ui-adapter-ui-internal",
+    "@ssot-ui/adapter-auth-nextauth": "file:../packages/ui-adapter-auth-nextauth",
+    "@ssot-ui/adapter-router-next": "file:../packages/ui-adapter-router-next",
+    "@ssot-ui/adapter-format-intl": "file:../packages/ui-adapter-format-intl",
+    "tailwindcss": "^3.4.0",
+    "autoprefixer": "^10.4.17",
+    "postcss": "^8.4.33"
+  },
+  "devDependencies": {
+    "prisma": "^6.0.0",
+    "@ssot-codegen/cli": "file:C:\\wamp64\\www\\ssot-codegen\\packages\\cli",
+    "typescript": "^5.3.3",
+    "@types/node": "^20.11.0",
+    "tsx": "^4.7.0",
+    "@ssot-codegen/gen": "file:C:\\wamp64\\www\\ssot-codegen\\packages\\gen",
+    "@ssot-codegen/sdk-runtime": "file:C:\\wamp64\\www\\ssot-codegen\\packages\\sdk-runtime",
+    "@ssot-codegen/templates-default": "file:C:\\wamp64\\www\\ssot-codegen\\packages\\templates-default",
+    "@types/express": "^4.17.21",
+    "@types/cors": "^2.8.17",
+    "@ssot-ui/prisma-to-models": "file:../packages/prisma-to-models",
+    "@ssot-ui/schemas": "file:../packages/ui-schemas",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

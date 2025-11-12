@@ -1,0 +1,19 @@
+{
+  "version": "1.0.0",
+  "modes": [
+    "light"
+  ],
+  "defaultMode": "light",
+  "colors": {
+    "primary": {},
+    "neutral": {}
+  },
+  "spacing": {},
+  "typography": {
+    "fontFamilies": {},
+    "fontSizes": {},
+    "fontWeights": {},
+    "lineHeights": {}
+  },
+  "radii": {}
+}

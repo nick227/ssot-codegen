@@ -4,43 +4,116 @@
  * DRY: Single hook for ALL expression evaluation in React components
  * SRP: Only evaluates expressions, doesn't render
  * 
+ * IMPROVEMENTS:
+ * - Type-safe with generics
+ * - Uses React Context (no prop drilling)
+ * - Better error handling (fallback, onError, throwOnError)
+ * - Memoization that actually works (stable context)
+ * 
  * Usage:
  * ```tsx
- * const value = useExpression(field.computed, context)
- * const isVisible = useConditionalVisibility(field.visibleWhen, context)
+ * // At page level:
+ * <ExpressionContextProvider data={item} user={session.user}>
+ *   <DetailPage>
+ *     <Field />  // No context props needed!
+ *   </DetailPage>
+ * </ExpressionContextProvider>
+ * 
+ * // In components:
+ * const value = useExpression<number>(field.computed)
+ * const isVisible = useConditionalVisibility(field.visibleWhen)
  * ```
  */
 
 import { useMemo } from 'react'
-import { evaluate, type Expression, type ExpressionContext } from '@ssot-ui/expressions'
+import { evaluate, type Expression } from '@ssot-ui/expressions'
+import { useExpressionContext } from '../context/expression-context.js'
 
 /**
- * Evaluate an expression with memoization
+ * Options for expression evaluation error handling
+ */
+export interface UseExpressionOptions<T> {
+  /** Value to return if evaluation fails or expression is undefined */
+  fallback?: T
+  /** Callback for evaluation errors */
+  onError?: (error: Error) => void
+  /** If true, throw errors instead of returning fallback */
+  throwOnError?: boolean
+}
+
+/**
+ * Evaluate an expression with memoization and type safety
  * 
  * DRY: All components use this single hook
- * Performance: Memoized to prevent re-evaluation
+ * Performance: Memoized with stable context reference
+ * Type-safe: Generic return type
+ * Error handling: fallback, onError, throwOnError options
  * 
- * @param expr - Expression to evaluate (undefined = return undefined)
- * @param context - Evaluation context (data, user, params, globals)
- * @returns Evaluated value or undefined
+ * @template T - Expected return type
+ * @param expr - Expression to evaluate (undefined = return fallback)
+ * @param options - Error handling options
+ * @returns Evaluated value (type T) or fallback
+ * 
+ * @example
+ * ```tsx
+ * // Basic usage (inferred type)
+ * const value = useExpression(field.computed)
+ * 
+ * // With type safety
+ * const total = useExpression<number>(field.computed)
+ * 
+ * // With fallback
+ * const discount = useExpression<number>(field.computed, { fallback: 0 })
+ * 
+ * // With error handling
+ * const price = useExpression<number>(field.computed, {
+ *   fallback: 0,
+ *   onError: (err) => toast.error(`Price calculation failed: ${err.message}`)
+ * })
+ * 
+ * // Throw errors in development
+ * const value = useExpression(field.computed, {
+ *   throwOnError: process.env.NODE_ENV === 'development'
+ * })
+ * ```
  */
-export function useExpression(
+export function useExpression<T = unknown>(
   expr: Expression | undefined,
-  context: ExpressionContext
-): any {
+  options?: UseExpressionOptions<T>
+): T | undefined {
+  const context = useExpressionContext()
+  
   return useMemo(() => {
-    if (!expr) return undefined
+    // Return fallback if no expression provided
+    if (!expr) return options?.fallback
     
     try {
-      return evaluate(expr, context)
+      // Evaluate expression with context from provider
+      return evaluate(expr, context) as T
     } catch (error) {
-      // Log error but don't throw (graceful degradation)
-      console.error('[useExpression] Evaluation failed:', error)
-      console.error('[useExpression] Expression:', expr)
-      console.error('[useExpression] Context:', context)
-      return undefined
+      const err = error instanceof Error ? error : new Error(String(error))
+      
+      // Throw if requested (useful in development)
+      if (options?.throwOnError) {
+        throw err
+      }
+      
+      // Call error handler if provided
+      if (options?.onError) {
+        options.onError(err)
+      }
+      
+      // Log error to console (development aid)
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('[useExpression] Evaluation failed:', err)
+        console.error('[useExpression] Expression:', expr)
+        console.error('[useExpression] Context:', context)
+      }
+      
+      // Return fallback value
+      return options?.fallback
     }
-  }, [expr, context])
+  }, [expr, context, options])
 }
 
 /**
@@ -50,19 +123,26 @@ export function useExpression(
  * Default: true if no condition provided
  * 
  * @param visibleWhen - Visibility condition
- * @param context - Evaluation context
  * @returns boolean - Whether element should be visible
+ * 
+ * @example
+ * ```tsx
+ * const isVisible = useConditionalVisibility(field.visibleWhen)
+ * if (!isVisible) return null
+ * 
+ * // Or inline:
+ * return useConditionalVisibility(field.visibleWhen) ? <Field /> : null
+ * ```
  */
 export function useConditionalVisibility(
-  visibleWhen: Expression | undefined,
-  context: ExpressionContext
+  visibleWhen: Expression | undefined
 ): boolean {
-  const result = useExpression(visibleWhen, context)
+  const result = useExpression<boolean>(visibleWhen, { fallback: true })
   
-  // Default to visible if no condition provided
+  // Default to visible if no condition provided or evaluation failed
   if (result === undefined) return true
   
-  // Cast to boolean
+  // Cast to boolean (handles truthy/falsy values)
   return Boolean(result)
 }
 
@@ -73,44 +153,30 @@ export function useConditionalVisibility(
  * Default: true if no condition provided
  * 
  * @param enabledWhen - Enabled condition
- * @param context - Evaluation context
  * @returns boolean - Whether element should be enabled
+ * 
+ * @example
+ * ```tsx
+ * const isEnabled = useConditionalEnabled(field.enabledWhen)
+ * 
+ * return (
+ *   <input
+ *     disabled={!isEnabled}
+ *     // ... other props
+ *   />
+ * )
+ * ```
  */
 export function useConditionalEnabled(
-  enabledWhen: Expression | undefined,
-  context: ExpressionContext
+  enabledWhen: Expression | undefined
 ): boolean {
-  const result = useExpression(enabledWhen, context)
+  const result = useExpression<boolean>(enabledWhen, { fallback: true })
   
-  // Default to enabled if no condition provided
+  // Default to enabled if no condition provided or evaluation failed
   if (result === undefined) return true
   
-  // Cast to boolean
+  // Cast to boolean (handles truthy/falsy values)
   return Boolean(result)
 }
 
-/**
- * Build expression context from current state
- * 
- * DRY: Standardizes context creation across components
- * 
- * @param data - Current item/form data
- * @param user - Current user (from session/auth)
- * @param params - Route parameters
- * @param globals - Global application state
- * @returns ExpressionContext
- */
-export function buildExpressionContext(
-  data: Record<string, any>,
-  user?: { id: string; roles: string[]; permissions?: string[] } | null,
-  params?: Record<string, string>,
-  globals?: Record<string, any>
-): ExpressionContext {
-  return {
-    data,
-    user: user || { id: '', roles: [], permissions: [] },
-    params: params || {},
-    globals: globals || {}
-  }
-}
 

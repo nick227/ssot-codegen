@@ -15,12 +15,20 @@ export { TemplateRuntime, type RuntimeConfig, type TemplateRuntimeProps } from '
 export { ErrorBoundary } from './components/error-boundary.js'
 export { LoadingFallback } from './components/loading-fallback.js'
 
-// Expression hooks (NEW)
+// Expression Context Provider (NEW)
+export {
+  ExpressionContextProvider,
+  useExpressionContext,
+  useHasExpressionContext,
+  type ExpressionContextProviderProps
+} from './context/expression-context.js'
+
+// Expression hooks (NEW - v2 with context provider)
 export {
   useExpression,
   useConditionalVisibility,
   useConditionalEnabled,
-  buildExpressionContext
+  type UseExpressionOptions
 } from './hooks/use-expression.js'
 
 // Re-export types for convenience
