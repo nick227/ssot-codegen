@@ -41,10 +41,6 @@ export function validateBulkConfig(
     return { valid: false, errors, warnings }
   }
 
-  if (projectsList.length === 0) {
-    warnings.push('No projects defined in configuration')
-  }
-
   // Handle simplified config format (array of strings)
   let projectsList: ProjectConfig[]
   if (Array.isArray(config.projects) && config.projects.length > 0 && typeof config.projects[0] === 'string') {
@@ -59,6 +55,10 @@ export function validateBulkConfig(
     }))
   } else {
     projectsList = config.projects as ProjectConfig[]
+  }
+
+  if (projectsList.length === 0) {
+    warnings.push('No projects defined in configuration')
   }
   
   // Validate each project

@@ -117,7 +117,8 @@ export async function generateBulkWebsites(
       if (result.status === 'fulfilled') {
         results.set(project.id, result.value)
       } else {
-        results.set(project.id, {
+        const projectId = typeof project === 'string' ? project : project.id
+        results.set(projectId, {
           success: false,
           error: result.reason instanceof Error ? result.reason.message : String(result.reason),
           filesGenerated: 0
