@@ -104,7 +104,7 @@ const ${modelCamel}CRUD = new BaseCRUDController(
     create: ${model.name}CreateSchema,
     update: ${model.name}UpdateSchema,
     query: ${model.name}QuerySchema
-  },
+  } as any,
   {
     modelName: '${model.name}',
     idType: '${idType}'
@@ -114,17 +114,23 @@ const ${modelCamel}CRUD = new BaseCRUDController(
 
 /**
  * Generate CRUD method exports
+ * IMPORTANT: Bind methods to instance to preserve 'this' context
  */
 function generateCRUDExports(model: ParsedModel, modelCamel: string): string {
   return `
 // Standard CRUD operations
-export const list${model.name}s = ${modelCamel}CRUD.list
-export const search${model.name}s = ${modelCamel}CRUD.search
-export const get${model.name} = ${modelCamel}CRUD.getById
-export const create${model.name} = ${modelCamel}CRUD.create
-export const update${model.name} = ${modelCamel}CRUD.update
-export const delete${model.name} = ${modelCamel}CRUD.deleteRecord
-export const count${model.name}s = ${modelCamel}CRUD.count`
+export const list${model.name}s = ${modelCamel}CRUD.list.bind(${modelCamel}CRUD)
+export const search${model.name}s = ${modelCamel}CRUD.search.bind(${modelCamel}CRUD)
+export const get${model.name} = ${modelCamel}CRUD.getById.bind(${modelCamel}CRUD)
+export const create${model.name} = ${modelCamel}CRUD.create.bind(${modelCamel}CRUD)
+export const update${model.name} = ${modelCamel}CRUD.update.bind(${modelCamel}CRUD)
+export const delete${model.name} = ${modelCamel}CRUD.deleteRecord.bind(${modelCamel}CRUD)
+export const count${model.name}s = ${modelCamel}CRUD.count.bind(${modelCamel}CRUD)
+
+// Bulk operations
+export const bulkCreate${model.name}s = ${modelCamel}CRUD.bulkCreate.bind(${modelCamel}CRUD)
+export const bulkUpdate${model.name}s = ${modelCamel}CRUD.bulkUpdate.bind(${modelCamel}CRUD)
+export const bulkDelete${model.name}s = ${modelCamel}CRUD.bulkDelete.bind(${modelCamel}CRUD)`
 }
 
 /**
@@ -214,6 +220,18 @@ export const increment${model.name}Views = createVoidDomainMethodController(
   // Approval workflow
   if (analysis.specialFields.approved) {
     methods.push(`
+/**
+ * List pending ${model.name} records
+ */
+export const listPending${model.name}s = createListMethodController(
+  ${modelCamel}Service.listPending,
+  ${model.name}QuerySchema,
+  {
+    modelName: '${model.name}',
+    methodName: 'listPending${model.name}s'
+  }
+)
+
 /**
  * Approve ${model.name}
  */

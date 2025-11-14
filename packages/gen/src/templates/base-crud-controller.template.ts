@@ -33,11 +33,15 @@ export interface CRUDService<T, CreateDTO, UpdateDTO, QueryDTO> {
 
 /**
  * Validation schemas for CRUD operations
+ * Note: Zod schemas may have slightly different inferred types than DTOs due to validation structure
+ * (e.g., nested where clauses), but they validate correctly at runtime.
+ * Using 'any' here is necessary because Zod's type inference doesn't always match DTO types exactly,
+ * but runtime validation ensures correctness.
  */
 export interface CRUDSchemas<CreateDTO, UpdateDTO, QueryDTO> {
   create: ZodSchema<any>  // Use 'any' to accommodate Zod schemas with defaults/coercions
   update: ZodSchema<any>
-  query: ZodSchema<any>
+  query: ZodSchema<any>  // Zod schemas validate correctly at runtime even if types don't match exactly
 }
 
 /**
