@@ -28,6 +28,7 @@ export { WriteStandalonePhase } from './11-write-standalone.phase.js'
 export { UiGenerationPhase } from './ui-generation.phase.js'
 export { WriteTestsPhase } from './12-write-tests.phase.js'
 export { FormatCodePhase } from './13-format-code.phase.js'
+export { ValidateTypeScriptPhase } from './14-validate-typescript.phase.js'
 
 // ============================================================================
 // TYPED PHASES (Strongly-Typed)
@@ -57,6 +58,7 @@ import { GenerateTsConfigPhase } from './10-generate-tsconfig.phase.js'
 import { WriteStandalonePhase } from './11-write-standalone.phase.js'
 import { WriteTestsPhase } from './12-write-tests.phase.js'
 import { FormatCodePhase } from './13-format-code.phase.js'
+import { ValidateTypeScriptPhase } from './14-validate-typescript.phase.js'
 import type { GenerationPhase } from '../phase-runner.js'
 
 /**
@@ -82,7 +84,8 @@ export function createAllPhases(): GenerationPhase[] {
     new GenerateTsConfigPhase(),
     new WriteStandalonePhase(),
     new WriteTestsPhase(),
-    new FormatCodePhase()
+    new FormatCodePhase(),
+    new ValidateTypeScriptPhase()  // NEW: Validates TypeScript compilation
   ]
 }
 

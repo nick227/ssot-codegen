@@ -11,6 +11,8 @@ export interface StandaloneProjectOptions {
   pluginDevDependencies?: Record<string, string>
   serviceNames?: string[]  // Service integration route names (e.g., ['ai-agent', 'file-storage'])
   hasPlugins?: boolean  // Whether any plugins were generated
+  hasUI?: boolean  // Whether UI files were generated
+  uiFramework?: 'vite' | 'nextjs'  // Frontend framework (default: 'vite')
 }
 
 export const packageJsonTemplate = (options: StandaloneProjectOptions) => `{
@@ -23,9 +25,15 @@ export const packageJsonTemplate = (options: StandaloneProjectOptions) => `{
     "node": ">=18.0.0"
   },
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "build": "rimraf dist && tsc && tsc-alias",
-    "start": "node dist/src/server.js",
+    "dev": "${options.hasUI ? (options.uiFramework === 'nextjs' ? 'concurrently "tsx watch src/server.ts" "next dev"' : 'concurrently "tsx watch src/server.ts" "vite"') : 'tsx watch src/server.ts'}",
+    "dev:backend": "tsx watch src/server.ts",
+    "dev:frontend": "${options.hasUI ? (options.uiFramework === 'nextjs' ? 'next dev' : 'vite') : ''}",
+    "build": "${options.hasUI ? (options.uiFramework === 'nextjs' ? 'rimraf dist .next && tsc && tsc-alias && next build' : 'rimraf dist dist-frontend && tsc && tsc-alias && vite build') : 'rimraf dist && tsc && tsc-alias'}",
+    "build:backend": "rimraf dist && tsc && tsc-alias",
+    "build:frontend": "${options.hasUI ? (options.uiFramework === 'nextjs' ? 'next build' : 'vite build') : ''}",
+    "start": "${options.hasUI ? (options.uiFramework === 'nextjs' ? 'concurrently "node dist/src/server.js" "next start"' : 'concurrently "node dist/src/server.js" "vite preview"') : 'node dist/src/server.js'}",
+    "start:backend": "node dist/src/server.js",
+    "start:frontend": "${options.hasUI ? (options.uiFramework === 'nextjs' ? 'next start' : 'vite preview') : ''}",
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:ui": "vitest --ui",
@@ -49,6 +57,7 @@ export const packageJsonTemplate = (options: StandaloneProjectOptions) => `{
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "@ssot-codegen/sdk-runtime": "file:../../packages/sdk-runtime",
     "compression": "^1.7.4",
     "cors": "^2.8.5",
     "dotenv": "^17.2.0",
@@ -60,7 +69,7 @@ export const packageJsonTemplate = (options: StandaloneProjectOptions) => `{
     "http-errors": "^2.0.0",
     "pino": "^9.5.0",
     "pino-http": "^10.3.0",
-    "zod": "^3.25.0"${options.pluginDependencies && Object.keys(options.pluginDependencies).length > 0 ? ',\n    ' + Object.entries(options.pluginDependencies).map(([pkg, ver]) => `"${pkg}": "${ver}"`).join(',\n    ') : ''}
+    "zod": "^3.25.0"${options.hasUI ? (options.uiFramework === 'nextjs' ? ',\n    "next": "^15.0.0",\n    "react": "^18.3.0",\n    "react-dom": "^18.3.0",\n    "@tanstack/react-query": "^5.0.0"' : ',\n    "react": "^18.3.0",\n    "react-dom": "^18.3.0",\n    "react-router-dom": "^6.26.0",\n    "@tanstack/react-query": "^5.0.0"') : ''}${options.pluginDependencies && Object.keys(options.pluginDependencies).length > 0 ? ',\n    ' + Object.entries(options.pluginDependencies).map(([pkg, ver]) => `"${pkg}": "${ver}"`).join(',\n    ') : ''}
   },
   "devDependencies": {
     "@types/compression": "^1.7.5",
@@ -85,7 +94,7 @@ export const packageJsonTemplate = (options: StandaloneProjectOptions) => `{
     "tsc-alias": "^1.8.16",
     "tsx": "^4.20.0",
     "typescript": "^5.9.0",
-    "vitest": "^2.1.0"${options.pluginDevDependencies && Object.keys(options.pluginDevDependencies).length > 0 ? ',\n    ' + Object.entries(options.pluginDevDependencies).map(([pkg, ver]) => `"${pkg}": "${ver}"`).join(',\n    ') : ''}
+    "vitest": "^2.1.0"${options.hasUI ? (options.uiFramework === 'nextjs' ? ',\n    "@types/react": "^18.3.0",\n    "@types/react-dom": "^18.3.0",\n    "concurrently": "^9.0.0",\n    "tailwindcss": "^3.4.0",\n    "autoprefixer": "^10.4.0",\n    "postcss": "^8.4.0",\n    "@testing-library/react": "^16.0.0",\n    "@testing-library/jest-dom": "^6.0.0"' : ',\n    "@types/react": "^18.3.0",\n    "@types/react-dom": "^18.3.0",\n    "@vitejs/plugin-react": "^4.3.0",\n    "concurrently": "^9.0.0",\n    "vite": "^5.4.0",\n    "tailwindcss": "^3.4.0",\n    "autoprefixer": "^10.4.0",\n    "postcss": "^8.4.0",\n    "@testing-library/react": "^16.0.0",\n    "@testing-library/jest-dom": "^6.0.0"') : ''}${options.pluginDevDependencies && Object.keys(options.pluginDevDependencies).length > 0 ? ',\n    ' + Object.entries(options.pluginDevDependencies).map(([pkg, ver]) => `"${pkg}": "${ver}"`).join(',\n    ') : ''}
   },
   "lint-staged": {
     "*.{ts,tsx}": [
@@ -100,15 +109,19 @@ export const packageJsonTemplate = (options: StandaloneProjectOptions) => `{
 }
 `
 
-export const tsconfigTemplate = (projectName: string) => `{
+export const tsconfigTemplate = (projectName: string, hasUI?: boolean, uiFramework?: 'vite' | 'nextjs') => {
+  const isNextjs = hasUI && uiFramework === 'nextjs'
+  const isVite = hasUI && uiFramework === 'vite'
+  
+  return `{
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "lib": ["ES2022"],
+    "lib": ["ES2022"${hasUI ? ', "DOM", "DOM.Iterable"' : ''}],
     "rootDir": ".",
     "outDir": "./dist",
-    "jsx": "react-jsx",
+    "jsx": "${hasUI ? (isNextjs ? 'preserve' : 'react-jsx') : 'react-jsx'}",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -119,13 +132,14 @@ export const tsconfigTemplate = (projectName: string) => `{
     "sourceMap": true,
     "allowImportingTsExtensions": false,
     "paths": {
-      "@/*": ["./src/*"]
-    }
+      "@/*": ["./src/*"${hasUI ? (isNextjs ? ',\n      "@/components/*": ["./components/*"],\n      "@/app/*": ["./app/*"]' : ',\n      "@/components/*": ["./src/components/*"]') : ''}]
+    }${isNextjs ? ',\n    "plugins": [\n      {\n        "name": "next"\n      }\n    ]' : ''}
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*"${hasUI ? (isNextjs ? ', "app/**/*", "components/**/*"' : ', "src/**/*", "index.html"') : ''}],
+  "exclude": ["node_modules", "dist", "src/sdk/**/*"${hasUI ? (isNextjs ? ', ".next"' : ', "dist-frontend"') : ''}]
 }
 `
+}
 
 export const envTemplate = (databaseProvider: string) => {
   const dbUrl = databaseProvider === 'postgresql' 
@@ -156,6 +170,12 @@ LOG_LEVEL=info
 export const configTemplate = () => `import { config as loadEnv } from 'dotenv'
 import path from 'path'
 import fs from 'fs'
+import { fileURLToPath } from 'url'
+import { dirname } from 'path'
+
+// ES module compatible __dirname
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
 /**
  * Load .env from multiple possible locations (workspace-first)
@@ -548,10 +568,11 @@ ${options.models.map(m => `- ${m}`).join('\n')}
    \`\`\`bash
    pnpm dev
    \`\`\`
+   ${options.hasUI ? 'This starts both the backend API server and Next.js frontend concurrently.\n\n   - Backend API: http://localhost:3000\n   - Frontend UI: http://localhost:3001' : ''}
 
 6. **Access the API:**
    - Health check: http://localhost:3000/health
-   - API endpoints: http://localhost:3000/api/*
+   - API endpoints: http://localhost:3000/api/*${options.hasUI ? '\n\n7. **Access the UI:**\n   - Frontend: http://localhost:3001\n   - Browse CRUD pages for all models' : ''}
 
 ## Scripts
 
@@ -740,6 +761,160 @@ export const huskyPreCommitTemplate = () => `#!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
 pnpm run precommit
+`
+
+export const nextConfigTemplate = () => `/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  // Proxy API requests to Express backend
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/:path*',
+      },
+    ]
+  },
+  // Enable TypeScript path aliases
+  typescript: {
+    ignoreBuildErrors: false,
+  },
+  eslint: {
+    ignoreDuringBuilds: false,
+  },
+}
+
+module.exports = nextConfig
+`
+
+export const nextLayoutTemplate = () => `import { ExpressionProvider } from '@/components/ssot'
+import './globals.css'
+
+export const metadata = {
+  title: 'Generated App',
+  description: 'Generated by SSOT Codegen',
+}
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body>
+        <ExpressionProvider>
+          {children}
+        </ExpressionProvider>
+      </body>
+    </html>
+  )
+}
+`
+
+export const tailwindConfigTemplate = () => `/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    './app/**/*.{js,ts,jsx,tsx,mdx}',
+    './components/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/**/*.{js,ts,jsx,tsx,mdx}',
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+}
+`
+
+export const postcssConfigTemplate = () => `module.exports = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}
+`
+
+export const globalsCssTemplate = () => `@tailwind base;
+@tailwind components;
+@tailwind utilities;
+`
+
+export const viteConfigTemplate = () => `import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import path from 'path'
+
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
+  server: {
+    port: 3001,
+    proxy: {
+      '/api': {
+        target: process.env.VITE_API_URL || 'http://localhost:3000',
+        changeOrigin: true,
+      },
+    },
+  },
+  build: {
+    outDir: 'dist-frontend',
+  },
+})
+`
+
+export const viteIndexHtmlTemplate = () => `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Generated App</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+`
+
+export const viteMainTemplate = () => `import React from 'react'
+import ReactDOM from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import App from './App'
+import './index.css'
+
+const queryClient = new QueryClient()
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </QueryClientProvider>
+  </React.StrictMode>,
+)
+`
+
+export const viteAppTemplate = () => `import { Routes, Route } from 'react-router-dom'
+import { ExpressionProvider } from '@/components/ssot'
+
+function App() {
+  return (
+    <ExpressionProvider>
+      <Routes>
+        <Route path="/" element={<div className="p-6"><h1 className="text-2xl font-bold">Welcome</h1></div>} />
+        {/* Routes will be added by page generators */}
+      </Routes>
+    </ExpressionProvider>
+  )
+}
+
+export default App
 `
 
 export const vitestConfigTemplate = () => `import { defineConfig } from 'vitest/config';

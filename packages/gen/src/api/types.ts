@@ -127,6 +127,22 @@ export interface GenerateOptions {
   format?: boolean
   
   /**
+   * UI generation configuration
+   * 
+   * When enabled, indicates that UI files will be generated
+   * This allows the pipeline to configure framework dependencies and setup
+   */
+  ui?: {
+    enabled?: boolean
+    /**
+     * Frontend framework to use
+     * 
+     * @default 'vite'
+     */
+    framework?: 'vite' | 'nextjs'
+  }
+  
+  /**
    * Maximum concurrent file writes (performance tuning)
    * 
    * @default 100

@@ -34,14 +34,27 @@ export class ValidateSchemaPhaseTyped extends TypedPhaseAdapter<
    * NO RUNTIME CHECKS NEEDED!
    */
   async executeTyped(context: ContextAfterPhase1): Promise<ValidateSchemaOutput> {
-    const { schema, logger } = context
+    const { schema, schemaContent, logger } = context
     
     // TypeScript guarantees schema exists - no runtime check needed!
-    const errors = validateSchema(schema)
+    // Use validateSchemaDetailed to get structured results (errors vs warnings/infos)
+    const { validateSchemaDetailed } = await import('../../dmmf-parser.js')
+    const result = validateSchemaDetailed(schema, false) // Don't throw, we'll handle it
     
-    if (errors.length > 0) {
-      errors.forEach(err => logger.error(err))
-      throw new Error('Schema validation failed')
+    // Add MySQL-specific validation (key length limits)
+    const { validateMySQLKeyLength } = await import('../../dmmf-parser/validation/mysql-key-length.js')
+    const mysqlValidation = validateMySQLKeyLength(schema, schemaContent)
+    result.errors.push(...mysqlValidation.errors)
+    result.warnings.push(...mysqlValidation.warnings)
+    
+    // Log all messages with appropriate levels
+    result.errors.forEach(err => logger.error(err))
+    result.warnings.forEach(warn => logger.warn(warn))
+    result.infos.forEach(info => logger.warn(`INFO: ${info}`)) // Use warn for info messages
+    
+    // Only throw on actual errors, not warnings or infos
+    if (result.errors.length > 0) {
+      throw new Error(`Schema validation failed:\n${result.errors.join('\n')}`)
     }
     
     // Return empty object (phase doesn't add data to context)

@@ -24,6 +24,7 @@ export interface ProjectConfig {
   packageManager: 'npm' | 'pnpm' | 'yarn'
   generateUI: boolean
   uiMode?: 'v3-runtime' | 'v2-codegen'  // NEW: V3 (JSON runtime) or V2 (code generation)
+  uiFramework?: 'vite' | 'nextjs'  // Frontend framework (default: 'vite')
   uiTemplate?: 'data-browser' | 'blog' | 'chatbot' | 'ecommerce' | 'dashboard'
 }
 
@@ -113,6 +114,24 @@ export async function getProjectConfig(): Promise<ProjectConfig> {
             title: '📝 Code Generation (V2)',
             value: 'v2-codegen',
             description: 'Generate TypeScript files for full customization'
+          }
+        ],
+        initial: 0
+      },
+      {
+        type: (prev, values) => values.generateUI ? 'select' : null,
+        name: 'uiFramework',
+        message: 'Frontend Framework:',
+        choices: [
+          {
+            title: '⚡ Vite + React Router (Default)',
+            value: 'vite',
+            description: 'Fast, modern, simple'
+          },
+          {
+            title: '▲ Next.js',
+            value: 'nextjs',
+            description: 'Full-stack React with SSR'
           }
         ],
         initial: 0

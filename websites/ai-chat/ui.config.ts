@@ -6,6 +6,7 @@
  */
 
 const config = {
+  framework: 'vite', // Use Vite as default frontend framework
   site: {
     name: 'AI Chat',
     description: 'AI-powered chat interface with real-time streaming',

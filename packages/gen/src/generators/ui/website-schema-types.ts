@@ -217,6 +217,9 @@ export interface BulkGenerateOptions {
   
   /** Output verbosity */
   verbose?: boolean
+  
+  /** Generate full-stack (backend + UI) vs UI-only (default: true) */
+  fullStack?: boolean
 }
 
 /**

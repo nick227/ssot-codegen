@@ -6,6 +6,7 @@
  */
 
 import path from 'node:path'
+import { existsSync, mkdirSync } from 'node:fs'
 import { analyzeModel } from '@/utils/relationship-analyzer.js'
 import { GenerationPhase, type PhaseContext, type PhaseResult } from '../phase-runner.js'
 import * as standaloneTemplates from '@/templates/standalone-project.template.js'
@@ -47,11 +48,23 @@ export class WriteStandalonePhase extends GenerationPhase {
       ? 'mysql'
       : 'sqlite'
     
+    // Detect if UI files were generated (check config first, then filesystem)
+    const uiConfig = (config as unknown as Record<string, unknown>).ui as { enabled?: boolean; framework?: 'vite' | 'nextjs' } | undefined
+    // Check config first (most reliable), then filesystem as fallback
+    const hasUI = uiConfig?.enabled === true ||
+                  existsSync(path.join(outputDir, 'app')) ||
+                  existsSync(path.join(outputDir, 'src', 'App.tsx')) ||
+                  existsSync(path.join(outputDir, 'src', 'main.tsx')) ||
+                  existsSync(path.join(outputDir, 'components')) // Components directory indicates UI
+    const uiFramework = uiConfig?.framework || 'vite'
+    
     const standaloneOptions: standaloneTemplates.StandaloneProjectOptions = {
       projectName: config.projectName || path.basename(outputDir),
       framework,
       databaseProvider,
-      models: modelNames
+      models: modelNames,
+      hasUI,
+      uiFramework
     }
     
     const writes: Promise<void>[] = []
@@ -62,7 +75,7 @@ export class WriteStandalonePhase extends GenerationPhase {
     
     // Write tsconfig.json
     const tsconfigPath = path.join(outputDir, 'tsconfig.json')
-    writes.push(writeFile(tsconfigPath, standaloneTemplates.tsconfigTemplate(standaloneOptions.projectName)))
+    writes.push(writeFile(tsconfigPath, standaloneTemplates.tsconfigTemplate(standaloneOptions.projectName, hasUI, uiFramework)))
     
     // Write .env.example with plugin variables
     const envPath = path.join(outputDir, '.env.example')
@@ -123,6 +136,79 @@ export class WriteStandalonePhase extends GenerationPhase {
       const prismaDir = path.join(outputDir, 'prisma')
       const newSchemaPath = path.join(prismaDir, 'schema.prisma')
       writes.push(writeFile(newSchemaPath, schemaContent))
+    }
+    
+    // Generate framework-specific configuration if UI files exist
+    if (hasUI) {
+      if (uiFramework === 'nextjs') {
+        // next.config.js
+        writes.push(writeFile(
+          path.join(outputDir, 'next.config.js'),
+          standaloneTemplates.nextConfigTemplate()
+        ))
+        
+        // app/layout.tsx (if app directory exists)
+        const appDir = path.join(outputDir, 'app')
+        if (existsSync(appDir)) {
+          const layoutPath = path.join(appDir, 'layout.tsx')
+          // Only create if it doesn't exist (UI generator might have created it)
+          if (!existsSync(layoutPath)) {
+            writes.push(writeFile(layoutPath, standaloneTemplates.nextLayoutTemplate()))
+          }
+          
+          // app/globals.css
+          const globalsCssPath = path.join(appDir, 'globals.css')
+          if (!existsSync(globalsCssPath)) {
+            writes.push(writeFile(globalsCssPath, standaloneTemplates.globalsCssTemplate()))
+          }
+        }
+      } else {
+        // vite.config.ts
+        writes.push(writeFile(
+          path.join(outputDir, 'vite.config.ts'),
+          standaloneTemplates.viteConfigTemplate()
+        ))
+        
+        // index.html for Vite
+        const indexHtmlPath = path.join(outputDir, 'index.html')
+        if (!existsSync(indexHtmlPath)) {
+          writes.push(writeFile(indexHtmlPath, standaloneTemplates.viteIndexHtmlTemplate()))
+        }
+        
+        // src/main.tsx for Vite entry point
+        const srcDir = path.join(outputDir, 'src')
+        if (!existsSync(srcDir)) {
+          mkdirSync(srcDir, { recursive: true })
+        }
+        const mainTsxPath = path.join(srcDir, 'main.tsx')
+        if (!existsSync(mainTsxPath)) {
+          writes.push(writeFile(mainTsxPath, standaloneTemplates.viteMainTemplate()))
+        }
+        
+        // src/App.tsx for Vite
+        const appTsxPath = path.join(srcDir, 'App.tsx')
+        if (!existsSync(appTsxPath)) {
+          writes.push(writeFile(appTsxPath, standaloneTemplates.viteAppTemplate()))
+        }
+        
+        // src/index.css for Vite
+        const indexCssPath = path.join(srcDir, 'index.css')
+        if (!existsSync(indexCssPath)) {
+          writes.push(writeFile(indexCssPath, standaloneTemplates.globalsCssTemplate()))
+        }
+      }
+      
+      // tailwind.config.js (shared)
+      writes.push(writeFile(
+        path.join(outputDir, 'tailwind.config.js'),
+        standaloneTemplates.tailwindConfigTemplate()
+      ))
+      
+      // postcss.config.js (shared)
+      writes.push(writeFile(
+        path.join(outputDir, 'postcss.config.js'),
+        standaloneTemplates.postcssConfigTemplate()
+      ))
     }
     
     await Promise.all(writes)

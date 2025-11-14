@@ -42,6 +42,7 @@ export function validateBulkConfig(
   }
 
   // Handle simplified config format (array of strings)
+  // Note: Actual outputDir will be set by expandProjectIds, this is just for validation
   let projectsList: ProjectConfig[]
   if (Array.isArray(config.projects) && config.projects.length > 0 && typeof config.projects[0] === 'string') {
     projectsList = (config.projects as string[]).map((id: string) => ({
@@ -51,7 +52,7 @@ export function validateBulkConfig(
         schemaPath: resolve(baseDir, 'websites', id, 'schema.prisma'),
         uiConfigPath: resolve(baseDir, 'websites', id, 'ui.config.ts')
       } as any, // Type assertion needed because schema can be string | WebsiteSchema | { schemaPath, uiConfigPath }
-      outputDir: resolve(baseDir, 'websites', id, 'generated')
+      outputDir: resolve(baseDir, 'generated', `${id}-1`) // Placeholder - actual will be set by expandProjectIds
     }))
   } else {
     projectsList = config.projects as ProjectConfig[]

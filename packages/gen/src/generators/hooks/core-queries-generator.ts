@@ -35,7 +35,7 @@ import type {
   ListResponse 
 } from '../../types'
 import type { SDK } from '../../index'
-import { stableKey } from '../../shared/query-helpers'
+import { stableKey } from './shared/query-helpers'
 
 /**
  * ${modelName} query factory - accepts API client for flexibility
@@ -54,7 +54,10 @@ export function create${modelName}Queries(api: SDK) {
        */
       get: (id: ${idType}) => ({
         queryKey: stableKey('${modelLower}', id),
-        queryFn: async (): Promise<${modelName} | null> => api.${modelLower}.get(id)
+        queryFn: async (): Promise<${modelName} | null> => {
+          const result = await api.${modelLower}.get(id)
+          return result || null
+        }
       }),
       
       /**
@@ -62,7 +65,10 @@ export function create${modelName}Queries(api: SDK) {
        */
       list: (query?: ${modelName}Query) => ({
         queryKey: stableKey('${modelLower}s', query),
-        queryFn: async (): Promise<ListResponse<${modelName}>> => api.${modelLower}.list(query)
+        queryFn: async (): Promise<ListResponse<${modelName}>> => {
+          const result = await api.${modelLower}.list(query)
+          return result || { data: [], meta: { total: 0, skip: 0, take: 20, hasMore: false } }
+        }
       }),
       
       /**
@@ -70,7 +76,10 @@ export function create${modelName}Queries(api: SDK) {
        */
       findOne: (where: Partial<${modelName}>) => ({
         queryKey: ['${modelLower}', 'query', JSON.stringify(where)],
-        queryFn: async (): Promise<${modelName} | null> => api.${modelLower}.findOne(where)
+        queryFn: async (): Promise<${modelName} | null> => {
+          const result = await api.${modelLower}.findOne(where)
+          return result || null
+        }
       }),
       
       /**
@@ -78,7 +87,10 @@ export function create${modelName}Queries(api: SDK) {
        */
       count: (query?: Pick<${modelName}Query, 'where'>) => ({
         queryKey: stableKey('${modelLower}s:count', query),
-        queryFn: async (): Promise<number> => api.${modelLower}.count(query)
+        queryFn: async (): Promise<number> => {
+          const result = await api.${modelLower}.count(query as Partial<${modelName}Query>)
+          return result || 0
+        }
       })
     }${helperQueries}
   }
@@ -146,22 +158,6 @@ export function create${modelName}Infinite(api: SDK) {
     }
   }
 }
-
-// ============================================
-// Backward compatibility: Default instance
-// ============================================
-// These use window.location.origin which works for simple cases
-// but you should prefer using the factory pattern above
-
-import { createSDK } from '../../index'
-
-const defaultApi = createSDK({ 
-  baseUrl: typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000' 
-})
-
-export const ${modelLower}Queries = create${modelName}Queries(defaultApi)
-export const ${modelLower}Mutations = create${modelName}Mutations(defaultApi)
-export const ${modelLower}Infinite = create${modelName}Infinite(defaultApi)
 `
 }
 

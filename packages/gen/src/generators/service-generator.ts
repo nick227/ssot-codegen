@@ -21,13 +21,27 @@ export { generateServiceBarrel } from './barrel-generator.js'
  */
 export function generateService(model: ParsedModel, schema?: ParsedSchema): string {
   // Generate additional enhanced methods (search, findBySlug, etc.)
-  const additionalMethods = generateEnhancedServiceMethods(model)
+  const enhancedResult = generateEnhancedServiceMethods(model, new Set(), schema?.models || [], schema)
+  const additionalMethods = enhancedResult.methods
+  const enumImports = enhancedResult.enumImports.length > 0 
+    ? `\nimport { ${enhancedResult.enumImports.join(', ')} } from '@prisma/client'`
+    : ''
   
   // Use shared CRUD template (eliminates ~100 lines of duplication)
-  return generateCRUDService(model, schema, {
+  const serviceCode = generateCRUDService(model, schema, {
     includeRelationships: false,
     enableLogging: false,
     additionalMethods
   })
+  
+  // Inject enum imports if needed
+  if (enumImports) {
+    return serviceCode.replace(
+      "import type { Prisma } from '@prisma/client'",
+      `import type { Prisma } from '@prisma/client'${enumImports}`
+    )
+  }
+  
+  return serviceCode
 }
 

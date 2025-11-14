@@ -54,8 +54,9 @@ export async function generateFromSchemaAPI(options: GenerateOptions): Promise<G
       verbosity: options.verbosity || 'normal',
       colors: false,  // API mode - no colors
       timestamps: false,  // API mode - no timestamps
-      features: options.features
-    }
+      features: options.features,
+      ui: options.ui
+    } as GeneratorConfig
     
     // Set environment variables for internal features
     if (options.format) {

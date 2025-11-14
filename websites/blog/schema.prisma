@@ -6,37 +6,36 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
 model Post {
-  id          String   @id @default(cuid())
+  id          String   @id @default(cuid()) @db.VarChar(191) // Primary key (always indexed)
   title       String
-  slug        String   @unique
+  slug        String   @unique @db.VarChar(191) // Unique constraint with length limit
   content     String   @db.Text
   excerpt     String?
   published   Boolean  @default(false)
   publishedAt DateTime?
-  authorId    String
+  authorId    String   @db.VarChar(191) // Foreign key in index
   author      User     @relation(fields: [authorId], references: [id])
-  categoryId  String?
+  categoryId  String?  @db.VarChar(191) // Foreign key
   category    Category? @relation(fields: [categoryId], references: [id])
   tags        Tag[]
   comments    Comment[]
   views       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
-  @@index([slug])
   @@index([published, publishedAt])
-  @@index([authorId])
+  @@index([authorId(length: 191)]) // Prefix index: ensure FK index respects length constraint
+  @@index([categoryId(length: 191)]) // Prefix index: ensure FK index respects length constraint
 }
 
 model Category {
-  id          String   @id @default(cuid())
+  id          String   @id @default(cuid()) @db.VarChar(191) // Primary key (always indexed)
   name        String
-  slug        String   @unique
+  slug        String   @unique @db.VarChar(191) // Unique constraint with length limit
   description String?
   posts       Post[]
   createdAt   DateTime @default(now())
@@ -44,39 +43,38 @@ model Category {
 }
 
 model Tag {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  slug      String   @unique
+  id        String   @id @default(cuid()) @db.VarChar(191) // Primary key (always indexed)
+  name      String   @unique @db.VarChar(191) // Unique constraint with length limit
+  slug      String   @unique @db.VarChar(191) // Unique constraint with length limit
   posts     Post[]
   createdAt DateTime @default(now())
 }
 
 model Comment {
-  id        String   @id @default(cuid())
+  id        String   @id @default(cuid()) @db.VarChar(191) // Primary key (always indexed)
   content   String   @db.Text
-  authorId  String
+  authorId  String   @db.VarChar(191) // Foreign key (auto-indexed)
   author    User     @relation(fields: [authorId], references: [id])
-  postId    String
+  postId    String   @db.VarChar(191) // Foreign key in index
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   approved  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
-  @@index([postId])
+  @@index([postId(length: 191)]) // Prefix index: ensure FK index respects length constraint
+  @@index([authorId(length: 191)]) // Prefix index: ensure FK index respects length constraint
 }
 
 model User {
-  id        String   @id @default(cuid())
+  id        String   @id @default(cuid()) @db.VarChar(191) // Primary key (always indexed)
   name      String?
-  email     String   @unique
+  email     String   @unique @db.VarChar(191) // Unique constraint with length limit
   image     String?
   role      UserRole @default(USER)
   posts     Post[]
   comments  Comment[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
-  @@index([email])
 }
 
 enum UserRole {

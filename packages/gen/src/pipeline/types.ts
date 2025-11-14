@@ -88,6 +88,14 @@ export interface GeneratorConfig {
    * ```
    */
   features?: PluginFeaturesConfig
+  
+  /**
+   * UI generation configuration
+   */
+  ui?: {
+    enabled?: boolean
+    framework?: 'vite' | 'nextjs'
+  }
 }
 
 export interface GeneratorResult {

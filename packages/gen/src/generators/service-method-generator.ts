@@ -16,8 +16,9 @@ import { toCamelCase } from '@/utils/naming.js'
 export function generateEnhancedServiceMethods(
   model: ParsedModel,
   existingMethods: Set<string> = new Set(),
-  allModels: readonly ParsedModel[] = []
-): string {
+  allModels: readonly ParsedModel[] = [],
+  fullSchema?: { enums?: readonly any[]; enumMap?: ReadonlyMap<string, any> }
+): { methods: string; enumImports: string[] } {
   // Create minimal ParsedSchema for analyzer
   const schema = {
     models: allModels,
@@ -29,6 +30,16 @@ export function generateEnhancedServiceMethods(
   const analysis = analyzeModelUnified(model, schema, {})
   const caps = analysis.capabilities
   const methods: string[] = []
+  const enumTypes = new Set<string>()
+  
+  // Collect enum types from filter fields
+  if (caps.hasSearch) {
+    caps.filterFields.forEach(field => {
+      if (field.type === 'enum' && field.fieldType) {
+        enumTypes.add(field.fieldType)
+      }
+    })
+  }
   
   // Generate search method
   if (caps.hasSearch && !existingMethods.has('search')) {
@@ -71,14 +82,17 @@ export function generateEnhancedServiceMethods(
     }
   }
   
-  return methods.length > 0 ? ',\n\n  ' + methods.join(',\n\n  ') : ''
+  return {
+    methods: methods.length > 0 ? ',\n\n  ' + methods.join(',\n\n  ') : '',
+    enumImports: Array.from(enumTypes)
+  }
 }
 
 function generateSearchMethod(model: ParsedModel, caps: ModelCapabilities): string {
   const modelName = model.name
   const modelCamel = toCamelCase(model.name)
   const searchConditions = caps.searchFields.map(field => 
-    `            { ${field}: { contains: params.q, mode: 'insensitive' } }`
+    `            { ${field}: { contains: params.q } }`
   ).join(',\n')
   
   const filterConditions = caps.filterFields
@@ -133,6 +147,7 @@ function generateSearchParams(caps: ModelCapabilities): string {
                      field.fieldType === 'Float' || field.fieldType === 'Decimal' ? 'number' :
                      field.fieldType === 'DateTime' ? 'Date | string' :
                      field.fieldType === 'Boolean' ? 'boolean' :
+                     field.fieldType === 'String' ? 'string' :
                      field.fieldType
       
       if (field.type === 'range') {
@@ -254,15 +269,47 @@ function generateGetByRelationMethod(
 function generateHierarchyMethods(model: ParsedModel): string {
   const modelName = model.name
   const modelCamel = toCamelCase(model.name)
+  const idType = model.idField?.type === 'String' ? 'string' : 'number'
+  const parentField = model.fields.find(f => f.name === 'parentId')
+  const childrenRelation = model.fields.find(f => f.isSelfRelation && f.relationFromFields?.length === 0)
+  const childrenFieldName = childrenRelation?.name || 'children'
   
   return `/**
    * Get children of parent ${modelName}
    * Auto-generated from self-referential relation detection
    */
-  async getChildren(parentId: number) {
+  async getChildren(parentId: ${idType}) {
     return prisma.${modelCamel}.findMany({
-      where: { parentId }
+      where: { parentId: parentId as any }
     })
+  },
+
+  /**
+   * Get ${modelName} thread (item with nested ${childrenFieldName})
+   * Auto-generated from self-referential relation detection
+   */
+  async getThread(id: ${idType}) {
+    const buildThread = async (itemId: ${idType}): Promise<any> => {
+      const item = await prisma.${modelCamel}.findUnique({
+        where: { id: itemId as any },
+        include: {
+          ${childrenFieldName}: true
+        }
+      })
+      
+      if (!item) return null
+      
+      const children = await Promise.all(
+        (item.${childrenFieldName} || []).map((child: any) => buildThread(child.id))
+      )
+      
+      return {
+        ...item,
+        ${childrenFieldName}: children.filter(Boolean)
+      }
+    }
+    
+    return buildThread(id)
   },
 
   /**
@@ -274,12 +321,12 @@ function generateHierarchyMethods(model: ParsedModel): string {
       orderBy: { id: 'asc' }
     })
     
-    const buildTree = (parentId: number | null): any[] => {
+    const buildTree = (parentId: ${idType} | null): any[] => {
       return items
         .filter(item => (item as any).parentId === parentId)
         .map(item => ({
           ...item,
-          children: buildTree(item.id)
+          ${childrenFieldName}: buildTree(item.id)
         }))
     }
     

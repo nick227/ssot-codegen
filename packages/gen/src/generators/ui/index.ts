@@ -62,7 +62,7 @@ export { generateHookLinkers } from './hook-linker-generator.js'
 export { generateLightweightComponents } from './lightweight-component-generator.js'
 
 // Bulk Generation
-export { generateBulkWebsites, loadBulkConfig, generateBulkReport } from './bulk-generator.js'
+export { generateBulkWebsites, loadBulkConfig, generateBulkReport, expandProjectIds } from './bulk-generator.js'
 export type { BulkGenerateResult } from './bulk-generator.js'
 
 // Bulk Validation

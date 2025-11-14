@@ -35,4 +35,5 @@ export * from './parsing/core.js'
 export * from './enhancement/model-enhancer.js'
 export * from './validation/schema-validator.js'
 export * from './validation/circular-detection.js'
+export * from './validation/mysql-key-length.js'
 

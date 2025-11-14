@@ -16,6 +16,7 @@ export interface UiGeneratorConfig {
   generatePages: boolean
   generateHookLinkers?: boolean  // Generate hook adapters (default: true)
   models?: string[]  // If undefined, generate for all models
+  uiFramework?: 'vite' | 'nextjs'  // Frontend framework (default: 'vite')
 }
 
 export interface UiGeneratorResult {
@@ -72,11 +73,12 @@ export function generateUI(
   
   // Generate pages per model (single pass, no intermediate arrays)
   if (config.generatePages) {
+    const uiFramework = config.uiFramework || 'vite'
     for (const model of targetModels) {
       // Skip internal models (convention-based)
       if (isInternalModel(model.name)) continue
       
-      const pageFiles = generatePageStubs(model, 'app')
+      const pageFiles = generatePageStubs(model, 'app', uiFramework)
       
       // Fuse into main map
       for (const [path, content] of pageFiles) {

@@ -15,22 +15,37 @@ import { fileURLToPath } from 'url'
 import { validateBulkConfig, validateModelReferences } from './bulk-validator.js'
 import { mergeCustomizations } from './config-merger.js'
 import { generateManifest, generateBulkManifest, type ProjectManifest } from './manifest-generator.js'
+import { findWorkspaceRoot, getNextProjectFolder, deriveProjectName } from '../../utils/gen-folder.js'
+import { generateFromSchemaAPI } from '../../api/implementation.js'
+import type { GenerateOptions } from '../../api/types.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 /**
  * Expand project IDs to full ProjectConfig objects
  */
-async function expandProjectIds(
+export async function expandProjectIds(
   projectIds: string[],
   baseDir: string,
   verbose: boolean
 ): Promise<ProjectConfig[]> {
   const expanded: ProjectConfig[] = []
   
+  // Find workspace root and generated directory
+  const workspaceRoot = findWorkspaceRoot(baseDir)
+  const generatedDir = resolve(workspaceRoot, 'generated')
+  
   for (const projectId of projectIds) {
     const projectDir = resolve(baseDir, 'websites', projectId)
     const starterPath = resolve(projectDir, 'starter.json')
+    
+    // Derive project name from projectId or schema
+    const schemaPath = resolve(projectDir, 'schema.prisma')
+    const projectBaseName = deriveProjectName(existsSync(schemaPath) ? schemaPath : undefined) || projectId
+    
+    // Use root-level generated/ folder with incremental naming
+    const projectFolderName = getNextProjectFolder(generatedDir, projectBaseName)
+    const outputDir = resolve(generatedDir, projectFolderName)
     
     if (!existsSync(starterPath)) {
       if (verbose) {
@@ -44,7 +59,7 @@ async function expandProjectIds(
           schemaPath: resolve(projectDir, 'schema.prisma'),
           uiConfigPath: resolve(projectDir, 'ui.config.ts')
         } as any, // Type assertion: schema can be string | WebsiteSchema | { schemaPath, uiConfigPath }
-        outputDir: resolve(projectDir, 'generated')
+        outputDir
       })
       continue
     }
@@ -58,7 +73,7 @@ async function expandProjectIds(
           schemaPath: resolve(projectDir, starter.schema || 'schema.prisma'),
           uiConfigPath: resolve(projectDir, starter.uiConfig || 'ui.config.ts')
         } as any, // Type assertion: schema can be string | WebsiteSchema | { schemaPath, uiConfigPath }
-        outputDir: resolve(projectDir, starter.outputDir || 'generated'),
+        outputDir,
         customizations: starter.customizations
       })
     } catch (error) {
@@ -103,20 +118,67 @@ async function parseSchemaFile(schemaPath: string): Promise<ParsedSchema> {
  */
 export async function generateBulkWebsites(
   config: BulkGenerateConfig,
-  options?: { verbose?: boolean; parallel?: boolean; baseDir?: string }
+  options?: { verbose?: boolean; parallel?: boolean; baseDir?: string; fullStack?: boolean }
 ): Promise<Map<string, BulkGenerateResult>> {
   const results = new Map<string, BulkGenerateResult>()
   const { projects, options: configOptions } = config
-  const { parallel = configOptions?.parallel ?? false, verbose = configOptions?.verbose ?? false, baseDir = process.cwd() } = options || {}
+  const { 
+    parallel = configOptions?.parallel ?? false, 
+    verbose = configOptions?.verbose ?? false, 
+    baseDir = process.cwd(),
+    fullStack = configOptions?.fullStack ?? true // Default to full-stack (backend + UI)
+  } = options || {}
   
   // Handle simplified config format (array of project IDs)
   const projectsList: ProjectConfig[] = Array.isArray(projects) && projects.length > 0 && typeof projects[0] === 'string'
     ? await expandProjectIds(projects as string[], baseDir, verbose)
     : projects as ProjectConfig[]
   
+  // Pre-validate all schemas before starting generation (fail fast on validation errors)
+  // This prevents wasting time generating projects with invalid schemas
+  if (fullStack) {
+    if (verbose) {
+      console.log('🔍 Pre-validating all schemas...')
+    }
+    
+    const validationErrors: string[] = []
+    for (const project of projectsList) {
+      try {
+        const schemaPath = typeof project.schema === 'string' 
+          ? resolve(baseDir, project.schema)
+          : resolve(baseDir, project.schema.schemaPath)
+        const schemaContent = readFileSync(schemaPath, 'utf-8')
+        const schema = await parseSchemaFile(schemaPath)
+        
+        // Run validation
+        const { validateSchemaDetailed } = await import('../../dmmf-parser.js')
+        const result = validateSchemaDetailed(schema, false)
+        
+        // Add MySQL-specific validation
+        const { validateMySQLKeyLength } = await import('../../dmmf-parser/validation/mysql-key-length.js')
+        const mysqlValidation = validateMySQLKeyLength(schema, schemaContent)
+        result.errors.push(...mysqlValidation.errors)
+        
+        if (result.errors.length > 0) {
+          validationErrors.push(`\n❌ ${project.name} (${project.id}):\n${result.errors.map(e => `   ${e}`).join('\n')}`)
+        }
+      } catch (error) {
+        validationErrors.push(`\n❌ ${project.name} (${project.id}): ${error instanceof Error ? error.message : String(error)}`)
+      }
+    }
+    
+    if (validationErrors.length > 0) {
+      throw new Error(`Schema validation failed for ${validationErrors.length} project(s). Fix these errors before generating:\n${validationErrors.join('\n')}`)
+    }
+    
+    if (verbose && validationErrors.length === 0) {
+      console.log('✅ All schemas validated successfully\n')
+    }
+  }
+  
   if (parallel) {
     // Generate in parallel
-    const promises = projectsList.map(project => generateProject(project, verbose, baseDir))
+    const promises = projectsList.map(project => generateProject(project, verbose, baseDir, fullStack))
     const projectResults = await Promise.allSettled(promises)
     
     for (let i = 0; i < projectsList.length; i++) {
@@ -137,7 +199,7 @@ export async function generateBulkWebsites(
     // Generate sequentially
     for (const project of projectsList) {
       try {
-        const result = await generateProject(project, verbose, baseDir)
+        const result = await generateProject(project, verbose, baseDir, fullStack)
         results.set(project.id, {
           success: result.success,
           filesGenerated: result.filesGenerated,
@@ -164,11 +226,13 @@ export async function generateBulkWebsites(
 
 /**
  * Generate a single project
+ * Uses full pipeline by default (fullStack: true) to ensure consistency with single generate command
  */
 async function generateProject(
   config: ProjectConfig,
   verbose: boolean,
-  baseDir: string = process.cwd()
+  baseDir: string = process.cwd(),
+  fullStack: boolean = true
 ): Promise<BulkGenerateResult & { files?: Map<string, string>; manifest?: ProjectManifest }> {
   if (verbose) {
     console.log(`📦 Generating project: ${config.name} (${config.id})`)
@@ -180,85 +244,189 @@ async function generateProject(
     : resolve(baseDir, config.schema.schemaPath)
   
   const schemaContent = readFileSync(schemaPath, 'utf-8')
-  const schema = await parseSchemaFile(schemaPath)
   
-  // Load UI config
-  const uiConfigPath = typeof config.schema === 'string'
-    ? resolve(dirname(schemaPath), 'ui.config.ts')
-    : resolve(baseDir, config.schema.uiConfigPath)
-  
-  let uiConfig: any = {}
-  let configContent = '{}'
-  try {
-    // Try to load UI config (may not exist)
-    const uiConfigModule = await import(uiConfigPath)
-    uiConfig = uiConfigModule.default || uiConfigModule
-  } catch (error) {
-    if (verbose) {
-      console.warn(`⚠️  UI config not found at ${uiConfigPath}, using defaults`)
+  if (fullStack) {
+    // Use full pipeline (same as single generate command)
+    // This ensures identical output to single generate
+    try {
+      // Load UI config first to get framework preference
+      const uiConfigPath = typeof config.schema === 'string'
+        ? resolve(dirname(schemaPath), 'ui.config.ts')
+        : resolve(baseDir, config.schema.uiConfigPath)
+      
+      let uiConfig: any = {}
+      let configContent = '{}'
+      try {
+        const uiConfigModule = await import(uiConfigPath)
+        uiConfig = uiConfigModule.default || uiConfigModule
+      } catch {
+        if (verbose) {
+          console.warn(`⚠️  UI config not found at ${uiConfigPath}, using defaults`)
+        }
+      }
+      
+      const generateOptions: GenerateOptions = {
+        schema: schemaPath,
+        output: config.outputDir,
+        framework: 'express', // Default, could be configurable
+        standalone: true,
+        projectName: config.name,
+        verbosity: verbose ? 'verbose' : 'normal',
+        ui: { 
+          enabled: true,
+          framework: (uiConfig as any)?.framework || 'vite' // Default to vite
+        }
+      }
+      
+      const result = await generateFromSchemaAPI(generateOptions)
+      
+      if (!result.success) {
+        throw new Error(result.errors?.[0]?.message || 'Generation failed')
+      }
+      
+      // Apply customizations
+      if (config.customizations) {
+        uiConfig = mergeCustomizations(uiConfig, config.customizations)
+      }
+      configContent = JSON.stringify(uiConfig)
+      
+      // Generate UI files and add to existing project
+      const schema = await parseSchemaFile(schemaPath)
+      const uiFramework = (uiConfig as any)?.framework || 'vite'
+      const uiResult = generateUI(schema, {
+        outputDir: config.outputDir,
+        generateComponents: true,
+        generatePages: true,
+        generateHookLinkers: true,
+        uiFramework
+      })
+      
+      // Generate site if SiteConfig is available
+      let siteFiles = new Map<string, string>()
+      if (uiConfig.pages && Array.isArray(uiConfig.pages)) {
+        const siteConfig = convertUiConfigToSiteConfig(uiConfig)
+        siteFiles = generateSite(siteConfig, schema, config.outputDir)
+      }
+      
+      // Merge UI files (will be written separately)
+      const allFiles = new Map<string, string>()
+      for (const [path, content] of uiResult.files) {
+        allFiles.set(path, content)
+      }
+      for (const [path, content] of siteFiles) {
+        allFiles.set(path, content)
+      }
+      
+      // Generate manifest
+      const manifest = generateManifest(config, schemaContent, configContent, result.filesCreated + allFiles.size)
+      const manifestPath = '.ssot/manifest.json'
+      allFiles.set(manifestPath, JSON.stringify(manifest, null, 2))
+      
+      if (verbose) {
+        console.log(`✅ Generated ${result.filesCreated} backend files + ${allFiles.size} UI files for ${config.name}`)
+      }
+      
+      return {
+        success: true,
+        filesGenerated: result.filesCreated + allFiles.size,
+        outputDir: result.outputDir || config.outputDir,
+        files: allFiles, // UI files only (backend already written by pipeline)
+        manifest
+      }
+    } catch (error) {
+      throw new Error(`Full-stack generation failed: ${error instanceof Error ? error.message : String(error)}`)
     }
-  }
-  
-  // Validate model references
-  const modelValidation = validateModelReferences(uiConfig, schema)
-  if (modelValidation.errors.length > 0) {
-    throw new Error(`Model validation failed: ${modelValidation.errors.join(', ')}`)
-  }
-  
-  // Apply customizations using deep merge
-  if (config.customizations) {
-    uiConfig = mergeCustomizations(uiConfig, config.customizations)
-  }
-  
-  // Capture config content for manifest (after customizations)
-  configContent = JSON.stringify(uiConfig)
-  
-  // Generate UI
-  const uiResult = generateUI(schema, {
-    outputDir: config.outputDir,
-    generateComponents: true,
-    generatePages: true,
-    generateHookLinkers: true
-  })
-  
-  // Generate site if SiteConfig is available
-  let siteFiles = new Map<string, string>()
-  if (uiConfig.pages && Array.isArray(uiConfig.pages)) {
-    // Convert UiConfig to SiteConfig if needed
-    const siteConfig = convertUiConfigToSiteConfig(uiConfig)
-    siteFiles = generateSite(siteConfig, schema, config.outputDir)
-  }
-  
-  // Merge results
-  const allFiles = new Map<string, string>()
-  for (const [path, content] of uiResult.files) {
-    allFiles.set(path, content)
-  }
-  for (const [path, content] of siteFiles) {
-    allFiles.set(path, content)
-  }
-  
-  // Copy Prisma schema to generated project (required for prisma generate)
-  const prismaSchemaPath = 'prisma/schema.prisma'
-  allFiles.set(prismaSchemaPath, schemaContent)
-  
-  if (verbose) {
-    console.log(`✅ Generated ${allFiles.size} files for ${config.name}`)
-  }
-  
-  // Generate manifest
-  const manifest = generateManifest(config, schemaContent, configContent, allFiles.size)
-  
-  // Add manifest to files
-  const manifestPath = '.ssot/manifest.json'
-  allFiles.set(manifestPath, JSON.stringify(manifest, null, 2))
-  
-  return {
-    success: true,
-    filesGenerated: allFiles.size,
-    outputDir: config.outputDir,
-    files: allFiles,
-    manifest
+  } else {
+    // UI-only mode (legacy behavior)
+    const schema = await parseSchemaFile(schemaPath)
+    
+    // Load UI config
+    const uiConfigPath = typeof config.schema === 'string'
+      ? resolve(dirname(schemaPath), 'ui.config.ts')
+      : resolve(baseDir, config.schema.uiConfigPath)
+    
+    let uiConfig: any = {}
+    let configContent = '{}'
+    try {
+      const uiConfigModule = await import(uiConfigPath)
+      uiConfig = uiConfigModule.default || uiConfigModule
+    } catch (error) {
+      if (verbose) {
+        console.warn(`⚠️  UI config not found at ${uiConfigPath}, using defaults`)
+      }
+    }
+    
+    // Validate model references
+    const modelValidation = validateModelReferences(uiConfig, schema)
+    if (modelValidation.errors.length > 0) {
+      throw new Error(`Model validation failed: ${modelValidation.errors.join(', ')}`)
+    }
+    
+    // Apply customizations using deep merge
+    if (config.customizations) {
+      uiConfig = mergeCustomizations(uiConfig, config.customizations)
+    }
+    
+    // Capture config content for manifest (after customizations)
+    configContent = JSON.stringify(uiConfig)
+    
+    // Generate UI
+    const uiResult = generateUI(schema, {
+      outputDir: config.outputDir,
+      generateComponents: true,
+      generatePages: true,
+      generateHookLinkers: true
+    })
+    
+    // Generate site if SiteConfig is available
+    let siteFiles = new Map<string, string>()
+    if (uiConfig.pages && Array.isArray(uiConfig.pages)) {
+      const siteConfig = convertUiConfigToSiteConfig(uiConfig)
+      siteFiles = generateSite(siteConfig, schema, config.outputDir)
+    }
+    
+    // Merge results
+    const allFiles = new Map<string, string>()
+    for (const [path, content] of uiResult.files) {
+      allFiles.set(path, content)
+    }
+    for (const [path, content] of siteFiles) {
+      allFiles.set(path, content)
+    }
+    
+    // Copy Prisma schema to generated project (required for prisma generate)
+    const prismaSchemaPath = 'prisma/schema.prisma'
+    allFiles.set(prismaSchemaPath, schemaContent)
+    
+    // Generate infrastructure files (package.json, tsconfig.json, etc.)
+    const projectName = config.name.toLowerCase().replace(/\s+/g, '-')
+    const packageJson = generatePackageJson(projectName, schema)
+    allFiles.set('package.json', packageJson)
+    
+    const tsconfig = generateTsConfig()
+    allFiles.set('tsconfig.json', tsconfig)
+    
+    const gitignore = generateGitignore()
+    allFiles.set('.gitignore', gitignore)
+    
+    if (verbose) {
+      console.log(`✅ Generated ${allFiles.size} files for ${config.name}`)
+    }
+    
+    // Generate manifest
+    const manifest = generateManifest(config, schemaContent, configContent, allFiles.size)
+    
+    // Add manifest to files
+    const manifestPath = '.ssot/manifest.json'
+    allFiles.set(manifestPath, JSON.stringify(manifest, null, 2))
+    
+    return {
+      success: true,
+      filesGenerated: allFiles.size,
+      outputDir: config.outputDir,
+      files: allFiles,
+      manifest
+    }
   }
 }
 
@@ -285,6 +453,172 @@ function convertUiConfigToSiteConfig(uiConfig: any): any {
       darkMode: uiConfig.theme?.darkMode || false
     }
   }
+}
+
+/**
+ * Generate package.json for generated project
+ */
+function generatePackageJson(projectName: string, schema: ParsedSchema, uiFramework: 'vite' | 'nextjs' = 'vite'): string {
+  const scripts = uiFramework === 'nextjs' 
+    ? {
+        dev: 'next dev',
+        build: 'next build',
+        start: 'next start',
+        'db:generate': 'prisma generate',
+        'db:push': 'prisma db push',
+        'db:migrate': 'prisma migrate dev',
+        'db:studio': 'prisma studio'
+      }
+    : {
+        dev: 'vite',
+        build: 'vite build',
+        preview: 'vite preview',
+        'db:generate': 'prisma generate',
+        'db:push': 'prisma db push',
+        'db:migrate': 'prisma migrate dev',
+        'db:studio': 'prisma studio'
+      }
+
+  const dependencies = uiFramework === 'nextjs'
+    ? {
+        '@prisma/client': '^5.22.0',
+        'next': '^15.0.0',
+        'react': '^18.3.0',
+        'react-dom': '^18.3.0'
+      }
+    : {
+        '@prisma/client': '^5.22.0',
+        'react': '^18.3.0',
+        'react-dom': '^18.3.0',
+        'react-router-dom': '^6.26.0'
+      }
+
+  const devDependencies = uiFramework === 'nextjs'
+    ? {
+        '@types/node': '^22.10.0',
+        '@types/react': '^18.3.0',
+        '@types/react-dom': '^18.3.0',
+        'prisma': '^5.22.0',
+        'typescript': '^5.9.0'
+      }
+    : {
+        '@types/node': '^22.10.0',
+        '@types/react': '^18.3.0',
+        '@types/react-dom': '^18.3.0',
+        '@vitejs/plugin-react': '^4.3.0',
+        'prisma': '^5.22.0',
+        'typescript': '^5.9.0',
+        'vite': '^5.4.0'
+      }
+
+  const pkg = {
+    name: projectName,
+    version: '1.0.0',
+    type: 'module',
+    description: 'Generated project from SSOT Codegen',
+    scripts,
+    dependencies,
+    devDependencies,
+    engines: {
+      node: '>=18.0.0'
+    }
+  }
+  return JSON.stringify(pkg, null, 2) + '\n'
+}
+
+/**
+ * Generate tsconfig.json for generated project
+ */
+function generateTsConfig(uiFramework: 'vite' | 'nextjs' = 'vite'): string {
+  const baseConfig = {
+    target: 'ES2022',
+    lib: ['dom', 'dom.iterable', 'esnext'],
+    allowJs: true,
+    skipLibCheck: true,
+    strict: true,
+    noEmit: true,
+    esModuleInterop: true,
+    module: 'esnext',
+    moduleResolution: 'bundler',
+    resolveJsonModule: true,
+    isolatedModules: true,
+    jsx: 'preserve' as const,
+    paths: {
+      '@/*': ['./src/*']
+    }
+  }
+
+  if (uiFramework === 'nextjs') {
+    return JSON.stringify({
+      compilerOptions: {
+        ...baseConfig,
+        incremental: true,
+        plugins: [
+          {
+            name: 'next'
+          }
+        ]
+      },
+      include: ['next-env.d.ts', '**/*.ts', '**/*.tsx', '.next/types/**/*.ts'],
+      exclude: ['node_modules']
+    }, null, 2) + '\n'
+  } else {
+    return JSON.stringify({
+      compilerOptions: baseConfig,
+      include: ['src/**/*.ts', 'src/**/*.tsx'],
+      exclude: ['node_modules', 'dist']
+    }, null, 2) + '\n'
+  }
+}
+
+/**
+ * Generate .gitignore for generated project
+ */
+function generateGitignore(): string {
+  return `# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+
+# Next.js
+.next/
+out/
+build/
+dist/
+
+# Production
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Prisma
+prisma/migrations/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Generated
+.ssot/
+`
 }
 
 /**

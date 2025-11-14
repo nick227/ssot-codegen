@@ -87,8 +87,11 @@ export function generateListMethod(config: CRUDServiceConfig): string {
       prisma.${modelLower}.findMany({
         skip,
         take,
-        orderBy: orderBy as Prisma.${modelName}OrderByWithRelationInput,
-        where: whereWithSoftDelete as Prisma.${modelName}WhereInput${defaultInclude}${includeStatement}
+        ${includeStatement ? '' : `...(orderBy && { orderBy: orderBy as Prisma.${modelName}OrderByWithRelationInput }),
+        ...(whereWithSoftDelete && { where: whereWithSoftDelete as Prisma.${modelName}WhereInput }),
+        ...(include && { include: include as Prisma.${modelName}Include }),
+        ...(select && { select: select as Prisma.${modelName}Select })`}${includeStatement ? `orderBy: orderBy as Prisma.${modelName}OrderByWithRelationInput,
+        where: whereWithSoftDelete as Prisma.${modelName}WhereInput${includeStatement}` : ''}
       }),
       prisma.${modelLower}.count({
         where: whereWithSoftDelete as Prisma.${modelName}WhereInput,
@@ -151,7 +154,7 @@ export function generateCreateMethod(config: CRUDServiceConfig): string {
   return `  /**
    * Create ${modelName}
    */
-  async create(data: ${modelName}CreateDTO) {
+  async create(data: Prisma.${modelName}CreateInput) {
     const item = await prisma.${modelLower}.create({
       data${includeStatement ? includeStatement : ''}
     })${enableLogging ? `
@@ -172,7 +175,7 @@ export function generateUpdateMethod(config: CRUDServiceConfig): string {
   async update(id: ${idType}, data: ${modelName}UpdateDTO) {
     const item = await prisma.${modelLower}.update({
       where: { id },
-      data${includeStatement ? includeStatement : ''}
+      data: data as Prisma.${modelName}UpdateInput${includeStatement || ''}
     })${enableLogging ? `
     logger.info({ ${modelLower}Id: id }, '${modelName} updated')` : ''}
     return item

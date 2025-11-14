@@ -7,27 +7,31 @@
 
 import type { ParsedModel } from '../../dmmf-parser.js'
 
-export function generatePageStubs(model: ParsedModel, outputDir: string): Map<string, string> {
+export function generatePageStubs(
+  model: ParsedModel, 
+  outputDir: string, 
+  uiFramework: 'vite' | 'nextjs' = 'vite'
+): Map<string, string> {
   const files = new Map<string, string>()
   const modelName = model.name
   const modelLower = modelName.toLowerCase()
   
   // List page
-  files.set(`${outputDir}/${modelLower}/page.tsx`, generateListPage(model))
+  files.set(`${outputDir}/${modelLower}/page.tsx`, generateListPage(model, uiFramework))
   
   // Detail page
-  files.set(`${outputDir}/${modelLower}/[id]/page.tsx`, generateDetailPage(model))
+  files.set(`${outputDir}/${modelLower}/[id]/page.tsx`, generateDetailPage(model, uiFramework))
   
   // Create page
-  files.set(`${outputDir}/${modelLower}/new/page.tsx`, generateCreatePage(model))
+  files.set(`${outputDir}/${modelLower}/new/page.tsx`, generateCreatePage(model, uiFramework))
   
   // Edit page
-  files.set(`${outputDir}/${modelLower}/[id]/edit/page.tsx`, generateEditPage(model))
+  files.set(`${outputDir}/${modelLower}/[id]/edit/page.tsx`, generateEditPage(model, uiFramework))
   
   return files
 }
 
-function generateListPage(model: ParsedModel): string {
+function generateListPage(model: ParsedModel, uiFramework: 'vite' | 'nextjs' = 'vite'): string {
   const modelName = model.name
   const modelLower = modelName.toLowerCase()
   
@@ -36,19 +40,25 @@ function generateListPage(model: ParsedModel): string {
     .filter(f => f.kind !== 'object' && f.name !== 'id')
     .slice(0, 5)
   
+  const routerImport = uiFramework === 'nextjs'
+    ? "import { useRouter } from 'next/navigation'"
+    : "import { useNavigate } from 'react-router-dom'"
+  
+  const routerHook = uiFramework === 'nextjs' ? 'useRouter()' : 'useNavigate()'
+  const navigateMethod = uiFramework === 'nextjs' ? 'router.push' : 'navigate'
+  
   return `/**
  * ${modelName} List Page
  * 
  * Generated page stub using smart components
  */
 
-'use client'
-
-import { useRouter } from 'next/navigation'
+${uiFramework === 'nextjs' ? "'use client'\n" : ''}
+import { ${uiFramework === 'nextjs' ? 'useRouter' : 'useNavigate'} } from '${uiFramework === 'nextjs' ? 'next/navigation' : 'react-router-dom'}'
 import { DataTable } from '@/components/ssot'
 
 export default function ${modelName}ListPage() {
-  const router = useRouter()
+  const ${uiFramework === 'nextjs' ? 'router' : 'navigate'} = ${routerHook}
   
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -58,7 +68,7 @@ export default function ${modelName}ListPage() {
           ${modelName}s
         </h1>
         <button
-          onClick={() => router.push('/${modelLower}/new')}
+          onClick={() => ${navigateMethod}('/${modelLower}/new')}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           Create ${modelName}
@@ -79,7 +89,7 @@ ${displayFields.map(f => `          { key: '${f.name}', label: '${formatLabel(f.
             confirm: 'Delete this ${modelLower}?'
           }
         ]}
-        onRowClick={(row) => router.push(\`/${modelLower}/\${row.id}\`)}
+        onRowClick={(row) => ${navigateMethod}(\`/${modelLower}/\${row.id}\`)}
       />
     </div>
   )
@@ -87,12 +97,22 @@ ${displayFields.map(f => `          { key: '${f.name}', label: '${formatLabel(f.
 `
 }
 
-function generateDetailPage(model: ParsedModel): string {
+function generateDetailPage(model: ParsedModel, uiFramework: 'vite' | 'nextjs' = 'vite'): string {
   const modelName = model.name
   const modelLower = modelName.toLowerCase()
   
   // Get all non-relation fields
   const displayFields = model.fields.filter(f => f.kind !== 'object')
+  
+  const routerImport = uiFramework === 'nextjs'
+    ? "import { useRouter } from 'next/navigation'"
+    : "import { useNavigate, useParams } from 'react-router-dom'"
+  
+  const routerHook = uiFramework === 'nextjs' ? 'useRouter()' : 'useNavigate()'
+  const paramsHook = uiFramework === 'nextjs' ? 'params' : 'useParams()'
+  const navigateMethod = uiFramework === 'nextjs' ? 'router.push' : 'navigate'
+  const backMethod = uiFramework === 'nextjs' ? 'router.back()' : 'navigate(-1)'
+  const idAccess = uiFramework === 'nextjs' ? 'params.id' : 'params.id!'
   
   return `/**
  * ${modelName} Detail Page
@@ -100,23 +120,22 @@ function generateDetailPage(model: ParsedModel): string {
  * Generated page stub using smart components
  */
 
-'use client'
-
+${uiFramework === 'nextjs' ? "'use client'\n" : ''}
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { ${uiFramework === 'nextjs' ? 'useRouter' : 'useNavigate, useParams'} } from '${uiFramework === 'nextjs' ? 'next/navigation' : 'react-router-dom'}'
 import { getSdk, Button } from '@/components/ssot'
 
-export default function ${modelName}DetailPage({ params }: { params: { id: string } }) {
-  const router = useRouter()
-  const [data, setData] = useState<any>(null)
+export default function ${modelName}DetailPage(${uiFramework === 'nextjs' ? '{ params }: { params: { id: string } }' : ''}) {
+  const ${uiFramework === 'nextjs' ? 'router' : 'navigate'} = ${routerHook}
+  ${uiFramework === 'vite' ? 'const params = useParams()\n  ' : ''}const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   
   useEffect(() => {
     const sdk = getSdk()
-    sdk.${modelLower}.findOne({ where: { id: params.id } })
+    sdk.${modelLower}.findOne({ where: { id: ${idAccess} } })
       .then(setData)
       .finally(() => setLoading(false))
-  }, [params.id])
+  }, [${idAccess}])
   
   if (loading) return <div className="p-6">Loading...</div>
   if (!data) return <div className="p-6">Not found</div>
@@ -131,18 +150,18 @@ export default function ${modelName}DetailPage({ params }: { params: { id: strin
         <div className="flex gap-2">
           <Button
             variant="secondary"
-            onClick={() => router.push(\`/${modelLower}/\${params.id}/edit\`)}
+            onClick={() => ${navigateMethod}(\`/${modelLower}/\${${idAccess}}/edit\`)}
           >
             Edit
           </Button>
           <Button
             action="delete"
             model="${modelLower}"
-            id={params.id}
+            id={${idAccess}}
             variant="danger"
             confirmMessage="Delete this ${modelLower}?"
             successMessage="${modelName} deleted"
-            onSuccess={() => router.push('/${modelLower}')}
+            onSuccess={() => ${navigateMethod}('/${modelLower}')}
           >
             Delete
           </Button>
@@ -163,7 +182,7 @@ ${displayFields.map(f => `          <div className="flex border-b border-gray-10
       <div className="mt-6">
         <Button
           variant="ghost"
-          onClick={() => router.back()}
+          onClick={() => ${backMethod}}
         >
           ← Back
         </Button>
@@ -174,7 +193,7 @@ ${displayFields.map(f => `          <div className="flex border-b border-gray-10
 `
 }
 
-function generateCreatePage(model: ParsedModel): string {
+function generateCreatePage(model: ParsedModel, uiFramework: 'vite' | 'nextjs' = 'vite'): string {
   const modelName = model.name
   const modelLower = modelName.toLowerCase()
   
@@ -185,19 +204,26 @@ function generateCreatePage(model: ParsedModel): string {
     !f.name.match(/^(createdAt|updatedAt)$/i)
   )
   
+  const routerImport = uiFramework === 'nextjs'
+    ? "import { useRouter } from 'next/navigation'"
+    : "import { useNavigate } from 'react-router-dom'"
+  
+  const routerHook = uiFramework === 'nextjs' ? 'useRouter()' : 'useNavigate()'
+  const navigateMethod = uiFramework === 'nextjs' ? 'router.push' : 'navigate'
+  const backMethod = uiFramework === 'nextjs' ? 'router.back()' : 'navigate(-1)'
+  
   return `/**
  * ${modelName} Create Page
  * 
  * Generated page stub using smart components
  */
 
-'use client'
-
-import { useRouter } from 'next/navigation'
+${uiFramework === 'nextjs' ? "'use client'\n" : ''}
+import { ${uiFramework === 'nextjs' ? 'useRouter' : 'useNavigate'} } from '${uiFramework === 'nextjs' ? 'next/navigation' : 'react-router-dom'}'
 import { Form } from '@/components/ssot'
 
 export default function ${modelName}CreatePage() {
-  const router = useRouter()
+  const ${uiFramework === 'nextjs' ? 'router' : 'navigate'} = ${routerHook}
   
   return (
     <div className="p-6 max-w-2xl mx-auto">
@@ -216,8 +242,8 @@ ${editableFields.map(f => `            {
               required: ${f.isRequired}
             }`).join(',\n')}
           ]}
-          onSuccess={(result) => router.push(\`/${modelLower}/\${result.id}\`)}
-          onCancel={() => router.back()}
+          onSuccess={(result) => ${navigateMethod}(\`/${modelLower}/\${result.id}\`)}
+          onCancel={() => ${backMethod}}
         />
       </div>
     </div>
@@ -226,7 +252,7 @@ ${editableFields.map(f => `            {
 `
 }
 
-function generateEditPage(model: ParsedModel): string {
+function generateEditPage(model: ParsedModel, uiFramework: 'vite' | 'nextjs' = 'vite'): string {
   const modelName = model.name
   const modelLower = modelName.toLowerCase()
   
@@ -237,20 +263,29 @@ function generateEditPage(model: ParsedModel): string {
     !f.name.match(/^(createdAt|updatedAt)$/i)
   )
   
+  const routerImport = uiFramework === 'nextjs'
+    ? "import { useRouter } from 'next/navigation'"
+    : "import { useNavigate, useParams } from 'react-router-dom'"
+  
+  const routerHook = uiFramework === 'nextjs' ? 'useRouter()' : 'useNavigate()'
+  const paramsHook = uiFramework === 'nextjs' ? 'params' : 'useParams()'
+  const navigateMethod = uiFramework === 'nextjs' ? 'router.push' : 'navigate'
+  const backMethod = uiFramework === 'nextjs' ? 'router.back()' : 'navigate(-1)'
+  const idAccess = uiFramework === 'nextjs' ? 'params.id' : 'params.id!'
+  
   return `/**
  * ${modelName} Edit Page
  * 
  * Generated page stub using smart components
  */
 
-'use client'
-
-import { useRouter } from 'next/navigation'
+${uiFramework === 'nextjs' ? "'use client'\n" : ''}
+import { ${uiFramework === 'nextjs' ? 'useRouter' : 'useNavigate, useParams'} } from '${uiFramework === 'nextjs' ? 'next/navigation' : 'react-router-dom'}'
 import { Form } from '@/components/ssot'
 
-export default function ${modelName}EditPage({ params }: { params: { id: string } }) {
-  const router = useRouter()
-  
+export default function ${modelName}EditPage(${uiFramework === 'nextjs' ? '{ params }: { params: { id: string } }' : ''}) {
+  const ${uiFramework === 'nextjs' ? 'router' : 'navigate'} = ${routerHook}
+  ${uiFramework === 'vite' ? 'const params = useParams()\n  ' : ''}
   return (
     <div className="p-6 max-w-2xl mx-auto">
       <h1 className="text-3xl font-bold text-gray-900 mb-6">
@@ -260,7 +295,7 @@ export default function ${modelName}EditPage({ params }: { params: { id: string 
       <div className="bg-white rounded-lg border border-gray-300 p-6">
         <Form
           model="${modelLower}"
-          id={params.id}
+          id={${idAccess}}
           fields={[
 ${editableFields.map(f => `            { 
               name: '${f.name}', 
@@ -269,8 +304,8 @@ ${editableFields.map(f => `            {
               required: ${f.isRequired}
             }`).join(',\n')}
           ]}
-          onSuccess={(result) => router.push(\`/${modelLower}/\${result.id}\`)}
-          onCancel={() => router.back()}
+          onSuccess={(result) => ${navigateMethod}(\`/${modelLower}/\${result.id}\`)}
+          onCancel={() => ${backMethod}}
         />
       </div>
     </div>

@@ -65,14 +65,15 @@ export async function createProject(projectPath: string, config: ProjectConfig):
     console.log('\n🔨 Generating code...')
     
     await generateFromSchema({
-      schemaPath,
-      outputDir: path.join(projectPath, 'src'),
+      schema: schemaPath,
+      output: path.join(projectPath, 'src'),
       framework: config.framework || 'express',
       standalone: false,
       projectName: config.projectName,
-      generateUI: config.generateUI,
-      uiFramework: config.generateUI ? 'nextjs' : undefined,
-      plugins: config.plugins || []
+      ui: config.generateUI ? {
+        enabled: true,
+        framework: config.uiFramework || 'vite'
+      } : undefined
     })
     
     console.log('  ✅ Generated API and UI via @ssot-codegen/gen')

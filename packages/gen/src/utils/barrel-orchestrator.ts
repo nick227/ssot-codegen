@@ -86,8 +86,14 @@ export function determineBarrelWrites(
     
     // Services (check for kebab-case filenames)
     const modelLower = modelName.toLowerCase()
-    if (generatedFiles.services.has(`${modelLower}.service.ts`) || 
-        generatedFiles.services.has(`${modelLower}.service.scaffold.ts`)) {
+    const serviceKey1 = `${modelLower}.service.ts`
+    const serviceKey2 = `${modelKebab}.service.ts`
+    const serviceScaffold1 = `${modelLower}.service.scaffold.ts`
+    const serviceScaffold2 = `${modelKebab}.service.scaffold.ts`
+    if (generatedFiles.services.has(serviceKey1) || 
+        generatedFiles.services.has(serviceKey2) ||
+        generatedFiles.services.has(serviceScaffold1) ||
+        generatedFiles.services.has(serviceScaffold2)) {
       layerModels.services.push(modelName)
       writes.push({
         path: path.join(cfg.rootDir, 'services', modelKebab, 'index.ts'),
@@ -98,8 +104,14 @@ export function determineBarrelWrites(
     }
     
     // Controllers
-    if (generatedFiles.controllers.has(`${modelLower}.controller.ts`) ||
-        generatedFiles.controllers.has(`${modelLower}.controller.scaffold.ts`)) {
+    const controllerKey1 = `${modelLower}.controller.ts`
+    const controllerKey2 = `${modelKebab}.controller.ts`
+    const controllerScaffold1 = `${modelLower}.controller.scaffold.ts`
+    const controllerScaffold2 = `${modelKebab}.controller.scaffold.ts`
+    if (generatedFiles.controllers.has(controllerKey1) ||
+        generatedFiles.controllers.has(controllerKey2) ||
+        generatedFiles.controllers.has(controllerScaffold1) ||
+        generatedFiles.controllers.has(controllerScaffold2)) {
       layerModels.controllers.push(modelName)
       writes.push({
         path: path.join(cfg.rootDir, 'controllers', modelKebab, 'index.ts'),
@@ -110,8 +122,14 @@ export function determineBarrelWrites(
     }
     
     // Routes
-    if (generatedFiles.routes.has(`${modelLower}.routes.ts`) ||
-        generatedFiles.routes.has(`${modelLower}.routes.scaffold.ts`)) {
+    const routeKey1 = `${modelLower}.routes.ts`
+    const routeKey2 = `${modelKebab}.routes.ts`
+    const routeScaffold1 = `${modelLower}.routes.scaffold.ts`
+    const routeScaffold2 = `${modelKebab}.routes.scaffold.ts`
+    if (generatedFiles.routes.has(routeKey1) ||
+        generatedFiles.routes.has(routeKey2) ||
+        generatedFiles.routes.has(routeScaffold1) ||
+        generatedFiles.routes.has(routeScaffold2)) {
       layerModels.routes.push(modelName)
       writes.push({
         path: path.join(cfg.rootDir, 'routes', modelKebab, 'index.ts'),

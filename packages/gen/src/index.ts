@@ -10,6 +10,7 @@ export type { CodeGeneratorConfig, GenerationError } from './code-generator.js'
 
 // Public API
 export * from './api/index.js'
+export { generate as generateFromSchema } from './api/public-api.js'
 
 // DMMF Parser
 export { parseDMMF } from './dmmf-parser.js'

@@ -6,21 +6,21 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
 model Product {
-  id          String   @id @default(cuid())
+  id          String   @id @default(cuid()) @db.VarChar(191) // Primary key (always indexed)
   name        String
-  slug        String   @unique
+  slug        String   @unique @db.VarChar(191) // Unique constraint with length limit
   description String   @db.Text
   price       Decimal  @db.Decimal(10, 2)
   compareAtPrice Decimal? @db.Decimal(10, 2)
-  sku         String?  @unique
+  sku         String?  @unique @db.VarChar(191) // Unique constraint with length limit
   inventory   Int      @default(0)
-  images      String[]
-  categoryId  String
+  images      Json     // Array stored as JSON in MySQL
+  categoryId  String   @db.VarChar(191) // Foreign key in index
   category    Category @relation(fields: [categoryId], references: [id])
   tags        Tag[]
   reviews     Review[]
@@ -29,41 +29,38 @@ model Product {
   featured    Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
-  @@index([slug])
-  @@index([categoryId])
+  @@index([categoryId(length: 191)]) // Prefix index: ensure FK index respects length constraint
   @@index([published, featured])
 }
 
 model Category {
-  id          String   @id @default(cuid())
+  id          String   @id @default(cuid()) @db.VarChar(191) // Primary key (always indexed)
   name        String
-  slug        String   @unique
+  slug        String   @unique @db.VarChar(191) // Unique constraint with length limit
   description String?
   products    Product[]
-  parentId    String?
+  parentId    String?   @db.VarChar(191) // Foreign key (auto-indexed)
   parent      Category? @relation("CategoryTree", fields: [parentId], references: [id])
   children    Category[] @relation("CategoryTree")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
-  @@index([slug])
+  @@index([parentId(length: 191)]) // Prefix index: ensure FK index respects length constraint
 }
 
 model Tag {
-  id        String    @id @default(cuid())
-  name      String    @unique
-  slug      String    @unique
+  id        String    @id @default(cuid()) @db.VarChar(191) // Primary key (always indexed)
+  name      String    @unique @db.VarChar(191) // Unique constraint with length limit
+  slug      String    @unique @db.VarChar(191) // Unique constraint with length limit
   products  Product[]
   createdAt DateTime  @default(now())
 }
 
 model Review {
-  id        String   @id @default(cuid())
+  id        String   @id @default(cuid()) @db.VarChar(191) // Primary key (always indexed)
   rating    Int      // 1-5
   title     String?
   content   String   @db.Text
-  productId String
+  productId String   @db.VarChar(191) // Foreign key in index
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   userId    String?
   userName  String?
@@ -71,12 +68,12 @@ model Review {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
-  @@index([productId])
+  @@index([productId(length: 191)]) // Prefix index: ensure FK index respects length constraint
 }
 
 model Order {
-  id          String      @id @default(cuid())
-  orderNumber String      @unique
+  id          String      @id @default(cuid()) @db.VarChar(191) // Primary key (always indexed)
+  orderNumber String      @unique @db.VarChar(191) // Unique constraint with length limit
   status      OrderStatus @default(PENDING)
   total       Decimal     @db.Decimal(10, 2)
   customerId  String?
@@ -86,22 +83,21 @@ model Order {
   items       OrderItem[]
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
-  
-  @@index([orderNumber])
   @@index([status])
 }
 
 model OrderItem {
-  id        String   @id @default(cuid())
-  orderId   String
+  id        String   @id @default(cuid()) @db.VarChar(191) // Primary key (always indexed)
+  orderId   String   @db.VarChar(191) // Foreign key in index
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId String
+  productId String   @db.VarChar(191) // Foreign key (auto-indexed)
   product   Product  @relation(fields: [productId], references: [id])
   quantity  Int
   price     Decimal  @db.Decimal(10, 2)
   createdAt DateTime @default(now())
   
-  @@index([orderId])
+  @@index([orderId(length: 191)]) // Prefix index: ensure FK index respects length constraint
+  @@index([productId(length: 191)]) // Prefix index: ensure FK index respects length constraint
 }
 
 enum OrderStatus {

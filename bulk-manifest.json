@@ -1,17 +1,17 @@
 {
-  "generatedAt": "2025-11-12T20:07:51.457Z",
+  "generatedAt": "2025-11-14T11:19:55.261Z",
   "projects": [
     {
       "projectId": "ai-chat",
       "name": "AI Chat SPA",
       "schema": "C:\\wamp64\\www\\ssot-codegen\\websites\\ai-chat\\schema.prisma",
       "baseConfig": "C:\\wamp64\\www\\ssot-codegen\\websites\\ai-chat\\ui.config.ts",
-      "generatedAt": "2025-11-12T20:07:51.402Z",
-      "checksum": "4bb6003b8a867dbd",
+      "generatedAt": "2025-11-14T11:18:00.318Z",
+      "checksum": "e9444959e3ad7d21",
       "version": "1.0.0",
-      "filesGenerated": 29,
+      "filesGenerated": 102,
       "metadata": {
-        "schemaHash": "7dce62d843ec5a57",
+        "schemaHash": "c7c5fc416992b0f1",
         "configHash": "44136fa355b3678a"
       }
     },
@@ -20,12 +20,12 @@
       "name": "Blog Website",
       "schema": "C:\\wamp64\\www\\ssot-codegen\\websites\\blog\\schema.prisma",
       "baseConfig": "C:\\wamp64\\www\\ssot-codegen\\websites\\blog\\ui.config.ts",
-      "generatedAt": "2025-11-12T20:07:51.403Z",
-      "checksum": "175a38ae405ce12b",
+      "generatedAt": "2025-11-14T11:18:00.351Z",
+      "checksum": "b9ff1b33a1b9e202",
       "version": "1.0.0",
-      "filesGenerated": 34,
+      "filesGenerated": 121,
       "metadata": {
-        "schemaHash": "7ed1543cebb11161",
+        "schemaHash": "091a58369aad9fb6",
         "configHash": "44136fa355b3678a"
       }
     },
@@ -34,19 +34,19 @@
       "name": "E-commerce Store",
       "schema": "C:\\wamp64\\www\\ssot-codegen\\websites\\ecommerce\\schema.prisma",
       "baseConfig": "C:\\wamp64\\www\\ssot-codegen\\websites\\ecommerce\\ui.config.ts",
-      "generatedAt": "2025-11-12T20:07:51.404Z",
-      "checksum": "55eefec8cfa2a0e0",
+      "generatedAt": "2025-11-14T11:18:00.401Z",
+      "checksum": "4070a46c027d4a92",
       "version": "1.0.0",
-      "filesGenerated": 39,
+      "filesGenerated": 140,
       "metadata": {
-        "schemaHash": "84936653b164b5fc",
+        "schemaHash": "62bb79412c5bccda",
         "configHash": "44136fa355b3678a"
       }
     }
   ],
   "summary": {
     "totalProjects": 3,
-    "totalFiles": 105,
+    "totalFiles": 366,
     "successful": 3,
     "failed": 0
   }
