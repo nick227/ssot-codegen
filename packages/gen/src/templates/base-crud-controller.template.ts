@@ -23,7 +23,8 @@ export interface CRUDService<T, CreateDTO, UpdateDTO, QueryDTO> {
   update(id: number | string, data: UpdateDTO): Promise<T | null>
   delete(id: number | string): Promise<boolean>
   count(where?: any): Promise<number>
-  createMany?(data: CreateDTO[]): Promise<{ count: number } | any>
+  // createMany accepts either CreateDTO[] or Prisma's CreateManyInput[] (which excludes relations)
+  createMany?(data: CreateDTO[] | any[]): Promise<{ count: number } | any>
   updateMany?(where: any, data: UpdateDTO): Promise<{ count: number } | any>
   deleteMany?(where: any): Promise<{ count: number } | any>
   search?(params: any): Promise<T[]>
