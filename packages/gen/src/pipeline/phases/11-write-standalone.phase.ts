@@ -51,11 +51,13 @@ export class WriteStandalonePhase extends GenerationPhase {
     // Detect if UI files were generated (check config first, then filesystem)
     const uiConfig = (config as unknown as Record<string, unknown>).ui as { enabled?: boolean; framework?: 'vite' | 'nextjs' } | undefined
     // Check config first (most reliable), then filesystem as fallback
+    // Also check for components directory which is created by UI generator
     const hasUI = uiConfig?.enabled === true ||
                   existsSync(path.join(outputDir, 'app')) ||
                   existsSync(path.join(outputDir, 'src', 'App.tsx')) ||
                   existsSync(path.join(outputDir, 'src', 'main.tsx')) ||
-                  existsSync(path.join(outputDir, 'components')) // Components directory indicates UI
+                  existsSync(path.join(outputDir, 'components')) || // Components directory indicates UI
+                  existsSync(path.join(outputDir, 'hooks')) // Hooks directory also indicates UI
     const uiFramework = uiConfig?.framework || 'vite'
     
     const standaloneOptions: standaloneTemplates.StandaloneProjectOptions = {

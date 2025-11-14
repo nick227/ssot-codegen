@@ -317,6 +317,55 @@ async function generateProject(
         allFiles.set(path, content)
       }
       
+      // Generate Vite config files if using Vite framework
+      if (uiFramework === 'vite') {
+        const { viteConfigTemplate, viteIndexHtmlTemplate, viteMainTemplate, viteAppTemplate, globalsCssTemplate, tailwindConfigTemplate, postcssConfigTemplate } = await import('../../templates/standalone-project.template.js')
+        const { existsSync } = await import('node:fs')
+        const { resolve } = await import('node:path')
+        
+        // vite.config.ts
+        const viteConfigPath = resolve(config.outputDir, 'vite.config.ts')
+        if (!existsSync(viteConfigPath)) {
+          allFiles.set('vite.config.ts', viteConfigTemplate())
+        }
+        
+        // index.html
+        const indexHtmlPath = resolve(config.outputDir, 'index.html')
+        if (!existsSync(indexHtmlPath)) {
+          allFiles.set('index.html', viteIndexHtmlTemplate())
+        }
+        
+        // src/main.tsx
+        const mainTsxPath = resolve(config.outputDir, 'src', 'main.tsx')
+        if (!existsSync(mainTsxPath)) {
+          allFiles.set('src/main.tsx', viteMainTemplate())
+        }
+        
+        // src/App.tsx (only if doesn't exist - UI generator may have created routes)
+        const appTsxPath = resolve(config.outputDir, 'src', 'App.tsx')
+        if (!existsSync(appTsxPath)) {
+          allFiles.set('src/App.tsx', viteAppTemplate())
+        }
+        
+        // src/index.css
+        const indexCssPath = resolve(config.outputDir, 'src', 'index.css')
+        if (!existsSync(indexCssPath)) {
+          allFiles.set('src/index.css', globalsCssTemplate())
+        }
+        
+        // tailwind.config.js
+        const tailwindConfigPath = resolve(config.outputDir, 'tailwind.config.js')
+        if (!existsSync(tailwindConfigPath)) {
+          allFiles.set('tailwind.config.js', tailwindConfigTemplate())
+        }
+        
+        // postcss.config.js
+        const postcssConfigPath = resolve(config.outputDir, 'postcss.config.js')
+        if (!existsSync(postcssConfigPath)) {
+          allFiles.set('postcss.config.js', postcssConfigTemplate())
+        }
+      }
+      
       // Generate manifest
       const manifest = generateManifest(config, schemaContent, configContent, result.filesCreated + allFiles.size)
       const manifestPath = '.ssot/manifest.json'
