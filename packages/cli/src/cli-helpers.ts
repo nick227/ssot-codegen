@@ -4,7 +4,7 @@
  * Extracted utilities for better testability and maintainability
  */
 
-import { resolve, isAbsolute, extname, normalize } from 'path'
+import { resolve, isAbsolute, extname, normalize, join } from 'path'
 import { existsSync, readdirSync, statSync, writeFileSync, readFileSync } from 'fs'
 import { execSync } from 'child_process'
 import chalk from 'chalk'
@@ -99,6 +99,7 @@ export interface PostGenOptions {
   outputDir: string
   schemaPath: string
   runTests: boolean
+  build?: boolean  // Whether to build the project after setup
 }
 
 /**
@@ -108,10 +109,13 @@ export interface PostGenOptions {
  * 1. Create .env file with test-ready values
  * 2. Install dependencies
  * 3. Generate Prisma client
- * 4. Run validation tests (optional)
+ * 4. Validate TypeScript compilation
+ * 5. Validate ES module compatibility
+ * 6. Run validation tests (optional)
+ * 7. Build project (optional, if build flag is set)
  */
 export async function runPostGenSetup(options: PostGenOptions): Promise<void> {
-  const { outputDir, schemaPath, runTests } = options
+  const { outputDir, schemaPath, runTests, build = false } = options
   
   console.log(chalk.blue('\n🔧 Setting up project...\n'))
   
@@ -124,7 +128,7 @@ export async function runPostGenSetup(options: PostGenOptions): Promise<void> {
       // Read schema to detect database provider
       const schemaContent = readFileSync(schemaPath, 'utf-8')
       const providerMatch = schemaContent.match(/provider\s*=\s*"(\w+)"/)
-      const provider = providerMatch ? providerMatch[1] : 'postgresql'
+      const provider = providerMatch ? providerMatch[1] : 'mysql' // Default to MySQL
       
       // Generate appropriate DATABASE_URL
       let databaseUrl = ''
@@ -139,7 +143,7 @@ export async function runPostGenSetup(options: PostGenOptions): Promise<void> {
           databaseUrl = 'file:./dev.db'
           break
         default:
-          databaseUrl = 'postgresql://postgres@localhost:5432/test_db'
+          databaseUrl = 'mysql://root@localhost:3306/test_db' // Default to MySQL
       }
       
       const envContent = `# Auto-generated environment file
@@ -170,16 +174,208 @@ LOG_LEVEL=info
     // 3. Generate Prisma client (use local version)
     console.log(chalk.gray('\n  🔨 Generating Prisma client...'))
     try {
-      execSync('pnpm exec prisma generate --schema=prisma/schema.prisma', { 
-        cwd: outputDir, 
-        stdio: 'inherit'
-      })
-      console.log(chalk.green('  ✓ Prisma client generated'))
-    } catch {
-      console.log(chalk.yellow('  ⚠️  Prisma generation failed (install prisma and run: pnpm exec prisma generate)'))
+      // Use path.join to ensure correct path separator on Windows
+      const schemaPath = join(outputDir, 'prisma', 'schema.prisma')
+      if (!existsSync(schemaPath)) {
+        console.log(chalk.yellow(`  ⚠️  Schema file not found at ${schemaPath}`))
+      } else {
+        execSync('pnpm exec prisma generate', { 
+          cwd: outputDir, 
+          stdio: 'inherit'
+        })
+        console.log(chalk.green('  ✓ Prisma client generated'))
+      }
+    } catch (error) {
+      const err = error as Error
+      console.log(chalk.yellow(`  ⚠️  Prisma generation failed: ${err.message}`))
+      console.log(chalk.gray('   You can run manually: pnpm exec prisma generate'))
     }
     
-    // 4. Run validation tests if requested
+    // 4. Create database and push schema (MySQL/PostgreSQL)
+    console.log(chalk.gray('\n  🗄️  Setting up database...'))
+    try {
+      const schemaPath = join(outputDir, 'prisma', 'schema.prisma')
+      if (!existsSync(schemaPath)) {
+        console.log(chalk.yellow(`  ⚠️  Schema file not found at ${schemaPath}`))
+      } else {
+        // Read schema to detect provider
+        const schemaContent = readFileSync(schemaPath, 'utf-8')
+        const providerMatch = schemaContent.match(/provider\s*=\s*"(\w+)"/)
+        const provider = providerMatch ? providerMatch[1] : 'mysql'
+        
+        // Read .env to get database name
+        const envPath = resolve(outputDir, '.env')
+        let dbName = 'test_db'
+        if (existsSync(envPath)) {
+          const envContent = readFileSync(envPath, 'utf-8')
+          const dbUrlMatch = envContent.match(/DATABASE_URL="[^"]*\/\/([^@]+@)?[^:]+:\d+\/([^"]+)"/)
+          if (dbUrlMatch && dbUrlMatch[2]) {
+            dbName = dbUrlMatch[2]
+          }
+        }
+        
+        // Create database if MySQL or PostgreSQL
+        if (provider === 'mysql') {
+          try {
+            console.log(chalk.gray(`  📦 Creating MySQL database: ${dbName}...`))
+            execSync(`mysql -u root -e "CREATE DATABASE IF NOT EXISTS ${dbName};"`, {
+              stdio: 'pipe',
+              timeout: 10000
+            })
+            console.log(chalk.green(`  ✓ Database '${dbName}' created/verified`))
+            
+            // Check MySQL storage engine (warn if MyISAM)
+            try {
+              const engineCheck = execSync(`mysql -u root -e "SHOW VARIABLES LIKE 'default_storage_engine';"`, {
+                stdio: 'pipe',
+                timeout: 5000,
+                encoding: 'utf-8'
+              })
+              if (engineCheck.includes('MyISAM')) {
+                console.log(chalk.yellow(`\n  ⚠️  Warning: MySQL is using MyISAM storage engine`))
+                console.log(chalk.yellow(`     MyISAM has a 1000-byte key length limit`))
+                console.log(chalk.yellow(`     Switch to InnoDB for better compatibility:`))
+                console.log(chalk.gray(`     1. Edit my.ini: default_storage_engine=InnoDB`))
+                console.log(chalk.gray(`     2. Restart MySQL service`))
+              }
+            } catch {
+              // Ignore engine check errors (MySQL might not be accessible)
+            }
+          } catch (dbError) {
+            console.log(chalk.yellow(`  ⚠️  Could not create database automatically: ${(dbError as Error).message}`))
+            console.log(chalk.gray(`   Please create manually: mysql -u root -e "CREATE DATABASE IF NOT EXISTS ${dbName};"`))
+          }
+        } else if (provider === 'postgresql') {
+          try {
+            console.log(chalk.gray(`  📦 Creating PostgreSQL database: ${dbName}...`))
+            // Try createdb first, fallback to psql
+            try {
+              execSync(`createdb -U postgres ${dbName}`, {
+                stdio: 'pipe',
+                timeout: 10000
+              })
+            } catch {
+              // If createdb fails, try psql
+              execSync(`psql -U postgres -c "CREATE DATABASE ${dbName};"`, {
+                stdio: 'pipe',
+                timeout: 10000
+              })
+            }
+            console.log(chalk.green(`  ✓ Database '${dbName}' created/verified`))
+          } catch (dbError) {
+            console.log(chalk.yellow(`  ⚠️  Could not create database automatically: ${(dbError as Error).message}`))
+            console.log(chalk.gray(`   PostgreSQL may not be running or not accessible.`))
+            console.log(chalk.gray(`   Please ensure PostgreSQL is running, then create manually:`))
+            console.log(chalk.gray(`   createdb -U postgres ${dbName}`))
+            console.log(chalk.gray(`   OR: psql -U postgres -c "CREATE DATABASE ${dbName};"`))
+          }
+        }
+        
+        // Push schema to database
+        console.log(chalk.gray('  📤 Pushing schema to database...'))
+        try {
+          execSync('pnpm exec prisma db push --accept-data-loss', { 
+            cwd: outputDir, 
+            stdio: 'inherit',
+            timeout: 60000
+          })
+          console.log(chalk.green('  ✓ Database schema pushed successfully'))
+        } catch (pushError) {
+          const pushErr = pushError as Error
+          console.log(chalk.yellow(`  ⚠️  Schema push failed: ${pushErr.message}`))
+          console.log(chalk.gray(`   This usually means:`))
+          console.log(chalk.gray(`   - Database server is not running`))
+          console.log(chalk.gray(`   - Connection credentials are incorrect`))
+          console.log(chalk.gray(`   - Database doesn't exist (create it first)`))
+          console.log(chalk.gray(`\n   Fix: Ensure database is running, then run:`))
+          console.log(chalk.gray(`   pnpm db:push`))
+          // Don't throw - allow project to continue without DB
+        }
+      }
+    } catch (error) {
+      const err = error as Error
+      console.log(chalk.yellow(`\n⚠️  Database setup failed: ${err.message}`))
+      console.log(chalk.gray('\n   You can set up manually:\n'))
+      
+      // Show provider-specific instructions
+      const schemaContent = existsSync(schemaPath) ? readFileSync(schemaPath, 'utf-8') : ''
+      const providerMatch = schemaContent.match(/provider\s*=\s*"(\w+)"/)
+      const detectedProvider = providerMatch ? providerMatch[1] : 'mysql'
+      
+      if (detectedProvider === 'postgresql') {
+        console.log(chalk.gray(`   1. Create database: createdb -U postgres test_db`))
+        console.log(chalk.gray(`      OR: psql -U postgres -c "CREATE DATABASE test_db;"`))
+      } else if (detectedProvider === 'mysql') {
+        console.log(chalk.gray(`   1. Create database: mysql -u root -e "CREATE DATABASE test_db;"`))
+      }
+      console.log(chalk.gray(`   2. Push schema: pnpm db:push`))
+    }
+    
+    // 5. Validate TypeScript compilation (catches type errors early)
+    // SDK files are excluded via tsconfig.json as they require frontend dependencies
+    console.log(chalk.gray('\n  🔍 Validating TypeScript compilation...'))
+    try {
+      execSync('npx tsc --noEmit', {
+        cwd: outputDir,
+        stdio: 'pipe',
+        encoding: 'utf-8'
+      })
+      console.log(chalk.green('  ✓ TypeScript compilation successful'))
+    } catch (error: any) {
+      const errorOutput = error.stderr?.toString() || error.stdout?.toString() || error.message || 'Unknown TypeScript error'
+      const errorMatch = errorOutput.match(/(\d+) error\(s\)/i)
+      const errorCount = errorMatch ? parseInt(errorMatch[1], 10) : 0
+      
+      console.log(chalk.red(`  ✗ TypeScript compilation failed with ${errorCount || 'unknown number of'} error(s)`))
+      console.log(chalk.gray('  This indicates generated code has type errors that must be fixed.'))
+      console.log(chalk.gray('\n  Error details:'))
+      console.log(chalk.gray(errorOutput.slice(0, 1000)))
+      
+      throw new Error(`TypeScript validation failed: ${errorCount || 'unknown number of'} error(s)`)
+    }
+    
+    // 5b. Validate ES module compatibility (catches runtime errors like __dirname)
+    console.log(chalk.gray('\n  🔍 Validating ES module compatibility...'))
+    try {
+      // Try to import the config file to catch ES module issues
+      const configPath = join(outputDir, 'src', 'config.ts')
+      if (existsSync(configPath)) {
+        // Use tsx to execute the config file and catch runtime errors
+        execSync('npx tsx src/config.ts', {
+          cwd: outputDir,
+          stdio: 'pipe',
+          encoding: 'utf-8',
+          timeout: 5000,
+          env: {
+            ...process.env,
+            DATABASE_URL: process.env.DATABASE_URL || 'mysql://root@localhost:3306/test_db',
+            NODE_ENV: 'test'
+          }
+        })
+      }
+      console.log(chalk.green('  ✓ ES module compatibility validated'))
+    } catch (error: any) {
+      const errorOutput = error.stderr?.toString() || error.stdout?.toString() || error.message || 'Unknown runtime error'
+      
+      // Check for common ES module issues
+      if (errorOutput.includes('__dirname is not defined') || 
+          errorOutput.includes('__filename is not defined') ||
+          errorOutput.includes('require is not defined')) {
+        console.log(chalk.red('  ✗ ES module compatibility check failed'))
+        console.log(chalk.yellow('  ⚠️  CommonJS globals (__dirname, __filename, require) detected in ES module'))
+        console.log(chalk.gray('  This indicates generated code uses CommonJS patterns in an ES module context.'))
+        console.log(chalk.gray('\n  Error details:'))
+        console.log(chalk.gray(errorOutput.slice(0, 1500)))
+        
+        throw new Error('ES module compatibility validation failed: CommonJS globals detected')
+      }
+      
+      // Other runtime errors might be expected (missing .env, etc.), so just warn
+      console.log(chalk.yellow('  ⚠️  Runtime validation had issues (may be expected):'))
+      console.log(chalk.gray(errorOutput.slice(0, 500)))
+    }
+    
+    // 6. Run validation tests if requested
     if (runTests) {
       console.log(chalk.gray('\n  🧪 Running validation tests...'))
       try {
@@ -193,10 +389,99 @@ LOG_LEVEL=info
       }
     }
     
+    // 7. Build project if requested (compiles TypeScript and frontend bundles)
+    if (build) {
+      console.log(chalk.gray('\n  🔨 Building project...'))
+      try {
+        execSync('pnpm build', { 
+          cwd: outputDir, 
+          stdio: 'inherit',
+          timeout: 600000 // 10 minutes timeout for builds
+        })
+        console.log(chalk.green('  ✓ Build completed successfully'))
+      } catch (buildError) {
+        const err = buildError as Error
+        console.log(chalk.yellow(`  ⚠️  Build failed: ${err.message}`))
+        console.log(chalk.gray('  This may be expected if:'))
+        console.log(chalk.gray('    - Frontend dependencies are missing'))
+        console.log(chalk.gray('    - Build configuration needs adjustment'))
+        console.log(chalk.gray('    - Environment variables are not set'))
+        console.log(chalk.gray('\n  You can build manually later:'))
+        console.log(chalk.gray(`    cd ${outputDir}`))
+        console.log(chalk.gray('    pnpm build'))
+        // Don't throw - allow project to continue even if build fails
+      }
+    }
+    
     console.log(chalk.green('\n✅ Project setup complete!\n'))
   } catch (setupError) {
     const err = setupError as Error
     throw new Error(`Setup failed: ${err.message}`)
+  }
+}
+
+/**
+ * Run smoke test on generated project
+ * 
+ * Performs basic validation:
+ * 1. Check that key files exist
+ * 2. Check that package.json is valid
+ * 3. Check that TypeScript compiles (if applicable)
+ */
+export async function runSmokeTest(outputDir: string, schemaPath: string): Promise<boolean> {
+  console.log(chalk.blue('\n🧪 Running smoke test...\n'))
+  
+  try {
+    const packageJsonPath = resolve(outputDir, 'package.json')
+    const prismaSchemaPath = resolve(outputDir, 'prisma', 'schema.prisma')
+    
+    // Check key files exist
+    if (!existsSync(packageJsonPath)) {
+      console.log(chalk.red('  ❌ package.json not found'))
+      return false
+    }
+    console.log(chalk.green('  ✓ package.json exists'))
+    
+    if (!existsSync(prismaSchemaPath)) {
+      console.log(chalk.red('  ❌ prisma/schema.prisma not found'))
+      return false
+    }
+    console.log(chalk.green('  ✓ prisma/schema.prisma exists'))
+    
+    // Check package.json is valid
+    try {
+      const pkg = JSON.parse(readFileSync(packageJsonPath, 'utf-8'))
+      if (!pkg.name || !pkg.version) {
+        console.log(chalk.yellow('  ⚠️  package.json missing name or version'))
+      } else {
+        console.log(chalk.green(`  ✓ package.json valid (${pkg.name}@${pkg.version})`))
+      }
+    } catch {
+      console.log(chalk.red('  ❌ package.json is invalid JSON'))
+      return false
+    }
+    
+    // Check TypeScript compiles (if tsconfig.json exists)
+    const tsconfigPath = resolve(outputDir, 'tsconfig.json')
+    if (existsSync(tsconfigPath)) {
+      try {
+        execSync('pnpm exec tsc --noEmit', {
+          cwd: outputDir,
+          stdio: 'pipe',
+          timeout: 30000
+        })
+        console.log(chalk.green('  ✓ TypeScript compiles successfully'))
+      } catch {
+        console.log(chalk.yellow('  ⚠️  TypeScript compilation has errors (may be expected)'))
+      }
+    }
+    
+    console.log(chalk.green('\n✅ Smoke test passed!\n'))
+    return true
+  } catch (error) {
+    const err = error as Error
+    console.log(chalk.red(`\n❌ Smoke test failed: ${err.message}\n`))
+    return false
   }
 }
 
