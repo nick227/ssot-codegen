@@ -162,7 +162,7 @@ export class BaseCRUDController<T, CreateDTO, UpdateDTO, QueryDTO> {
         // Check for common Express objects that have circular references
         if (key === 'req' || key === 'res' || key === 'request' || key === 'response') {
           // Replace with a simple identifier instead of the full object
-          sanitized[key] = \`[${key} object]\`
+          sanitized[key] = \`[\${key} object]\`
         } else if (value.constructor && value.constructor.name === 'IncomingMessage') {
           sanitized[key] = '[Request object]'
         } else if (value.constructor && value.constructor.name === 'ServerResponse') {
@@ -173,7 +173,7 @@ export class BaseCRUDController<T, CreateDTO, UpdateDTO, QueryDTO> {
             JSON.stringify(value)
             sanitized[key] = value
           } catch {
-            sanitized[key] = \`[${typeof value} object]\`
+            sanitized[key] = \`[\${typeof value} object]\`
           }
         }
       } else {
@@ -620,7 +620,7 @@ export function createVoidDomainMethodController(
 
 export function createListMethodController(
   serviceFn: (query: any) => Promise<{ data: any[]; meta: any }>,
-  querySchema: ZodSchema<any>,
+  querySchema: ZodSchema<any> | z.ZodType<any, any, any>,
   config: { modelName: string; methodName: string }
 ) {
   return async (req: Request, res: Response): Promise<Response> => {
