@@ -23,9 +23,9 @@ export interface CRUDService<T, CreateDTO, UpdateDTO, QueryDTO> {
   update(id: number | string, data: UpdateDTO): Promise<T | null>
   delete(id: number | string): Promise<boolean>
   count(where?: any): Promise<number>
-  createMany?(data: CreateDTO[]): Promise<{ count: number }>
-  updateMany?(where: any, data: UpdateDTO): Promise<{ count: number }>
-  deleteMany?(where: any): Promise<{ count: number }>
+  createMany?(data: CreateDTO[]): Promise<{ count: number } | any>
+  updateMany?(where: any, data: UpdateDTO): Promise<{ count: number } | any>
+  deleteMany?(where: any): Promise<{ count: number } | any>
   search?(params: any): Promise<T[]>
   findBySlug?(slug: string): Promise<T | null>
   [key: string]: any  // Allow additional methods (getByX, listPublished, etc.)
@@ -256,7 +256,9 @@ export class BaseCRUDController<T, CreateDTO, UpdateDTO, QueryDTO> {
       const data = this.schemas.create.parse(req.body)
       const item = await this.service.create(data)
       
-      logger.info({ id: item?.id || 'unknown', model: this.config.modelName }, \`Created \${this.config.modelName}\`)
+      // Safely access id property (T may not always have id, but most models do)
+      const itemId = (item as any)?.id || 'unknown'
+      logger.info({ id: itemId, model: this.config.modelName }, \`Created \${this.config.modelName}\`)
       return res.status(201).json({ data: item })
     } catch (error) {
       if (error instanceof ZodError) {
@@ -384,12 +386,14 @@ export class BaseCRUDController<T, CreateDTO, UpdateDTO, QueryDTO> {
       logger.debug({ count: validatedData.length, model: this.config.modelName }, \`Bulk creating \${this.config.modelName} records\`)
       
       const result = await this.service.createMany(validatedData)
-      logger.info({ count: result.count }, \`Bulk created \${this.config.modelName} records\`)
+      // Handle Prisma BatchPayload or { count: number } return type
+      const count = (result as any)?.count ?? 0
+      logger.info({ count }, \`Bulk created \${this.config.modelName} records\`)
       return res.status(201).json({ 
-        data: { count: result.count },
+        data: { count },
         meta: { 
-          total: result.count,
-          message: \`Created \${result.count} \${this.config.modelName} records\`
+          total: count,
+          message: \`Created \${count} \${this.config.modelName} records\`
         }
       })
     } catch (error) {
@@ -423,12 +427,14 @@ export class BaseCRUDController<T, CreateDTO, UpdateDTO, QueryDTO> {
       logger.debug({ model: this.config.modelName }, \`Bulk updating \${this.config.modelName} records\`)
       
       const result = await this.service.updateMany(where, validatedData)
-      logger.info({ count: result.count }, \`Bulk updated \${this.config.modelName} records\`)
+      // Handle Prisma BatchPayload or { count: number } return type
+      const count = (result as any)?.count ?? 0
+      logger.info({ count }, \`Bulk updated \${this.config.modelName} records\`)
       return res.json({ 
-        data: { count: result.count },
+        data: { count },
         meta: { 
-          total: result.count,
-          message: \`Updated \${result.count} \${this.config.modelName} records\`
+          total: count,
+          message: \`Updated \${count} \${this.config.modelName} records\`
         }
       })
     } catch (error) {
@@ -459,12 +465,14 @@ export class BaseCRUDController<T, CreateDTO, UpdateDTO, QueryDTO> {
       logger.debug({ where, model: this.config.modelName }, \`Bulk deleting \${this.config.modelName} records\`)
       
       const result = await this.service.deleteMany(where)
-      logger.info({ count: result.count }, \`Bulk deleted \${this.config.modelName} records\`)
+      // Handle Prisma BatchPayload or { count: number } return type
+      const count = (result as any)?.count ?? 0
+      logger.info({ count }, \`Bulk deleted \${this.config.modelName} records\`)
       return res.json({ 
-        data: { count: result.count },
+        data: { count },
         meta: { 
-          total: result.count,
-          message: \`Deleted \${result.count} \${this.config.modelName} records\`
+          total: count,
+          message: \`Deleted \${count} \${this.config.modelName} records\`
         }
       })
     } catch (error) {
