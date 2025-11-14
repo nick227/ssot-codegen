@@ -620,7 +620,7 @@ export function createVoidDomainMethodController(
 
 export function createListMethodController(
   serviceFn: (query: any) => Promise<{ data: any[]; meta: any }>,
-  querySchema: z.ZodType<any, any, any>,
+  querySchema: ZodSchema<any>,
   config: { modelName: string; methodName: string }
 ) {
   return async (req: Request, res: Response): Promise<Response> => {

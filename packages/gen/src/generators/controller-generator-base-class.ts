@@ -169,7 +169,7 @@ export const get${model.name}BySlug = createDomainMethodController(
  */
 export const listPublished${model.name}s = createListMethodController(
   ${modelCamel}Service.listPublished,
-  ${model.name}QuerySchema,
+  ${model.name}QuerySchema as any,
   {
     modelName: '${model.name}',
     methodName: 'listPublished${model.name}s'
@@ -225,7 +225,7 @@ export const increment${model.name}Views = createVoidDomainMethodController(
  */
 export const listPending${model.name}s = createListMethodController(
   ${modelCamel}Service.listPending,
-  ${model.name}QuerySchema,
+  ${model.name}QuerySchema as any,
   {
     modelName: '${model.name}',
     methodName: 'listPending${model.name}s'
@@ -265,7 +265,7 @@ export const reject${model.name} = createDomainMethodController(
  */
 export const list${model.name}sWithDeleted = createListMethodController(
   ${modelCamel}Service.listWithDeleted,
-  ${model.name}QuerySchema,
+  ${model.name}QuerySchema as any,
   {
     modelName: '${model.name}',
     methodName: 'list${model.name}sWithDeleted'
