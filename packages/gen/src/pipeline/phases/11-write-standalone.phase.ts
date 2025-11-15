@@ -52,7 +52,9 @@ export class WriteStandalonePhase extends GenerationPhase {
     const uiConfig = (config as unknown as Record<string, unknown>).ui as { enabled?: boolean; framework?: 'vite' | 'nextjs' } | undefined
     // Check config first (most reliable), then filesystem as fallback
     // Also check for components directory which is created by UI generator
+    // In bulk generation, UI files are written after standalone phase, so we must check config
     const hasUI = uiConfig?.enabled === true ||
+                  (config as unknown as Record<string, unknown>).generateUI === true ||
                   existsSync(path.join(outputDir, 'app')) ||
                   existsSync(path.join(outputDir, 'src', 'App.tsx')) ||
                   existsSync(path.join(outputDir, 'src', 'main.tsx')) ||
