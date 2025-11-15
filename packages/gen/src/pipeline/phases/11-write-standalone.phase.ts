@@ -51,13 +51,8 @@ export class WriteStandalonePhase extends GenerationPhase {
     // Detect if UI files were generated (check config first, then filesystem)
     // In bulk generation, UI files are written AFTER standalone phase, so we must check config.ui.enabled
     // The bulk generator sets ui: { enabled: true } when generating UI
+    // Note: package.json will be updated after UI files are written by bulk generator
     const uiConfig = config.ui
-    // Debug: Log UI config detection (can be removed after verification)
-    if (process.env.DEBUG_UI_DETECTION) {
-      console.log('[DEBUG] UI Config:', JSON.stringify(uiConfig))
-      console.log('[DEBUG] config.ui?.enabled:', uiConfig?.enabled)
-      console.log('[DEBUG] Full config keys:', Object.keys(config))
-    }
     const hasUI = uiConfig?.enabled === true ||
                   existsSync(path.join(outputDir, 'app')) ||
                   existsSync(path.join(outputDir, 'src', 'App.tsx')) ||
@@ -65,12 +60,6 @@ export class WriteStandalonePhase extends GenerationPhase {
                   existsSync(path.join(outputDir, 'components')) || // Components directory indicates UI
                   existsSync(path.join(outputDir, 'hooks')) // Hooks directory also indicates UI
     const uiFramework = uiConfig?.framework || 'vite'
-    
-    // Debug: Log hasUI result
-    if (process.env.DEBUG_UI_DETECTION) {
-      console.log('[DEBUG] hasUI:', hasUI)
-      console.log('[DEBUG] uiFramework:', uiFramework)
-    }
     
     const standaloneOptions: standaloneTemplates.StandaloneProjectOptions = {
       projectName: config.projectName || path.basename(outputDir),
