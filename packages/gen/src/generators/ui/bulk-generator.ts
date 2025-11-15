@@ -366,6 +366,40 @@ async function generateProject(
         }
       }
       
+      // Update package.json to include React/Vite dependencies
+      // The standalone phase generated package.json before UI files existed, so it doesn't have React deps
+      const packageJsonPath = resolve(config.outputDir, 'package.json')
+      if (existsSync(packageJsonPath)) {
+        const { packageJsonTemplate } = await import('../../templates/standalone-project.template.js')
+        const { readFileSync } = await import('node:fs')
+        const existingPkg = JSON.parse(readFileSync(packageJsonPath, 'utf-8'))
+        const projectName = existingPkg.name || config.name
+        
+        // Regenerate package.json with UI dependencies
+        const updatedPkg = packageJsonTemplate({
+          projectName,
+          framework: 'express',
+          databaseProvider: schemaContent.includes('provider = "postgresql"') ? 'postgresql' : schemaContent.includes('provider = "mysql"') ? 'mysql' : 'sqlite',
+          models: schema.models.map((m: any) => m.name),
+          hasUI: true,
+          uiFramework: uiFramework as 'vite' | 'nextjs'
+        })
+        
+        // Parse the template output and merge with existing package.json to preserve any custom fields
+        const updatedPkgObj = JSON.parse(updatedPkg)
+        const mergedPkg = {
+          ...existingPkg,
+          ...updatedPkgObj,
+          // Preserve existing scripts if they were customized
+          scripts: {
+            ...updatedPkgObj.scripts,
+            ...existingPkg.scripts
+          }
+        }
+        
+        allFiles.set('package.json', JSON.stringify(mergedPkg, null, 2))
+      }
+      
       // Generate manifest
       const manifest = generateManifest(config, schemaContent, configContent, result.filesCreated + allFiles.size)
       const manifestPath = '.ssot/manifest.json'
