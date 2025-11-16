@@ -901,7 +901,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 `
 
 export const viteAppTemplate = () => `import { Routes, Route } from 'react-router-dom'
-import { ExpressionProvider } from '@/components/ssot'
+import { ExpressionProvider } from '@/components/ssot/index.js'
 
 function App() {
   return (
