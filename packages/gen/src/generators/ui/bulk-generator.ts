@@ -317,6 +317,9 @@ async function generateProject(
         allFiles.set(path, content)
       }
       
+      // Use result.outputDir which is the actual output directory from the pipeline
+      const actualOutputDir = result.outputDir || config.outputDir
+      
       // Generate Vite config files if using Vite framework
       if (uiFramework === 'vite') {
         const { viteConfigTemplate, viteIndexHtmlTemplate, viteMainTemplate, viteAppTemplate, globalsCssTemplate, tailwindConfigTemplate, postcssConfigTemplate } = await import('../../templates/standalone-project.template.js')
@@ -324,43 +327,43 @@ async function generateProject(
         const { resolve } = await import('node:path')
         
         // vite.config.ts
-        const viteConfigPath = resolve(config.outputDir, 'vite.config.ts')
+        const viteConfigPath = resolve(actualOutputDir, 'vite.config.ts')
         if (!existsSync(viteConfigPath)) {
           allFiles.set('vite.config.ts', viteConfigTemplate())
         }
         
         // index.html
-        const indexHtmlPath = resolve(config.outputDir, 'index.html')
+        const indexHtmlPath = resolve(actualOutputDir, 'index.html')
         if (!existsSync(indexHtmlPath)) {
           allFiles.set('index.html', viteIndexHtmlTemplate())
         }
         
         // src/main.tsx
-        const mainTsxPath = resolve(config.outputDir, 'src', 'main.tsx')
+        const mainTsxPath = resolve(actualOutputDir, 'src', 'main.tsx')
         if (!existsSync(mainTsxPath)) {
           allFiles.set('src/main.tsx', viteMainTemplate())
         }
         
         // src/App.tsx (only if doesn't exist - UI generator may have created routes)
-        const appTsxPath = resolve(config.outputDir, 'src', 'App.tsx')
+        const appTsxPath = resolve(actualOutputDir, 'src', 'App.tsx')
         if (!existsSync(appTsxPath)) {
           allFiles.set('src/App.tsx', viteAppTemplate())
         }
         
         // src/index.css
-        const indexCssPath = resolve(config.outputDir, 'src', 'index.css')
+        const indexCssPath = resolve(actualOutputDir, 'src', 'index.css')
         if (!existsSync(indexCssPath)) {
           allFiles.set('src/index.css', globalsCssTemplate())
         }
         
         // tailwind.config.js
-        const tailwindConfigPath = resolve(config.outputDir, 'tailwind.config.js')
+        const tailwindConfigPath = resolve(actualOutputDir, 'tailwind.config.js')
         if (!existsSync(tailwindConfigPath)) {
           allFiles.set('tailwind.config.js', tailwindConfigTemplate())
         }
         
         // postcss.config.js
-        const postcssConfigPath = resolve(config.outputDir, 'postcss.config.js')
+        const postcssConfigPath = resolve(actualOutputDir, 'postcss.config.js')
         if (!existsSync(postcssConfigPath)) {
           allFiles.set('postcss.config.js', postcssConfigTemplate())
         }
@@ -368,7 +371,7 @@ async function generateProject(
       
       // Update package.json to include React/Vite dependencies
       // The standalone phase generated package.json before UI files existed, so it doesn't have React deps
-      const packageJsonPath = resolve(config.outputDir, 'package.json')
+      const packageJsonPath = resolve(actualOutputDir, 'package.json')
       if (existsSync(packageJsonPath)) {
         const { packageJsonTemplate } = await import('../../templates/standalone-project.template.js')
         const { readFileSync } = await import('node:fs')
