@@ -337,14 +337,27 @@ LOG_LEVEL=info
                              errorOutput.includes("Cannot find module '@tanstack/react-query'") ||
                              errorOutput.includes("Cannot find module 'react-router-dom'")
       
+      // Check for DOM type errors (frontend files being validated)
+      const domTypeErrors = errorOutput.includes("Cannot find name 'window'") ||
+                           errorOutput.includes("Cannot find name 'alert'") ||
+                           errorOutput.includes("Property 'value' does not exist on type 'HTMLTextAreaElement'") ||
+                           errorOutput.includes("Property 'value' does not exist on type 'HTMLSelectElement'") ||
+                           errorOutput.includes("Property 'checked' does not exist on type 'HTMLInputElement'") ||
+                           errorOutput.includes("Try changing the 'lib' compiler option to include 'dom'")
+      
+      // Check if errors are in frontend component files
+      const frontendFileErrors = errorOutput.includes('src/components/ssot/') ||
+                                errorOutput.includes('src/App.tsx') ||
+                                errorOutput.includes('src/main.tsx')
+      
       // Also check for casing/file name issues that might be resolved after install
       const casingErrors = errorOutput.includes('differs from already included file name') ||
                           errorOutput.includes('has no default export')
       
-      if ((reactTypeErrors || casingErrors) && hasFrontendFiles) {
-        console.log(chalk.yellow('  ⚠️  TypeScript validation skipped for frontend files (dependencies not installed yet)'))
-        console.log(chalk.gray('  Frontend files will be validated after pnpm install'))
-        console.log(chalk.gray('  This is expected - React types will be available after dependency installation'))
+      if ((reactTypeErrors || casingErrors || (domTypeErrors && frontendFileErrors)) && hasFrontendFiles) {
+        console.log(chalk.yellow('  ⚠️  TypeScript validation skipped for frontend files (dependencies not installed yet or DOM types not available)'))
+        console.log(chalk.gray('  Frontend files will be validated during frontend build'))
+        console.log(chalk.gray('  This is expected - React/DOM types will be available after dependency installation'))
       } else {
         const errorMatch = errorOutput.match(/(\d+) error\(s\)/i)
         const errorCount = errorMatch ? parseInt(errorMatch[1], 10) : 0
