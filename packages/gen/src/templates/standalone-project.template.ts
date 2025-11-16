@@ -813,7 +813,7 @@ export default function RootLayout({
 `
 
 export const tailwindConfigTemplate = () => `/** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
   content: [
     './app/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -826,7 +826,7 @@ module.exports = {
 }
 `
 
-export const postcssConfigTemplate = () => `module.exports = {
+export const postcssConfigTemplate = () => `export default {
   plugins: {
     tailwindcss: {},
     autoprefixer: {},
