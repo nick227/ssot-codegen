@@ -166,7 +166,9 @@ export function Button({
     // Confirmation for delete
     if (action === 'delete') {
       const message = confirmMessage || \`Delete this \${model}?\`
-      if (!window.confirm(message)) return
+      if (typeof window !== 'undefined' && typeof (window as any).confirm === 'function') {
+        if (!(window as any).confirm(message)) return
+      }
     }
     
     setLoading(true)
@@ -590,7 +592,7 @@ export function Form({ model, fields, id, onSuccess, onCancel }: FormProps) {
           {field.type === 'textarea' ? (
             <textarea
               value={formData[field.name] || ''}
-              onChange={(e) => handleChange(field.name, e.target.value)}
+              onChange={(e) => handleChange(field.name, (e.target as HTMLTextAreaElement).value)}
               placeholder={field.placeholder}
               rows={4}
               readOnly={isReadOnly}
@@ -599,7 +601,7 @@ export function Form({ model, fields, id, onSuccess, onCancel }: FormProps) {
           ) : field.type === 'select' ? (
             <select
               value={formData[field.name] || ''}
-              onChange={(e) => handleChange(field.name, e.target.value)}
+              onChange={(e) => handleChange(field.name, (e.target as HTMLSelectElement).value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">Select...</option>
@@ -611,14 +613,14 @@ export function Form({ model, fields, id, onSuccess, onCancel }: FormProps) {
             <input
               type="checkbox"
               checked={formData[field.name] || false}
-              onChange={(e) => handleChange(field.name, e.target.checked)}
+              onChange={(e) => handleChange(field.name, (e.target as HTMLInputElement).checked)}
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
           ) : (
             <input
               type={field.type}
               value={formData[field.name] || ''}
-              onChange={(e) => handleChange(field.name, e.target.value)}
+              onChange={(e) => handleChange(field.name, (e.target as HTMLInputElement).value)}
               placeholder={field.placeholder}
               readOnly={isReadOnly}
               className={\`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent \${isReadOnly ? 'bg-gray-100 cursor-not-allowed' : ''}\`}
@@ -762,24 +764,24 @@ export const toast = {
   success: (message: string) => {
     console.log('✓', message)
     // TODO: Replace with actual toast library
-    if (typeof window !== 'undefined') {
-      alert('✓ ' + message)
+    if (typeof window !== 'undefined' && typeof (window as any).alert === 'function') {
+      (window as any).alert('✓ ' + message)
     }
   },
   
   error: (message: string) => {
     console.error('✗', message)
     // TODO: Replace with actual toast library
-    if (typeof window !== 'undefined') {
-      alert('✗ ' + message)
+    if (typeof window !== 'undefined' && typeof (window as any).alert === 'function') {
+      (window as any).alert('✗ ' + message)
     }
   },
   
   info: (message: string) => {
     console.log('ℹ', message)
     // TODO: Replace with actual toast library
-    if (typeof window !== 'undefined') {
-      alert('ℹ ' + message)
+    if (typeof window !== 'undefined' && typeof (window as any).alert === 'function') {
+      (window as any).alert('ℹ ' + message)
     }
   }
 }
