@@ -25,13 +25,13 @@ export const packageJsonTemplate = (options: StandaloneProjectOptions) => `{
     "node": ">=18.0.0"
   },
   "scripts": {
-    "dev": "${options.hasUI ? (options.uiFramework === 'nextjs' ? 'concurrently "tsx watch src/server.ts" "next dev"' : 'concurrently "tsx watch src/server.ts" "vite"') : 'tsx watch src/server.ts'}",
+    "dev": "${options.hasUI ? (options.uiFramework === 'nextjs' ? 'concurrently \\"tsx watch src/server.ts\\" \\"next dev\\"' : 'concurrently \\"tsx watch src/server.ts\\" \\"vite\\"') : 'tsx watch src/server.ts'}",
     "dev:backend": "tsx watch src/server.ts",
     "dev:frontend": "${options.hasUI ? (options.uiFramework === 'nextjs' ? 'next dev' : 'vite') : ''}",
     "build": "${options.hasUI ? (options.uiFramework === 'nextjs' ? 'rimraf dist .next && tsc && tsc-alias && next build' : 'rimraf dist dist-frontend && tsc && tsc-alias && vite build') : 'rimraf dist && tsc && tsc-alias'}",
     "build:backend": "rimraf dist && tsc && tsc-alias",
     "build:frontend": "${options.hasUI ? (options.uiFramework === 'nextjs' ? 'next build' : 'vite build') : ''}",
-    "start": "${options.hasUI ? (options.uiFramework === 'nextjs' ? 'concurrently "node dist/src/server.js" "next start"' : 'concurrently "node dist/src/server.js" "vite preview"') : 'node dist/src/server.js'}",
+    "start": "${options.hasUI ? (options.uiFramework === 'nextjs' ? 'concurrently \\"node dist/src/server.js\\" \\"next start\\"' : 'concurrently \\"node dist/src/server.js\\" \\"vite preview\\"') : 'node dist/src/server.js'}",
     "start:backend": "node dist/src/server.js",
     "start:frontend": "${options.hasUI ? (options.uiFramework === 'nextjs' ? 'next start' : 'vite preview') : ''}",
     "test": "vitest",
