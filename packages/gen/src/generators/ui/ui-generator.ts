@@ -42,7 +42,7 @@ export function generateUI(
   
   // Generate hook linkers (lightweight adapters for connecting components to hooks)
   if (config.generateHookLinkers !== false) {
-    const hookLinkerFiles = generateHookLinkers(schema, 'hooks')
+    const hookLinkerFiles = generateHookLinkers(schema, 'src/hooks')
     
     // Fuse into main map (single pass)
     for (const [path, content] of hookLinkerFiles) {
@@ -53,7 +53,7 @@ export function generateUI(
   
   // Generate smart component library (once per project)
   if (config.generateComponents) {
-    const componentFiles = generateSmartComponents('components/ssot')
+    const componentFiles = generateSmartComponents('src/components/ssot')
     
     // Fuse into main map (single pass)
     for (const [path, content] of componentFiles) {
