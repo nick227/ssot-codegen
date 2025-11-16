@@ -13,8 +13,38 @@ export function generateExpressionProvider(): string {
 
 'use client'
 
-import { ExpressionContextProvider } from '@ssot-ui/expressions'
-import { useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+
+// Simple expression context - for full expression support, install @ssot-ui/expressions
+interface ExpressionContextValue {
+  data: any
+  user: any
+  globals: any
+}
+
+const ExpressionContext = createContext<ExpressionContextValue>({
+  data: {},
+  user: null,
+  globals: {}
+})
+
+export function ExpressionContextProvider({
+  children,
+  data = {},
+  user = null,
+  globals = {}
+}: {
+  children: ReactNode
+  data?: any
+  user?: any
+  globals?: any
+}) {
+  return (
+    <ExpressionContext.Provider value={{ data, user, globals }}>
+      {children}
+    </ExpressionContext.Provider>
+  )
+}
 
 export interface ExpressionProviderProps {
   children: React.ReactNode

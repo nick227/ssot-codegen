@@ -52,7 +52,19 @@ function generateSmartButton(): string {
 import { useState } from 'react'
 import { getSdk } from './sdk-client'
 import { toast } from './toast'
-import { useExpression } from '@ssot-ui/expressions'
+// Simple expression hook - evaluates expressions in context
+function useExpression() {
+  return (expr: any, context: any = {}) => {
+    // Simple evaluation - for full expression support, install @ssot-ui/expressions
+    if (expr === undefined || expr === null) return true
+    if (typeof expr === 'boolean') return expr
+    if (typeof expr === 'string') {
+      // Simple field access: 'fieldName' -> context.fieldName
+      return context[expr] ?? false
+    }
+    return true
+  }
+}
 
 export type ButtonAction = 'delete' | 'save' | 'custom'
 export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost'
@@ -68,7 +80,6 @@ export interface ButtonProps {
   action?: ButtonAction
   model?: string
   id?: string
-  data?: any
   
   // Custom action
   onClick?: () => void | Promise<void>
@@ -155,7 +166,7 @@ export function Button({
     // Confirmation for delete
     if (action === 'delete') {
       const message = confirmMessage || \`Delete this \${model}?\`
-      if (!confirm(message)) return
+      if (!window.confirm(message)) return
     }
     
     setLoading(true)
@@ -245,7 +256,19 @@ function generateSmartDataTable(): string {
 import { useState, useEffect } from 'react'
 import { getSdk } from './sdk-client'
 import { Button } from './Button'
-import { useExpression } from '@ssot-ui/expressions'
+// Simple expression hook - evaluates expressions in context
+function useExpression() {
+  return (expr: any, context: any = {}) => {
+    // Simple evaluation - for full expression support, install @ssot-ui/expressions
+    if (expr === undefined || expr === null) return true
+    if (typeof expr === 'boolean') return expr
+    if (typeof expr === 'string') {
+      // Simple field access: 'fieldName' -> context.fieldName
+      return context[expr] ?? false
+    }
+    return true
+  }
+}
 
 export interface ColumnDef<T = any> {
   key: string
@@ -378,8 +401,8 @@ export function DataTable<T extends { id: string }>({
               {visibleColumns.map(col => (
                 <td key={col.key} className="px-4 py-3 text-sm">
                   {col.render 
-                    ? col.render(row[col.key], row)
-                    : String(row[col.key] ?? '-')
+                    ? col.render((row as Record<string, any>)[col.key], row)
+                    : String((row as Record<string, any>)[col.key] ?? '-')
                   }
                 </td>
               ))}
@@ -431,7 +454,19 @@ function generateSmartForm(): string {
 import { useState, useEffect } from 'react'
 import { getSdk } from './sdk-client'
 import { Button } from './Button'
-import { useExpression } from '@ssot-ui/expressions'
+// Simple expression hook - evaluates expressions in context
+function useExpression() {
+  return (expr: any, context: any = {}) => {
+    // Simple evaluation - for full expression support, install @ssot-ui/expressions
+    if (expr === undefined || expr === null) return true
+    if (typeof expr === 'boolean') return expr
+    if (typeof expr === 'string') {
+      // Simple field access: 'fieldName' -> context.fieldName
+      return context[expr] ?? false
+    }
+    return true
+  }
+}
 
 export interface FieldDef {
   name: string

@@ -69,7 +69,7 @@ export const packageJsonTemplate = (options: StandaloneProjectOptions) => `{
     "http-errors": "^2.0.0",
     "pino": "^9.5.0",
     "pino-http": "^10.3.0",
-    "zod": "^3.25.0"${options.hasUI ? (options.uiFramework === 'nextjs' ? ',\n    "next": "^15.0.0",\n    "react": "^18.3.0",\n    "react-dom": "^18.3.0",\n    "@tanstack/react-query": "^5.0.0"' : ',\n    "react": "^18.3.0",\n    "react-dom": "^18.3.0",\n    "react-router-dom": "^6.26.0",\n    "@tanstack/react-query": "^5.0.0"') : ''}${options.pluginDependencies && Object.keys(options.pluginDependencies).length > 0 ? ',\n    ' + Object.entries(options.pluginDependencies).map(([pkg, ver]) => `"${pkg}": "${ver}"`).join(',\n    ') : ''}
+    "zod": "^3.25.0"${options.hasUI ? (options.uiFramework === 'nextjs' ? ',\n    "next": "^15.0.0",\n    "react": "^18.3.0",\n    "react-dom": "^18.3.0",\n    "@tanstack/react-query": "^5.0.0",\n    "@ssot-ui/expressions": "file:../../packages/ui/expressions"' : ',\n    "react": "^18.3.0",\n    "react-dom": "^18.3.0",\n    "react-router-dom": "^6.26.0",\n    "@tanstack/react-query": "^5.0.0",\n    "@ssot-ui/expressions": "file:../../packages/ui/expressions"') : ''}${options.pluginDependencies && Object.keys(options.pluginDependencies).length > 0 ? ',\n    ' + Object.entries(options.pluginDependencies).map(([pkg, ver]) => `"${pkg}": "${ver}"`).join(',\n    ') : ''}
   },
   "devDependencies": {
     "@types/compression": "^1.7.5",
