@@ -375,11 +375,13 @@ async function generateProject(
         const existingPkg = JSON.parse(readFileSync(packageJsonPath, 'utf-8'))
         const projectName = existingPkg.name || config.name
         
+        const databaseProvider = schemaContent.includes('provider = "postgresql"') ? 'postgresql' : schemaContent.includes('provider = "mysql"') ? 'mysql' : 'sqlite'
+        
         // Regenerate package.json with UI dependencies
         const updatedPkg = packageJsonTemplate({
           projectName,
           framework: 'express',
-          databaseProvider: schemaContent.includes('provider = "postgresql"') ? 'postgresql' : schemaContent.includes('provider = "mysql"') ? 'mysql' : 'sqlite',
+          databaseProvider,
           models: schema.models.map((m: any) => m.name),
           hasUI: true,
           uiFramework: uiFramework as 'vite' | 'nextjs'
@@ -387,18 +389,36 @@ async function generateProject(
         
         // Parse the template output and merge with existing package.json to preserve any custom fields
         const updatedPkgObj = JSON.parse(updatedPkg)
+        
+        // Ensure dependencies and devDependencies exist
+        const existingDeps = existingPkg.dependencies || {}
+        const existingDevDeps = existingPkg.devDependencies || {}
+        const updatedDeps = updatedPkgObj.dependencies || {}
+        const updatedDevDeps = updatedPkgObj.devDependencies || {}
+        
+        // Debug: Check if React deps are in updated template
+        if (verbose && uiFramework === 'vite') {
+          const hasReact = 'react' in updatedDeps
+          const hasVite = 'vite' in updatedDevDeps
+          if (!hasReact || !hasVite) {
+            console.warn(`⚠️  Warning: React/Vite deps missing from template. React: ${hasReact}, Vite: ${hasVite}`)
+            console.warn(`   Updated deps keys: ${Object.keys(updatedDeps).join(', ')}`)
+            console.warn(`   Updated devDeps keys: ${Object.keys(updatedDevDeps).filter(k => k.includes('react') || k.includes('vite')).join(', ')}`)
+          }
+        }
+        
         const mergedPkg = {
           ...existingPkg,
           ...updatedPkgObj,
-          // Merge dependencies (updatedPkgObj has React/Vite deps)
+          // Merge dependencies (updatedPkgObj has React/Vite deps) - updated deps take precedence
           dependencies: {
-            ...existingPkg.dependencies,
-            ...updatedPkgObj.dependencies
+            ...existingDeps,
+            ...updatedDeps
           },
-          // Merge devDependencies (updatedPkgObj has React/Vite dev deps)
+          // Merge devDependencies (updatedPkgObj has React/Vite dev deps) - updated dev deps take precedence
           devDependencies: {
-            ...existingPkg.devDependencies,
-            ...updatedPkgObj.devDependencies
+            ...existingDevDeps,
+            ...updatedDevDeps
           },
           // Use updated scripts (they include frontend commands)
           scripts: updatedPkgObj.scripts
