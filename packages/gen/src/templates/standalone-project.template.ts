@@ -136,7 +136,7 @@ export const tsconfigTemplate = (projectName: string, hasUI?: boolean, uiFramewo
     }${isNextjs ? ',\n    "plugins": [\n      {\n        "name": "next"\n      }\n    ]' : ''}
   },
   "include": ["src/**/*.ts"${hasUI ? (isNextjs ? ', "app/**/*", "components/**/*"' : '') : ''}],
-  "exclude": ["node_modules", "dist", "src/sdk/**/*"${hasUI ? (isNextjs ? ', ".next"' : ', "dist-frontend", "src/**/*.tsx", "src/main.tsx", "src/App.tsx"') : ''}]
+  "exclude": ["node_modules", "dist", "src/sdk/**/*"${hasUI ? (isNextjs ? ', ".next"' : ', "dist-frontend", "src/**/*.tsx", "src/main.tsx", "src/App.tsx", "src/components/**/*.ts", "src/hooks/**/*.ts"') : ''}]
 }
 `
 }
