@@ -28,7 +28,7 @@ export const packageJsonTemplate = (options: StandaloneProjectOptions) => `{
     "dev": "${options.hasUI ? (options.uiFramework === 'nextjs' ? 'concurrently \\"tsx watch src/server.ts\\" \\"next dev\\"' : 'concurrently \\"tsx watch src/server.ts\\" \\"vite\\"') : 'tsx watch src/server.ts'}",
     "dev:backend": "tsx watch src/server.ts",
     "dev:frontend": "${options.hasUI ? (options.uiFramework === 'nextjs' ? 'next dev' : 'vite') : ''}",
-    "build": "${options.hasUI ? (options.uiFramework === 'nextjs' ? 'rimraf dist .next && tsc && tsc-alias && next build' : 'rimraf dist dist-frontend && tsc && tsc-alias && vite build') : 'rimraf dist && tsc && tsc-alias'}",
+    "build": "${options.hasUI ? (options.uiFramework === 'nextjs' ? 'rimraf dist .next && tsc --skipLibCheck && tsc-alias && next build' : 'rimraf dist dist-frontend && tsc -p tsconfig.build.json --skipLibCheck && tsc-alias && vite build') : 'rimraf dist && tsc --skipLibCheck && tsc-alias'}",
     "build:backend": "rimraf dist && tsc && tsc-alias",
     "build:frontend": "${options.hasUI ? (options.uiFramework === 'nextjs' ? 'next build' : 'vite build') : ''}",
     "start": "${options.hasUI ? (options.uiFramework === 'nextjs' ? 'concurrently \\"node dist/src/server.js\\" \\"next start\\"' : 'concurrently \\"node dist/src/server.js\\" \\"vite preview\\"') : 'node dist/src/server.js'}",
@@ -136,7 +136,26 @@ export const tsconfigTemplate = (projectName: string, hasUI?: boolean, uiFramewo
     }${isNextjs ? ',\n    "plugins": [\n      {\n        "name": "next"\n      }\n    ]' : ''}
   },
   "include": ["src/**/*.ts"${hasUI ? (isNextjs ? ', "app/**/*", "components/**/*"' : '') : ''}],
-  "exclude": ["node_modules", "dist", "src/sdk/**/*"${hasUI ? (isNextjs ? ', ".next"' : ', "dist-frontend", "src/**/*.tsx", "src/main.tsx", "src/App.tsx", "src/components/**/*.ts", "src/hooks/**/*.ts"') : ''}]
+  "exclude": ["node_modules", "dist", "src/sdk/**/*"${hasUI ? (isNextjs ? ', ".next", "src/**/*.tsx", "src/main.tsx", "src/App.tsx", "src/components/**/*", "src/hooks/**/*"' : ', "dist-frontend", "src/**/*.tsx", "src/main.tsx", "src/App.tsx", "src/components/**/*", "src/hooks/**/*"') : ''}]
+}
+`
+}
+
+export const tsconfigBuildTemplate = (hasUI?: boolean, uiFramework?: 'vite' | 'nextjs') => {
+  const isVite = hasUI && uiFramework === 'vite'
+  
+  if (!hasUI || !isVite) {
+    return null // No separate build config needed
+  }
+  
+  return `{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "jsx": "react-jsx"
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "dist-frontend", "src/sdk/**/*", "src/**/*.tsx", "src/main.tsx", "src/App.tsx", "src/components/**/*", "src/hooks/**/*", "tests/**/*"]
 }
 `
 }

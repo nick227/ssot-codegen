@@ -80,6 +80,15 @@ export class WriteStandalonePhase extends GenerationPhase {
     const tsconfigPath = path.join(outputDir, 'tsconfig.json')
     writes.push(writeFile(tsconfigPath, standaloneTemplates.tsconfigTemplate(standaloneOptions.projectName, hasUI, uiFramework)))
     
+    // Write tsconfig.build.json for backend-only builds (Vite projects with UI)
+    if (hasUI && uiFramework === 'vite') {
+      const tsconfigBuildContent = standaloneTemplates.tsconfigBuildTemplate(hasUI, uiFramework)
+      if (tsconfigBuildContent) {
+        const tsconfigBuildPath = path.join(outputDir, 'tsconfig.build.json')
+        writes.push(writeFile(tsconfigBuildPath, tsconfigBuildContent))
+      }
+    }
+    
     // Write .env.example with plugin variables
     const envPath = path.join(outputDir, '.env.example')
     let envContent = standaloneTemplates.envTemplate(databaseProvider)
