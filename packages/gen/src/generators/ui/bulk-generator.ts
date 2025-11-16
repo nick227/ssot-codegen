@@ -396,12 +396,14 @@ async function generateProject(
         const updatedDeps = updatedPkgObj.dependencies || {}
         const updatedDevDeps = updatedPkgObj.devDependencies || {}
         
-        // Debug: Check if React deps are in updated template
-        if (verbose && uiFramework === 'vite') {
+        // Debug: Always log when updating package.json
+        if (verbose) {
           const hasReact = 'react' in updatedDeps
           const hasVite = 'vite' in updatedDevDeps
+          console.log(`📦 Updating package.json for ${config.name} (uiFramework: ${uiFramework})`)
+          console.log(`   React in template: ${hasReact}, Vite in template: ${hasVite}`)
           if (!hasReact || !hasVite) {
-            console.warn(`⚠️  Warning: React/Vite deps missing from template. React: ${hasReact}, Vite: ${hasVite}`)
+            console.warn(`⚠️  Warning: React/Vite deps missing from template!`)
             console.warn(`   Updated deps keys: ${Object.keys(updatedDeps).join(', ')}`)
             console.warn(`   Updated devDeps keys: ${Object.keys(updatedDevDeps).filter(k => k.includes('react') || k.includes('vite')).join(', ')}`)
           }
@@ -425,6 +427,14 @@ async function generateProject(
         }
         
         allFiles.set('package.json', JSON.stringify(mergedPkg, null, 2))
+        
+        if (verbose) {
+          const finalHasReact = 'react' in mergedPkg.dependencies
+          const finalHasVite = 'vite' in mergedPkg.devDependencies
+          console.log(`   Final merged package.json - React: ${finalHasReact}, Vite: ${finalHasVite}`)
+        }
+      } else if (verbose) {
+        console.warn(`⚠️  package.json not found at ${packageJsonPath}, skipping update`)
       }
       
       // Generate manifest
