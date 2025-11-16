@@ -436,6 +436,15 @@ async function generateProject(
           const finalHasVite = 'vite' in mergedPkg.devDependencies
           console.log(`   Final merged package.json - React: ${finalHasReact}, Vite: ${finalHasVite}`)
         }
+        
+        // Generate tsconfig.build.json for backend-only builds (Vite projects with UI)
+        if (uiFramework === 'vite') {
+          const { tsconfigBuildTemplate } = await import('../../templates/standalone-project.template.js')
+          const tsconfigBuildContent = tsconfigBuildTemplate(true, 'vite')
+          if (tsconfigBuildContent) {
+            allFiles.set('tsconfig.build.json', tsconfigBuildContent)
+          }
+        }
       } else if (verbose) {
         console.warn(`⚠️  package.json not found at ${packageJsonPath}, skipping update`)
       }
