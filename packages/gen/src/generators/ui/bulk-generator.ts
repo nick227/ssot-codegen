@@ -390,11 +390,18 @@ async function generateProject(
         const mergedPkg = {
           ...existingPkg,
           ...updatedPkgObj,
-          // Preserve existing scripts if they were customized
-          scripts: {
-            ...updatedPkgObj.scripts,
-            ...existingPkg.scripts
-          }
+          // Merge dependencies (updatedPkgObj has React/Vite deps)
+          dependencies: {
+            ...existingPkg.dependencies,
+            ...updatedPkgObj.dependencies
+          },
+          // Merge devDependencies (updatedPkgObj has React/Vite dev deps)
+          devDependencies: {
+            ...existingPkg.devDependencies,
+            ...updatedPkgObj.devDependencies
+          },
+          // Use updated scripts (they include frontend commands)
+          scripts: updatedPkgObj.scripts
         }
         
         allFiles.set('package.json', JSON.stringify(mergedPkg, null, 2))
