@@ -37,6 +37,7 @@
     "test:ai-chat": "cd examples/ai-chat-example && pnpm run test",
     "test:generator": "cd packages/gen && pnpm test",
     "test:generated": "node scripts/test-generated.js",
+    "test:bulk": "node test-bulk-generation.js",
     "full-test": "pnpm run build && pnpm run lint && pnpm test:generator && pnpm run test:generated"
   },
   "devDependencies": {
