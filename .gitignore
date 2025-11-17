@@ -42,6 +42,12 @@ yarn-error.log*
 coverage/
 .nyc_output/
 .test-consumer/
+playwright-report/
+playwright.config.js
+test-frontend-playwright.js
+test-frontend-playwright.mjs
+test-frontend-simple.mjs
+test-results/
 
 # Misc
 *.local
