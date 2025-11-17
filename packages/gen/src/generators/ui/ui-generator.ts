@@ -74,11 +74,13 @@ export function generateUI(
   // Generate pages per model (single pass, no intermediate arrays)
   if (config.generatePages) {
     const uiFramework = config.uiFramework || 'vite'
+    // Use 'src/app' for Vite, 'app' for Next.js
+    const pageOutputDir = uiFramework === 'vite' ? 'src/app' : 'app'
     for (const model of targetModels) {
       // Skip internal models (convention-based)
       if (isInternalModel(model.name)) continue
       
-      const pageFiles = generatePageStubs(model, 'app', uiFramework)
+      const pageFiles = generatePageStubs(model, pageOutputDir, uiFramework)
       
       // Fuse into main map
       for (const [path, content] of pageFiles) {
@@ -95,7 +97,7 @@ export function generateUI(
  * Check if model is internal (skip UI generation)
  * Hot path: inline check, no allocations
  */
-function isInternalModel(modelName: string): boolean {
+export function isInternalModel(modelName: string): boolean {
   // Convention: Skip auth tables, migrations, junction tables
   const internalPrefixes = ['_prisma', 'Account', 'Session', 'VerificationToken']
   

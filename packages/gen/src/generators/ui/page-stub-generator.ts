@@ -16,17 +16,21 @@ export function generatePageStubs(
   const modelName = model.name
   const modelLower = modelName.toLowerCase()
   
-  // List page
-  files.set(`${outputDir}/${modelLower}/page.tsx`, generateListPage(model, uiFramework))
-  
-  // Detail page
-  files.set(`${outputDir}/${modelLower}/[id]/page.tsx`, generateDetailPage(model, uiFramework))
-  
-  // Create page
-  files.set(`${outputDir}/${modelLower}/new/page.tsx`, generateCreatePage(model, uiFramework))
-  
-  // Edit page
-  files.set(`${outputDir}/${modelLower}/[id]/edit/page.tsx`, generateEditPage(model, uiFramework))
+  // For React Router (Vite), use :id instead of [id]
+  // For Next.js, use [id] directory structure
+  if (uiFramework === 'vite') {
+    // React Router: flat file structure with route params in filename
+    files.set(`${outputDir}/${modelLower}/page.tsx`, generateListPage(model, uiFramework))
+    files.set(`${outputDir}/${modelLower}/detail.tsx`, generateDetailPage(model, uiFramework))
+    files.set(`${outputDir}/${modelLower}/new.tsx`, generateCreatePage(model, uiFramework))
+    files.set(`${outputDir}/${modelLower}/edit.tsx`, generateEditPage(model, uiFramework))
+  } else {
+    // Next.js: directory-based routing
+    files.set(`${outputDir}/${modelLower}/page.tsx`, generateListPage(model, uiFramework))
+    files.set(`${outputDir}/${modelLower}/[id]/page.tsx`, generateDetailPage(model, uiFramework))
+    files.set(`${outputDir}/${modelLower}/new/page.tsx`, generateCreatePage(model, uiFramework))
+    files.set(`${outputDir}/${modelLower}/[id]/edit/page.tsx`, generateEditPage(model, uiFramework))
+  }
   
   return files
 }

@@ -919,22 +919,106 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 )
 `
 
-export const viteAppTemplate = () => `import { Routes, Route } from 'react-router-dom'
+export const viteAppTemplate = (models: string[] = []) => {
+  // Generate imports for all model pages
+  const modelImports = models
+    .filter(model => {
+      // Skip internal models
+      const modelLower = model.toLowerCase()
+      return !['_prisma', '_metadata'].includes(modelLower)
+    })
+    .map(model => {
+      const modelLower = model.toLowerCase()
+      return `import ${model}ListPage from './app/${modelLower}/page.js'
+import ${model}DetailPage from './app/${modelLower}/detail.js'
+import ${model}CreatePage from './app/${modelLower}/new.js'
+import ${model}EditPage from './app/${modelLower}/edit.js'`
+    })
+    .join('\n')
+
+  // Generate routes for all models
+  const modelRoutes = models
+    .filter(model => {
+      const modelLower = model.toLowerCase()
+      return !['_prisma', '_metadata'].includes(modelLower)
+    })
+    .map(model => {
+      const modelLower = model.toLowerCase()
+      return `        <Route path="/${modelLower}" element={<${model}ListPage />} />
+        <Route path="/${modelLower}/:id" element={<${model}DetailPage />} />
+        <Route path="/${modelLower}/new" element={<${model}CreatePage />} />
+        <Route path="/${modelLower}/:id/edit" element={<${model}EditPage />} />`
+    })
+    .join('\n')
+
+  return `import { Routes, Route, Link } from 'react-router-dom'
 import { ExpressionProvider } from '@/components/ssot/index.js'
+${modelImports}
 
 function App() {
   return (
     <ExpressionProvider>
-      <Routes>
-        <Route path="/" element={<div className="p-6"><h1 className="text-2xl font-bold">Welcome</h1></div>} />
-        {/* Routes will be added by page generators */}
-      </Routes>
+      <div className="min-h-screen bg-gray-50">
+        {/* Navigation */}
+        <nav className="bg-white shadow-sm border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between h-16">
+              <div className="flex">
+                <Link to="/" className="flex items-center px-2 py-2 text-xl font-bold text-gray-900">
+                  Home
+                </Link>
+                <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+${models
+  .filter(model => {
+    const modelLower = model.toLowerCase()
+    return !['_prisma', '_metadata'].includes(modelLower)
+  })
+  .map(model => {
+    const modelLower = model.toLowerCase()
+    const modelPlural = modelLower.endsWith('s') ? `${modelLower}es` : `${modelLower}s`
+    return `                  <Link to="/${modelLower}" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-700 hover:text-gray-900">
+                    ${model}s
+                  </Link>`
+  })
+  .join('\n')}
+                </div>
+              </div>
+            </div>
+          </div>
+        </nav>
+
+        {/* Main Content */}
+        <Routes>
+          <Route path="/" element={
+            <div className="p-6 max-w-7xl mx-auto">
+              <h1 className="text-3xl font-bold text-gray-900 mb-6">Welcome</h1>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+${models
+  .filter(model => {
+    const modelLower = model.toLowerCase()
+    return !['_prisma', '_metadata'].includes(modelLower)
+  })
+  .map(model => {
+    const modelLower = model.toLowerCase()
+    return `                <Link to="/${modelLower}" className="block p-6 bg-white rounded-lg shadow hover:shadow-md transition-shadow">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-2">${model}s</h2>
+                  <p className="text-gray-600">Manage ${model.toLowerCase()} records</p>
+                </Link>`
+  })
+  .join('\n')}
+              </div>
+            </div>
+          } />
+${modelRoutes}
+        </Routes>
+      </div>
     </ExpressionProvider>
   )
 }
 
 export default App
 `
+}
 
 export const vitestConfigTemplate = () => `import { defineConfig } from 'vitest/config';
 import path from 'path';

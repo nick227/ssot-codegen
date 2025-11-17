@@ -6,7 +6,7 @@
 
 import type { ParsedSchema } from '../../dmmf-parser.js'
 import type { BulkGenerateConfig, ProjectConfig } from './website-schema-types.js'
-import { generateUI } from './ui-generator.js'
+import { generateUI, isInternalModel } from './ui-generator.js'
 import { generateSite } from './site-builder.js'
 import { parseDMMF } from '../../dmmf-parser.js'
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs'
@@ -344,11 +344,15 @@ async function generateProject(
           allFiles.set('src/main.tsx', viteMainTemplate())
         }
         
-        // src/App.tsx (only if doesn't exist - UI generator may have created routes)
-        const appTsxPath = resolve(actualOutputDir, 'src', 'App.tsx')
-        if (!existsSync(appTsxPath)) {
-          allFiles.set('src/App.tsx', viteAppTemplate())
-        }
+        // src/App.tsx - Always regenerate with routes for all models
+        // Get model names from schema (skip internal models)
+        const modelNames = schema.models
+          .filter(m => {
+            const modelLower = m.name.toLowerCase()
+            return !['_prisma', '_metadata'].includes(modelLower) && !isInternalModel(m.name)
+          })
+          .map(m => m.name)
+        allFiles.set('src/App.tsx', viteAppTemplate(modelNames))
         
         // src/index.css
         const indexCssPath = resolve(actualOutputDir, 'src', 'index.css')
