@@ -1,0 +1,509 @@
+// Dating App Backend - Prisma Schema
+// Generated from FEATURES.md specification
+// SSOT (Single Source of Truth) for database structure
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+  // Database name: dating-app
+  // Example URL: mysql://user:password@localhost:3306/dating-app
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+  BANNED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  NON_BINARY
+  PREFER_NOT_TO_SAY
+}
+
+enum EventType {
+  profile_view
+  profile_like
+  profile_dislike
+  quiz_open
+  quiz_take
+  quiz_like
+  quiz_dislike
+  message_sent
+  match_view
+  match_ghost
+  match_streak
+}
+
+enum TargetType {
+  profile
+  quiz
+  match
+}
+
+enum QuizQuestionType {
+  multiple_choice
+  multiple_select
+  likert
+  slider
+  ranking
+  text_input
+  matrix
+}
+
+enum DimensionCategory {
+  profile
+  quiz
+  behavior
+  system
+  mixed
+}
+
+enum BodyType {
+  SLIM
+  AVERAGE
+  ATHLETIC
+  CURVY
+  MUSCULAR
+  PREFER_NOT_TO_SAY
+}
+
+enum SwipeType {
+  LIKE
+  DISLIKE
+}
+
+// ============================================================================
+// MODELS
+// ============================================================================
+
+model User {
+  id            String        @id @default(uuid()) @db.VarChar(191)
+  email         String        @unique @db.VarChar(191)
+  passwordHash  String? // Nullable for OAuth users
+  oauthProvider String? // "google", "facebook", "apple"
+  oauthId       String?
+  accountStatus AccountStatus @default(ACTIVE)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  lastLoginAt   DateTime?
+
+  // Relations
+  profile                    Profile?
+  photos                     Photo[]
+  swipesAsSwiper             Swipe[]                 @relation("Swiper")
+  swipesAsSwiped             Swipe[]                 @relation("Swiped")
+  matchesAsUser1             Match[]                 @relation("User1")
+  matchesAsUser2             Match[]                 @relation("User2")
+  messagesSent               Message[]               @relation("Sender")
+  messagesReceived           Message[]               @relation("Receiver")
+  quizAnswers                QuizAnswer[]
+  quizResults                QuizResult[]
+  behaviorEvents             BehaviorEvent[]
+  userDimensionScores        UserDimensionScore[]
+  userDimensionPriorities    UserDimensionPriority[]
+  compatibilityScoresAsUser1 CompatibilityScore[]    @relation("User1Compat")
+  compatibilityScoresAsUser2 CompatibilityScore[]    @relation("User2Compat")
+  blocksAsBlocker            Block[]                 @relation("Blocker")
+  blocksAsBlocked            Block[]                 @relation("Blocked")
+
+  @@index([email(length: 191)])
+  @@index([accountStatus])
+  @@index([lastLoginAt])
+}
+
+model Profile {
+  id        String  @id @default(uuid()) @db.VarChar(191)
+  userId    String  @unique @db.VarChar(191)
+  name      String
+  age       Int
+  gender    Gender
+  bio       String? @db.Text
+  location  Json // { city, state, country, lat, lng }
+  ethnicity String?
+
+  // Physical Attributes
+  height    Int? // in cm
+  bodyType  BodyType?
+  eyeColor  String?
+  hairColor String?
+
+  // Lifestyle
+  education  String?
+  occupation String?
+
+  // Meta values (JSON) - flexible key-value pairs
+  // Uses dot notation: personality.type, lifestyle.activity_level, etc.
+  meta Json? @default("{}")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Note: MySQL doesn't support JSON field indexing directly.
+  // Location queries should use application-level filtering or consider adding lat/lng columns for spatial indexing.
+
+  @@index([userId(length: 191)])
+  @@index([age])
+  @@index([gender])
+}
+
+model Photo {
+  id               String   @id @default(uuid()) @db.VarChar(191)
+  userId           String   @db.VarChar(191)
+  url              String
+  order            Int      @default(0)
+  moderationStatus String   @default("pending") @db.VarChar(191) // pending, approved, rejected
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId(length: 191)])
+  @@index([userId(length: 191), order])
+  @@index([moderationStatus(length: 191)])
+}
+
+/// @service discovery-service
+/// @methods getDiscoveryQueue, getCandidates, refreshQueue
+/// @description Discovery queue with compatibility-based matching, filters, and pagination
+model Swipe {
+  id        String    @id @default(uuid()) @db.VarChar(191)
+  swiperId  String    @db.VarChar(191)
+  swipedId  String    @db.VarChar(191)
+  type      SwipeType // LIKE or DISLIKE
+  createdAt DateTime  @default(now())
+
+  // Relations
+  swiper User @relation("Swiper", fields: [swiperId], references: [id], onDelete: Cascade)
+  swiped User @relation("Swiped", fields: [swipedId], references: [id], onDelete: Cascade)
+
+  @@unique([swiperId(length: 125), swipedId(length: 125)])
+  @@index([swiperId(length: 191), createdAt])
+  @@index([swipedId(length: 191)])
+  @@index([type])
+}
+
+model Match {
+  id          String    @id @default(uuid()) @db.VarChar(191)
+  user1Id     String    @db.VarChar(191)
+  user2Id     String    @db.VarChar(191)
+  createdAt   DateTime  @default(now())
+  unmatchedAt DateTime?
+
+  // Relations
+  user1    User      @relation("User1", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2    User      @relation("User2", fields: [user2Id], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@unique([user1Id(length: 125), user2Id(length: 125)])
+  @@index([user1Id(length: 191), createdAt])
+  @@index([user2Id(length: 191), createdAt])
+  @@index([unmatchedAt])
+}
+
+model Message {
+  id          String    @id @default(uuid()) @db.VarChar(191)
+  matchId     String    @db.VarChar(191)
+  senderId    String    @db.VarChar(191)
+  receiverId  String    @db.VarChar(191)
+  content     String    @db.Text
+  messageType String    @default("text") // text, photo, gif
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  // Relations
+  match    Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  sender   User  @relation("Sender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User  @relation("Receiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([matchId(length: 191), createdAt])
+  @@index([senderId(length: 191)])
+  @@index([receiverId(length: 191)])
+  @@index([readAt])
+}
+
+model Quiz {
+  id            String   @id @default(uuid()) @db.VarChar(191)
+  title         String
+  description   String?  @db.Text
+  category      String?  @db.VarChar(191)
+  estimatedTime Int? // in minutes
+  meta          Json?    @default("{}") // category, personality_dimension, focus_area, difficulty
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  questions QuizQuestion[]
+  answers   QuizAnswer[]
+  results   QuizResult[]
+
+  @@index([category(length: 191)])
+}
+
+model QuizQuestion {
+  id         String           @id @default(uuid()) @db.VarChar(191)
+  quizId     String           @db.VarChar(191)
+  type       QuizQuestionType
+  order      Int
+  configJson Json // Flexible config: options, scale ranges, question text, etc.
+  createdAt  DateTime         @default(now())
+
+  // Relations
+  quiz    Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  answers QuizAnswer[]
+
+  @@index([quizId(length: 191), order])
+  @@index([type])
+}
+
+model QuizAnswer {
+  id         String   @id @default(uuid()) @db.VarChar(191)
+  quizId     String   @db.VarChar(191)
+  questionId String   @db.VarChar(191)
+  userId     String   @db.VarChar(191)
+  answerJson Json // Flexible answer structure based on question type
+  createdAt  DateTime @default(now())
+
+  // Relations
+  quiz     Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  question QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([quizId(length: 125), userId(length: 125)])
+  @@index([questionId(length: 191)])
+  @@index([userId(length: 191)])
+}
+
+model QuizResult {
+  id         String   @id @default(uuid()) @db.VarChar(191)
+  quizId     String   @db.VarChar(191)
+  userId     String   @db.VarChar(191)
+  score      Float? // 0-100, nullable for quizzes without scoring
+  resultJson Json? // Additional result data
+  createdAt  DateTime @default(now())
+
+  // Relations
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Note: QuizResult is for UX/analytics display only, NOT used for dimension scoring
+  // Dimension updates come from BehaviorEvent records
+
+  @@index([quizId(length: 125), userId(length: 125)])
+  @@index([userId(length: 191)])
+  @@index([score])
+}
+
+model BehaviorEvent {
+  id          String     @id @default(uuid()) @db.VarChar(191)
+  userId      String     @db.VarChar(191)
+  eventType   EventType
+  targetType  TargetType
+  targetId    String     @db.VarChar(191)
+  meta        Json       @default("{}") // Event-specific meta (profile_meta, quiz_meta, match_id, etc.)
+  processedAt DateTime? // Nullable for idempotency - only process where NULL
+  ruleVersion String?    @db.VarChar(191) // Version of rules used when processed (for reprocessing)
+  createdAt   DateTime   @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Note: Append-only table. Never store dimensionsAffected (derived from rules).
+  // Workers infer affected dimensions from eventType + meta + DimensionMappingRule records.
+
+  @@index([userId(length: 191), processedAt])
+  @@index([userId(length: 191), eventType, createdAt])
+  @@index([targetType, targetId(length: 191)])
+  @@index([ruleVersion(length: 191), processedAt])
+  @@index([processedAt])
+}
+
+model BehaviorEventArchive {
+  id          String     @id @default(uuid()) @db.VarChar(191)
+  userId      String     @db.VarChar(191)
+  eventType   EventType
+  targetType  TargetType
+  targetId    String     @db.VarChar(191)
+  meta        Json
+  processedAt DateTime?
+  ruleVersion String?    @db.VarChar(191)
+  createdAt   DateTime
+  archivedAt  DateTime   @default(now())
+
+  // Archived events older than 90 days (retention: 2 years)
+  // Query active table first, archive table only for historical analysis
+
+  @@index([userId(length: 191), createdAt])
+  @@index([eventType])
+  @@index([archivedAt])
+}
+
+model PersonalityDimension {
+  id                  String            @id @db.VarChar(191) // String key: "introversion", "interests_music", "location_proximity", etc.
+  name                String
+  description         String?           @db.Text
+  category            DimensionCategory
+  isActive            Boolean           @default(true)
+  normalizationConfig Json? // Per-dimension normalization strategy (default: clamp-based with R=100)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  userDimensionScores     UserDimensionScore[]
+  dimensionMappingRules   DimensionMappingRule[]
+  userDimensionPriorities UserDimensionPriority[]
+
+  // Note: System dimensions (category="system") are NOT stored in UserDimensionScore.
+  // They are computed on-demand per user pair during compatibility calculation.
+
+  @@index([category])
+  @@index([isActive])
+  @@index([category, isActive])
+}
+
+model UserDimensionScore {
+  id               String    @id @default(uuid()) @db.VarChar(191)
+  userId           String    @db.VarChar(191)
+  dimensionId      String    @db.VarChar(191)
+  normalizedScore  Float     @default(0) // 0-100, primary score for compatibility
+  rawScore         Float? // Accumulated points before normalization (unbounded)
+  lastUpdated      DateTime  @default(now()) // Timestamp of last rawScore update
+  lastNormalizedAt DateTime? // Timestamp of last normalization
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user      User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dimension PersonalityDimension @relation(fields: [dimensionId], references: [id], onDelete: Cascade)
+
+  // Note: Only for personality dimensions, NOT system dimensions.
+  // System dimensions are computed on-demand per user pair.
+
+  @@unique([userId(length: 125), dimensionId(length: 125)])
+  @@index([dimensionId(length: 191), normalizedScore])
+  @@index([userId(length: 191), lastUpdated])
+  @@index([lastNormalizedAt])
+}
+
+/// ⚠️ CACHE ANCHOR ONLY: This table is a cache, NOT the source of truth.
+/// Compatibility is computed on-demand from UserDimensionScore + UserDimensionPriority + system dimension formulas.
+/// The generator should NOT treat this as primary data. Can be cleared/rebuilt at any time without data loss.
+model CompatibilityScore {
+  id                 String   @id @default(uuid()) @db.VarChar(191)
+  user1Id            String   @db.VarChar(191)
+  user2Id            String   @db.VarChar(191) // Always user1Id < user2Id
+  overallScore       Float // 0-100 compatibility percentage
+  dimensionBreakdown Json // { "location_proximity": 85, "age_gap": 92, ... } - all values 0-100
+  calculatedAt       DateTime @default(now())
+  cacheVersion       String?  @db.VarChar(191) // For cache invalidation
+
+  // Relations
+  user1 User @relation("User1Compat", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2 User @relation("User2Compat", fields: [user2Id], references: [id], onDelete: Cascade)
+
+  // Note: Optional cache table. App must work if this table is empty (compute on-demand).
+  // Cache invalidation: when UserDimensionPriority changes, UserDimensionScore updated, profile updated,
+  // or DimensionMappingRule/EventWeightConfig changes. TTL: 24 hours (recalculate on read if stale).
+
+  @@unique([user1Id(length: 125), user2Id(length: 125)])
+  @@index([user1Id(length: 191), calculatedAt])
+  @@index([user2Id(length: 191), calculatedAt])
+  @@index([calculatedAt])
+}
+
+model UserDimensionPriority {
+  id          String   @id @default(uuid()) @db.VarChar(191)
+  userId      String   @db.VarChar(191)
+  dimensionId String   @db.VarChar(191)
+  weight      Float    @default(1.0) // 0.0 to 10.0, default 1.0
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user      User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dimension PersonalityDimension @relation(fields: [dimensionId], references: [id], onDelete: Cascade)
+
+  // Note: Includes both personality and system dimensions.
+  // When new dimensions added, existing users get default weight = 1.0.
+  // Weights normalized: normalized_weight = weight / Σ(all_weights) to ensure sum = 1.0.
+
+  @@unique([userId(length: 125), dimensionId(length: 125)])
+  @@index([userId(length: 191)])
+  @@index([dimensionId(length: 191)])
+}
+
+/// @service admin-config-service
+/// @methods createRule, updateRule, deleteRule, bulkUpdateRules, getRuleHistory, createEventWeight, updateEventWeight, getConfigStatus
+/// @description Admin service for managing dimension mapping rules and event weight configurations
+model DimensionMappingRule {
+  id          String     @id @default(uuid()) @db.VarChar(191)
+  eventType   String     @db.VarChar(191) // EventType enum value (can be pipe-separated: "profile_view|profile_like")
+  targetType  TargetType
+  metaKey     String // e.g., "personality.type", "interests", "lifestyle.activity_level"
+  metaValue   String?    @db.VarChar(191) // Value to match (null for array contains)
+  dimensionId String     @db.VarChar(191)
+  weight      Float      @default(1.0) // Multiplier for event weight (can be negative for dis-preference)
+  isActive    Boolean    @default(true)
+  version     String     @default("v1.0") @db.VarChar(191) // For reprocessing when rules change
+  matchType   String? // "exact", "array_contains", "nested", "pattern"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  dimension PersonalityDimension @relation(fields: [dimensionId], references: [id], onDelete: Cascade)
+
+  // Note: Rules map meta keys/values → PersonalityDimension.id values.
+  // Multiple rules can map to same dimension (weights are additive).
+  // When rules change, set BehaviorEvent.processedAt = NULL for events with old ruleVersion.
+
+  @@index([eventType(length: 191), targetType, isActive])
+  @@index([dimensionId(length: 191), isActive])
+  @@index([isActive])
+  @@index([version(length: 191)])
+}
+
+model EventWeightConfig {
+  id          String    @id @default(uuid()) @db.VarChar(191)
+  eventType   EventType @unique
+  baseWeight  Float // Base weight for event type (e.g., profile_view: +1, profile_like: +3, profile_dislike: -4)
+  isActive    Boolean   @default(true)
+  description String?   @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Note: Stores configurable weights for each event type (not hard-coded).
+  // Final points = baseWeight × DimensionMappingRule.weight × dynamicMultiplier (if applicable).
+
+  @@index([isActive])
+}
+
+model Block {
+  id        String   @id @default(uuid()) @db.VarChar(191)
+  blockerId String   @db.VarChar(191)
+  blockedId String   @db.VarChar(191)
+  createdAt DateTime @default(now())
+
+  // Relations
+  blocker User @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId(length: 125), blockedId(length: 125)])
+  @@index([blockerId(length: 191)])
+  @@index([blockedId(length: 191)])
+}

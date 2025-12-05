@@ -3,7 +3,7 @@
     "baseUrl": ".",
     "paths": {
       "@gen/*": [
-        "C:\\wamp64\\www\\ssot-codegen\\generated\\E-commerce Store-64\\src/*"
+        "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src/*"
       ]
     }
   }

@@ -211,28 +211,58 @@ export function validateMySQLKeyLength(
     }
     
     // Validate composite indexes and composite unique constraints (check total key length)
-    const modelBlockMatch = schemaContent.match(new RegExp(`model\\s+${model.name}\\s*\\{([^}]+)\\}`, 's'))
-    if (modelBlockMatch) {
-      const modelBody = modelBlockMatch[1]
+    // Use brace counting to handle nested structures (JSON fields, comments, etc.)
+    const modelStartPattern = new RegExp(`model\\s+${model.name}\\s*\\{`, 's')
+    const modelStartMatch = schemaContent.match(modelStartPattern)
+    if (!modelStartMatch) continue
+    
+    const startPos = modelStartMatch.index! + modelStartMatch[0].length - 1 // Position of opening brace
+    let braceCount = 1
+    let endPos = startPos + 1
+    while (braceCount > 0 && endPos < schemaContent.length) {
+      if (schemaContent[endPos] === '{') braceCount++
+      else if (schemaContent[endPos] === '}') braceCount--
+      endPos++
+    }
+    const modelBody = schemaContent.substring(startPos + 1, endPos - 1)
+    
+    if (modelBody) {
       
       // Find all @@index directives
       const indexMatches = modelBody.matchAll(/@@index\s*\(\s*\[([^\]]+)\]\s*\)/g)
       
       // Find all @@unique directives (composite unique constraints)
-      const uniqueMatches = modelBody.matchAll(/@@unique\s*\(\s*\[([^\]]+)\]\s*\)/g)
+      const uniqueMatches = Array.from(modelBody.matchAll(/@@unique\s*\(\s*\[([^\]]+)\]\s*\)/g))
+      
+      // Create a map of unique constraints from schema content (preserves prefix index syntax)
+      const schemaUniqueConstraints = new Map<string, string>()
+      for (const match of uniqueMatches) {
+        const fields = match[1]
+        // Create a key from field names (without prefix syntax) for matching
+        const key = fields.split(',').map(f => f.trim().replace(/\(.*\)$/, '').trim()).join(', ')
+        schemaUniqueConstraints.set(key, fields)
+      }
       
       // Combine both types of composite indexes
       const allCompositeIndexes = [
         ...Array.from(indexMatches).map(m => ({ type: 'index', fields: m[1] })),
-        ...Array.from(uniqueMatches).map(m => ({ type: 'unique', fields: m[1] }))
+        ...uniqueMatches.map(m => ({ type: 'unique', fields: m[1] }))
       ]
       
       // Also check model.uniqueFields for composite unique constraints
+      // But prefer the ones parsed from schema content (which preserve prefix index syntax)
       for (const uniqueConstraint of model.uniqueFields) {
         if (uniqueConstraint.length > 1) {
+          const key = uniqueConstraint.join(', ')
+          // If we have a schema-parsed version with prefix indexes, use that instead
+          if (schemaUniqueConstraints.has(key)) {
+            // Already added from schema content, skip
+            continue
+          }
+          // Otherwise add the parsed version (without prefix syntax)
           allCompositeIndexes.push({
             type: 'unique',
-            fields: uniqueConstraint.join(', ')
+            fields: key
           })
         }
       }
@@ -242,6 +272,7 @@ export function validateMySQLKeyLength(
         let totalKeyLength = 0
         const stringFields: string[] = []
         const originalIndexDef = compositeIndex.fields // Keep original to check for prefix indexes
+        let prefixIndexesDetected = false
         
         for (const fieldName of indexFields) {
           // Extract field name (remove prefix index syntax like "fieldName(191)")
@@ -257,6 +288,7 @@ export function validateMySQLKeyLength(
             if (prefixLength !== null) {
               // Prefix index is used - use that length
               totalKeyLength += prefixLength * 4
+              prefixIndexesDetected = true
             } else {
               // No prefix index - use full field length
               const fieldDef = getFieldDefinition(model.name, field.name, schemaContent)
@@ -280,7 +312,8 @@ export function validateMySQLKeyLength(
           // Check if prefix indexes are already used in the original index definition
           const hasPrefixIndexes = originalIndexDef.includes('(length:')
           
-          if (!hasPrefixIndexes) {
+          // Only report error if prefix indexes are NOT detected AND NOT present in original definition
+          if (!hasPrefixIndexes && !prefixIndexesDetected) {
             errors.push(
               `Model ${model.name} has ${indexType} [${indexFields.join(', ')}] with total key length ${totalKeyLength} bytes, ` +
               `exceeding MySQL limit (${MAX_KEY_LENGTH} bytes). ` +

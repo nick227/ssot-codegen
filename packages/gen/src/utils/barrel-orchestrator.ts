@@ -140,6 +140,45 @@ export function determineBarrelWrites(
     }
   }
   
+  // Handle service integration routes (routes that don't match model name patterns)
+  // Service routes use service annotation names, not model names
+  const processedRouteNames = new Set<string>()
+  for (const modelName of modelNames) {
+    const modelKebab = toKebabCase(modelName)
+    const modelLower = modelName.toLowerCase()
+    const routeKey1 = `${modelLower}.routes.ts`
+    const routeKey2 = `${modelKebab}.routes.ts`
+    const routeScaffold1 = `${modelLower}.routes.scaffold.ts`
+    const routeScaffold2 = `${modelKebab}.routes.scaffold.ts`
+    if (generatedFiles.routes.has(routeKey1)) processedRouteNames.add(routeKey1)
+    if (generatedFiles.routes.has(routeKey2)) processedRouteNames.add(routeKey2)
+    if (generatedFiles.routes.has(routeScaffold1)) processedRouteNames.add(routeScaffold1)
+    if (generatedFiles.routes.has(routeScaffold2)) processedRouteNames.add(routeScaffold2)
+  }
+  
+  // Check for any route files that weren't processed (service integration routes)
+  for (const [routeFileName] of generatedFiles.routes) {
+    if (!processedRouteNames.has(routeFileName) && routeFileName.endsWith('.routes.ts')) {
+      // Extract service/route name from filename (e.g., "admin-config-service.routes.ts" -> "admin-config-service")
+      const routeName = routeFileName.replace(/\.routes\.ts$/, '')
+      const routeKebab = toKebabCase(routeName)
+      
+      // Only create barrel if it doesn't already exist
+      const barrelPath = path.join(cfg.rootDir, 'routes', routeKebab, 'index.ts')
+      const alreadyExists = writes.some(w => w.path === barrelPath)
+      
+      if (!alreadyExists) {
+        layerModels.routes.push(routeName)
+        writes.push({
+          path: barrelPath,
+          content: generateRoutesBarrel(routeName),
+          trackId: `routes:${routeName}:index`,
+          esmPath: esmPathFn('routes', routeName)
+        })
+      }
+    }
+  }
+  
   // Generate layer-level barrels
   for (const [layer, layerModelsArray] of Object.entries(layerModels)) {
     if (layerModelsArray.length > 0) {

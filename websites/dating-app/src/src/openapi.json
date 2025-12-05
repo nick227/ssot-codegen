@@ -1,0 +1,396 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Generated API",
+    "version": "1.0.0",
+    "description": "Auto-generated from Prisma schema"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/api",
+      "description": "Development"
+    }
+  ],
+  "paths": {
+    "/users": {
+      "get": {
+        "operationId": "listUsers",
+        "summary": "List all User records",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createUser",
+        "summary": "Create a User",
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
+    },
+    "/profiles": {
+      "get": {
+        "operationId": "listProfiles",
+        "summary": "List all Profile records",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createProfile",
+        "summary": "Create a Profile",
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
+    },
+    "/photos": {
+      "get": {
+        "operationId": "listPhotos",
+        "summary": "List all Photo records",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createPhoto",
+        "summary": "Create a Photo",
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
+    },
+    "/swipes": {
+      "get": {
+        "operationId": "listSwipes",
+        "summary": "List all Swipe records",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createSwipe",
+        "summary": "Create a Swipe",
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
+    },
+    "/matchs": {
+      "get": {
+        "operationId": "listMatchs",
+        "summary": "List all Match records",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createMatch",
+        "summary": "Create a Match",
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
+    },
+    "/messages": {
+      "get": {
+        "operationId": "listMessages",
+        "summary": "List all Message records",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createMessage",
+        "summary": "Create a Message",
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
+    },
+    "/quizs": {
+      "get": {
+        "operationId": "listQuizs",
+        "summary": "List all Quiz records",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createQuiz",
+        "summary": "Create a Quiz",
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
+    },
+    "/quizquestions": {
+      "get": {
+        "operationId": "listQuizQuestions",
+        "summary": "List all QuizQuestion records",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createQuizQuestion",
+        "summary": "Create a QuizQuestion",
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
+    },
+    "/quizanswers": {
+      "get": {
+        "operationId": "listQuizAnswers",
+        "summary": "List all QuizAnswer records",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createQuizAnswer",
+        "summary": "Create a QuizAnswer",
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
+    },
+    "/quizresults": {
+      "get": {
+        "operationId": "listQuizResults",
+        "summary": "List all QuizResult records",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createQuizResult",
+        "summary": "Create a QuizResult",
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
+    },
+    "/behaviorevents": {
+      "get": {
+        "operationId": "listBehaviorEvents",
+        "summary": "List all BehaviorEvent records",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createBehaviorEvent",
+        "summary": "Create a BehaviorEvent",
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
+    },
+    "/behavioreventarchives": {
+      "get": {
+        "operationId": "listBehaviorEventArchives",
+        "summary": "List all BehaviorEventArchive records",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createBehaviorEventArchive",
+        "summary": "Create a BehaviorEventArchive",
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
+    },
+    "/personalitydimensions": {
+      "get": {
+        "operationId": "listPersonalityDimensions",
+        "summary": "List all PersonalityDimension records",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createPersonalityDimension",
+        "summary": "Create a PersonalityDimension",
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
+    },
+    "/userdimensionscores": {
+      "get": {
+        "operationId": "listUserDimensionScores",
+        "summary": "List all UserDimensionScore records",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createUserDimensionScore",
+        "summary": "Create a UserDimensionScore",
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
+    },
+    "/compatibilityscores": {
+      "get": {
+        "operationId": "listCompatibilityScores",
+        "summary": "List all CompatibilityScore records",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createCompatibilityScore",
+        "summary": "Create a CompatibilityScore",
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
+    },
+    "/userdimensionprioritys": {
+      "get": {
+        "operationId": "listUserDimensionPrioritys",
+        "summary": "List all UserDimensionPriority records",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createUserDimensionPriority",
+        "summary": "Create a UserDimensionPriority",
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
+    },
+    "/dimensionmappingrules": {
+      "get": {
+        "operationId": "listDimensionMappingRules",
+        "summary": "List all DimensionMappingRule records",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createDimensionMappingRule",
+        "summary": "Create a DimensionMappingRule",
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
+    },
+    "/eventweightconfigs": {
+      "get": {
+        "operationId": "listEventWeightConfigs",
+        "summary": "List all EventWeightConfig records",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createEventWeightConfig",
+        "summary": "Create a EventWeightConfig",
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
+    },
+    "/blocks": {
+      "get": {
+        "operationId": "listBlocks",
+        "summary": "List all Block records",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createBlock",
+        "summary": "Create a Block",
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
+    }
+  }
+}

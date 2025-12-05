@@ -74,7 +74,7 @@ export const packageJsonTemplate = (options: StandaloneProjectOptions) => `{
   "devDependencies": {
     "@types/compression": "^1.7.5",
     "@types/cors": "^2.8.17",
-    "@types/express": "^5.0.0",
+    "@types/express": "^4.17.21",
     "@types/hpp": "^0.2.6",
     "@types/node": "^22.10.0",
     "@typescript-eslint/eslint-plugin": "^8.0.0",

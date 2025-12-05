@@ -54,7 +54,7 @@ export const VERSIONS = {
   expressValidator: '^7.2.0',
   multer: '^1.4.5',
   typesMorgan: '^1.9.9',
-  typesExpress: '^5.0.0',
+  typesExpress: '^4.17.21',
   typesCors: '^2.8.19',
   typesMulter: '^1.4.12',
   

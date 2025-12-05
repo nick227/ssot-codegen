@@ -1,0 +1,3284 @@
+{
+  "schemaHash": "522e6f7f50f76c166654bd8b5e311c70f6a2687fb258a155ee22800f85699b4d",
+  "models": [
+    "User",
+    "Profile",
+    "Photo",
+    "Swipe",
+    "Match",
+    "Message",
+    "Quiz",
+    "QuizQuestion",
+    "QuizAnswer",
+    "QuizResult",
+    "BehaviorEvent",
+    "BehaviorEventArchive",
+    "PersonalityDimension",
+    "UserDimensionScore",
+    "CompatibilityScore",
+    "UserDimensionPriority",
+    "DimensionMappingRule",
+    "EventWeightConfig",
+    "Block"
+  ],
+  "version": "0.4.0",
+  "generatedAt": "2025-12-05T06:13:49.912Z",
+  "totalFiles": 270,
+  "breakdown": [
+    {
+      "layer": "contracts",
+      "count": 76
+    },
+    {
+      "layer": "validators",
+      "count": 57
+    },
+    {
+      "layer": "services",
+      "count": 16
+    },
+    {
+      "layer": "controllers",
+      "count": 15
+    },
+    {
+      "layer": "routes",
+      "count": 15
+    }
+  ],
+  "pathMap": {
+    "contracts:User:user.create.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\user\\user.create.dto.ts",
+      "esm": "@gen/contracts/user"
+    },
+    "contracts:User:user.update.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\user\\user.update.dto.ts",
+      "esm": "@gen/contracts/user"
+    },
+    "contracts:User:user.read.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\user\\user.read.dto.ts",
+      "esm": "@gen/contracts/user"
+    },
+    "contracts:User:user.query.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\user\\user.query.dto.ts",
+      "esm": "@gen/contracts/user"
+    },
+    "contracts:Profile:profile.create.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\profile\\profile.create.dto.ts",
+      "esm": "@gen/contracts/profile"
+    },
+    "contracts:Profile:profile.update.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\profile\\profile.update.dto.ts",
+      "esm": "@gen/contracts/profile"
+    },
+    "contracts:Profile:profile.read.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\profile\\profile.read.dto.ts",
+      "esm": "@gen/contracts/profile"
+    },
+    "contracts:Profile:profile.query.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\profile\\profile.query.dto.ts",
+      "esm": "@gen/contracts/profile"
+    },
+    "contracts:Photo:photo.create.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\photo\\photo.create.dto.ts",
+      "esm": "@gen/contracts/photo"
+    },
+    "contracts:Photo:photo.update.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\photo\\photo.update.dto.ts",
+      "esm": "@gen/contracts/photo"
+    },
+    "contracts:Photo:photo.read.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\photo\\photo.read.dto.ts",
+      "esm": "@gen/contracts/photo"
+    },
+    "contracts:Photo:photo.query.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\photo\\photo.query.dto.ts",
+      "esm": "@gen/contracts/photo"
+    },
+    "contracts:Swipe:swipe.create.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\swipe\\swipe.create.dto.ts",
+      "esm": "@gen/contracts/swipe"
+    },
+    "contracts:Swipe:swipe.update.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\swipe\\swipe.update.dto.ts",
+      "esm": "@gen/contracts/swipe"
+    },
+    "contracts:Swipe:swipe.read.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\swipe\\swipe.read.dto.ts",
+      "esm": "@gen/contracts/swipe"
+    },
+    "contracts:Swipe:swipe.query.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\swipe\\swipe.query.dto.ts",
+      "esm": "@gen/contracts/swipe"
+    },
+    "contracts:Match:match.create.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\match\\match.create.dto.ts",
+      "esm": "@gen/contracts/match"
+    },
+    "contracts:Match:match.update.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\match\\match.update.dto.ts",
+      "esm": "@gen/contracts/match"
+    },
+    "contracts:Match:match.read.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\match\\match.read.dto.ts",
+      "esm": "@gen/contracts/match"
+    },
+    "contracts:Match:match.query.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\match\\match.query.dto.ts",
+      "esm": "@gen/contracts/match"
+    },
+    "contracts:Message:message.create.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\message\\message.create.dto.ts",
+      "esm": "@gen/contracts/message"
+    },
+    "contracts:Message:message.update.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\message\\message.update.dto.ts",
+      "esm": "@gen/contracts/message"
+    },
+    "contracts:Message:message.read.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\message\\message.read.dto.ts",
+      "esm": "@gen/contracts/message"
+    },
+    "contracts:Message:message.query.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\message\\message.query.dto.ts",
+      "esm": "@gen/contracts/message"
+    },
+    "contracts:Quiz:quiz.create.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz\\quiz.create.dto.ts",
+      "esm": "@gen/contracts/quiz"
+    },
+    "contracts:Quiz:quiz.update.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz\\quiz.update.dto.ts",
+      "esm": "@gen/contracts/quiz"
+    },
+    "contracts:Quiz:quiz.read.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz\\quiz.read.dto.ts",
+      "esm": "@gen/contracts/quiz"
+    },
+    "contracts:Quiz:quiz.query.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz\\quiz.query.dto.ts",
+      "esm": "@gen/contracts/quiz"
+    },
+    "contracts:QuizQuestion:quiz-question.create.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz-question\\quiz-question.create.dto.ts",
+      "esm": "@gen/contracts/quizquestion"
+    },
+    "contracts:QuizQuestion:quiz-question.update.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz-question\\quiz-question.update.dto.ts",
+      "esm": "@gen/contracts/quizquestion"
+    },
+    "contracts:QuizQuestion:quiz-question.read.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz-question\\quiz-question.read.dto.ts",
+      "esm": "@gen/contracts/quizquestion"
+    },
+    "contracts:QuizQuestion:quiz-question.query.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz-question\\quiz-question.query.dto.ts",
+      "esm": "@gen/contracts/quizquestion"
+    },
+    "contracts:QuizAnswer:quiz-answer.create.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz-answer\\quiz-answer.create.dto.ts",
+      "esm": "@gen/contracts/quizanswer"
+    },
+    "contracts:QuizAnswer:quiz-answer.update.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz-answer\\quiz-answer.update.dto.ts",
+      "esm": "@gen/contracts/quizanswer"
+    },
+    "contracts:QuizAnswer:quiz-answer.read.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz-answer\\quiz-answer.read.dto.ts",
+      "esm": "@gen/contracts/quizanswer"
+    },
+    "contracts:QuizAnswer:quiz-answer.query.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz-answer\\quiz-answer.query.dto.ts",
+      "esm": "@gen/contracts/quizanswer"
+    },
+    "contracts:QuizResult:quiz-result.create.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz-result\\quiz-result.create.dto.ts",
+      "esm": "@gen/contracts/quizresult"
+    },
+    "contracts:QuizResult:quiz-result.update.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz-result\\quiz-result.update.dto.ts",
+      "esm": "@gen/contracts/quizresult"
+    },
+    "contracts:QuizResult:quiz-result.read.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz-result\\quiz-result.read.dto.ts",
+      "esm": "@gen/contracts/quizresult"
+    },
+    "contracts:QuizResult:quiz-result.query.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz-result\\quiz-result.query.dto.ts",
+      "esm": "@gen/contracts/quizresult"
+    },
+    "contracts:BehaviorEvent:behavior-event.create.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\behavior-event\\behavior-event.create.dto.ts",
+      "esm": "@gen/contracts/behaviorevent"
+    },
+    "contracts:BehaviorEvent:behavior-event.update.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\behavior-event\\behavior-event.update.dto.ts",
+      "esm": "@gen/contracts/behaviorevent"
+    },
+    "contracts:BehaviorEvent:behavior-event.read.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\behavior-event\\behavior-event.read.dto.ts",
+      "esm": "@gen/contracts/behaviorevent"
+    },
+    "contracts:BehaviorEvent:behavior-event.query.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\behavior-event\\behavior-event.query.dto.ts",
+      "esm": "@gen/contracts/behaviorevent"
+    },
+    "contracts:BehaviorEventArchive:behavior-event-archive.create.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\behavior-event-archive\\behavior-event-archive.create.dto.ts",
+      "esm": "@gen/contracts/behavioreventarchive"
+    },
+    "contracts:BehaviorEventArchive:behavior-event-archive.update.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\behavior-event-archive\\behavior-event-archive.update.dto.ts",
+      "esm": "@gen/contracts/behavioreventarchive"
+    },
+    "contracts:BehaviorEventArchive:behavior-event-archive.read.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\behavior-event-archive\\behavior-event-archive.read.dto.ts",
+      "esm": "@gen/contracts/behavioreventarchive"
+    },
+    "contracts:BehaviorEventArchive:behavior-event-archive.query.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\behavior-event-archive\\behavior-event-archive.query.dto.ts",
+      "esm": "@gen/contracts/behavioreventarchive"
+    },
+    "contracts:PersonalityDimension:personality-dimension.create.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\personality-dimension\\personality-dimension.create.dto.ts",
+      "esm": "@gen/contracts/personalitydimension"
+    },
+    "contracts:PersonalityDimension:personality-dimension.update.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\personality-dimension\\personality-dimension.update.dto.ts",
+      "esm": "@gen/contracts/personalitydimension"
+    },
+    "contracts:PersonalityDimension:personality-dimension.read.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\personality-dimension\\personality-dimension.read.dto.ts",
+      "esm": "@gen/contracts/personalitydimension"
+    },
+    "contracts:PersonalityDimension:personality-dimension.query.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\personality-dimension\\personality-dimension.query.dto.ts",
+      "esm": "@gen/contracts/personalitydimension"
+    },
+    "contracts:UserDimensionScore:user-dimension-score.create.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\user-dimension-score\\user-dimension-score.create.dto.ts",
+      "esm": "@gen/contracts/userdimensionscore"
+    },
+    "contracts:UserDimensionScore:user-dimension-score.update.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\user-dimension-score\\user-dimension-score.update.dto.ts",
+      "esm": "@gen/contracts/userdimensionscore"
+    },
+    "contracts:UserDimensionScore:user-dimension-score.read.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\user-dimension-score\\user-dimension-score.read.dto.ts",
+      "esm": "@gen/contracts/userdimensionscore"
+    },
+    "contracts:UserDimensionScore:user-dimension-score.query.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\user-dimension-score\\user-dimension-score.query.dto.ts",
+      "esm": "@gen/contracts/userdimensionscore"
+    },
+    "contracts:CompatibilityScore:compatibility-score.create.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\compatibility-score\\compatibility-score.create.dto.ts",
+      "esm": "@gen/contracts/compatibilityscore"
+    },
+    "contracts:CompatibilityScore:compatibility-score.update.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\compatibility-score\\compatibility-score.update.dto.ts",
+      "esm": "@gen/contracts/compatibilityscore"
+    },
+    "contracts:CompatibilityScore:compatibility-score.read.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\compatibility-score\\compatibility-score.read.dto.ts",
+      "esm": "@gen/contracts/compatibilityscore"
+    },
+    "contracts:CompatibilityScore:compatibility-score.query.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\compatibility-score\\compatibility-score.query.dto.ts",
+      "esm": "@gen/contracts/compatibilityscore"
+    },
+    "contracts:UserDimensionPriority:user-dimension-priority.create.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\user-dimension-priority\\user-dimension-priority.create.dto.ts",
+      "esm": "@gen/contracts/userdimensionpriority"
+    },
+    "contracts:UserDimensionPriority:user-dimension-priority.update.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\user-dimension-priority\\user-dimension-priority.update.dto.ts",
+      "esm": "@gen/contracts/userdimensionpriority"
+    },
+    "contracts:UserDimensionPriority:user-dimension-priority.read.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\user-dimension-priority\\user-dimension-priority.read.dto.ts",
+      "esm": "@gen/contracts/userdimensionpriority"
+    },
+    "contracts:UserDimensionPriority:user-dimension-priority.query.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\user-dimension-priority\\user-dimension-priority.query.dto.ts",
+      "esm": "@gen/contracts/userdimensionpriority"
+    },
+    "contracts:DimensionMappingRule:dimension-mapping-rule.create.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\dimension-mapping-rule\\dimension-mapping-rule.create.dto.ts",
+      "esm": "@gen/contracts/dimensionmappingrule"
+    },
+    "contracts:DimensionMappingRule:dimension-mapping-rule.update.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\dimension-mapping-rule\\dimension-mapping-rule.update.dto.ts",
+      "esm": "@gen/contracts/dimensionmappingrule"
+    },
+    "contracts:DimensionMappingRule:dimension-mapping-rule.read.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\dimension-mapping-rule\\dimension-mapping-rule.read.dto.ts",
+      "esm": "@gen/contracts/dimensionmappingrule"
+    },
+    "contracts:DimensionMappingRule:dimension-mapping-rule.query.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\dimension-mapping-rule\\dimension-mapping-rule.query.dto.ts",
+      "esm": "@gen/contracts/dimensionmappingrule"
+    },
+    "contracts:EventWeightConfig:event-weight-config.create.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\event-weight-config\\event-weight-config.create.dto.ts",
+      "esm": "@gen/contracts/eventweightconfig"
+    },
+    "contracts:EventWeightConfig:event-weight-config.update.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\event-weight-config\\event-weight-config.update.dto.ts",
+      "esm": "@gen/contracts/eventweightconfig"
+    },
+    "contracts:EventWeightConfig:event-weight-config.read.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\event-weight-config\\event-weight-config.read.dto.ts",
+      "esm": "@gen/contracts/eventweightconfig"
+    },
+    "contracts:EventWeightConfig:event-weight-config.query.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\event-weight-config\\event-weight-config.query.dto.ts",
+      "esm": "@gen/contracts/eventweightconfig"
+    },
+    "contracts:Block:block.create.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\block\\block.create.dto.ts",
+      "esm": "@gen/contracts/block"
+    },
+    "contracts:Block:block.update.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\block\\block.update.dto.ts",
+      "esm": "@gen/contracts/block"
+    },
+    "contracts:Block:block.read.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\block\\block.read.dto.ts",
+      "esm": "@gen/contracts/block"
+    },
+    "contracts:Block:block.query.dto.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\block\\block.query.dto.ts",
+      "esm": "@gen/contracts/block"
+    },
+    "validators:User:user.create.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\user\\user.create.zod.ts",
+      "esm": "@gen/validators/user"
+    },
+    "validators:User:user.update.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\user\\user.update.zod.ts",
+      "esm": "@gen/validators/user"
+    },
+    "validators:User:user.query.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\user\\user.query.zod.ts",
+      "esm": "@gen/validators/user"
+    },
+    "validators:Profile:profile.create.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\profile\\profile.create.zod.ts",
+      "esm": "@gen/validators/profile"
+    },
+    "validators:Profile:profile.update.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\profile\\profile.update.zod.ts",
+      "esm": "@gen/validators/profile"
+    },
+    "validators:Profile:profile.query.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\profile\\profile.query.zod.ts",
+      "esm": "@gen/validators/profile"
+    },
+    "validators:Photo:photo.create.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\photo\\photo.create.zod.ts",
+      "esm": "@gen/validators/photo"
+    },
+    "validators:Photo:photo.update.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\photo\\photo.update.zod.ts",
+      "esm": "@gen/validators/photo"
+    },
+    "validators:Photo:photo.query.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\photo\\photo.query.zod.ts",
+      "esm": "@gen/validators/photo"
+    },
+    "validators:Swipe:swipe.create.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\swipe\\swipe.create.zod.ts",
+      "esm": "@gen/validators/swipe"
+    },
+    "validators:Swipe:swipe.update.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\swipe\\swipe.update.zod.ts",
+      "esm": "@gen/validators/swipe"
+    },
+    "validators:Swipe:swipe.query.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\swipe\\swipe.query.zod.ts",
+      "esm": "@gen/validators/swipe"
+    },
+    "validators:Match:match.create.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\match\\match.create.zod.ts",
+      "esm": "@gen/validators/match"
+    },
+    "validators:Match:match.update.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\match\\match.update.zod.ts",
+      "esm": "@gen/validators/match"
+    },
+    "validators:Match:match.query.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\match\\match.query.zod.ts",
+      "esm": "@gen/validators/match"
+    },
+    "validators:Message:message.create.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\message\\message.create.zod.ts",
+      "esm": "@gen/validators/message"
+    },
+    "validators:Message:message.update.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\message\\message.update.zod.ts",
+      "esm": "@gen/validators/message"
+    },
+    "validators:Message:message.query.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\message\\message.query.zod.ts",
+      "esm": "@gen/validators/message"
+    },
+    "validators:Quiz:quiz.create.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz\\quiz.create.zod.ts",
+      "esm": "@gen/validators/quiz"
+    },
+    "validators:Quiz:quiz.update.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz\\quiz.update.zod.ts",
+      "esm": "@gen/validators/quiz"
+    },
+    "validators:Quiz:quiz.query.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz\\quiz.query.zod.ts",
+      "esm": "@gen/validators/quiz"
+    },
+    "validators:QuizQuestion:quiz-question.create.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz-question\\quiz-question.create.zod.ts",
+      "esm": "@gen/validators/quizquestion"
+    },
+    "validators:QuizQuestion:quiz-question.update.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz-question\\quiz-question.update.zod.ts",
+      "esm": "@gen/validators/quizquestion"
+    },
+    "validators:QuizQuestion:quiz-question.query.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz-question\\quiz-question.query.zod.ts",
+      "esm": "@gen/validators/quizquestion"
+    },
+    "validators:QuizAnswer:quiz-answer.create.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz-answer\\quiz-answer.create.zod.ts",
+      "esm": "@gen/validators/quizanswer"
+    },
+    "validators:QuizAnswer:quiz-answer.update.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz-answer\\quiz-answer.update.zod.ts",
+      "esm": "@gen/validators/quizanswer"
+    },
+    "validators:QuizAnswer:quiz-answer.query.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz-answer\\quiz-answer.query.zod.ts",
+      "esm": "@gen/validators/quizanswer"
+    },
+    "validators:QuizResult:quiz-result.create.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz-result\\quiz-result.create.zod.ts",
+      "esm": "@gen/validators/quizresult"
+    },
+    "validators:QuizResult:quiz-result.update.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz-result\\quiz-result.update.zod.ts",
+      "esm": "@gen/validators/quizresult"
+    },
+    "validators:QuizResult:quiz-result.query.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz-result\\quiz-result.query.zod.ts",
+      "esm": "@gen/validators/quizresult"
+    },
+    "validators:BehaviorEvent:behavior-event.create.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\behavior-event\\behavior-event.create.zod.ts",
+      "esm": "@gen/validators/behaviorevent"
+    },
+    "validators:BehaviorEvent:behavior-event.update.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\behavior-event\\behavior-event.update.zod.ts",
+      "esm": "@gen/validators/behaviorevent"
+    },
+    "validators:BehaviorEvent:behavior-event.query.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\behavior-event\\behavior-event.query.zod.ts",
+      "esm": "@gen/validators/behaviorevent"
+    },
+    "validators:BehaviorEventArchive:behavior-event-archive.create.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\behavior-event-archive\\behavior-event-archive.create.zod.ts",
+      "esm": "@gen/validators/behavioreventarchive"
+    },
+    "validators:BehaviorEventArchive:behavior-event-archive.update.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\behavior-event-archive\\behavior-event-archive.update.zod.ts",
+      "esm": "@gen/validators/behavioreventarchive"
+    },
+    "validators:BehaviorEventArchive:behavior-event-archive.query.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\behavior-event-archive\\behavior-event-archive.query.zod.ts",
+      "esm": "@gen/validators/behavioreventarchive"
+    },
+    "validators:PersonalityDimension:personality-dimension.create.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\personality-dimension\\personality-dimension.create.zod.ts",
+      "esm": "@gen/validators/personalitydimension"
+    },
+    "validators:PersonalityDimension:personality-dimension.update.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\personality-dimension\\personality-dimension.update.zod.ts",
+      "esm": "@gen/validators/personalitydimension"
+    },
+    "validators:PersonalityDimension:personality-dimension.query.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\personality-dimension\\personality-dimension.query.zod.ts",
+      "esm": "@gen/validators/personalitydimension"
+    },
+    "validators:UserDimensionScore:user-dimension-score.create.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\user-dimension-score\\user-dimension-score.create.zod.ts",
+      "esm": "@gen/validators/userdimensionscore"
+    },
+    "validators:UserDimensionScore:user-dimension-score.update.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\user-dimension-score\\user-dimension-score.update.zod.ts",
+      "esm": "@gen/validators/userdimensionscore"
+    },
+    "validators:UserDimensionScore:user-dimension-score.query.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\user-dimension-score\\user-dimension-score.query.zod.ts",
+      "esm": "@gen/validators/userdimensionscore"
+    },
+    "validators:CompatibilityScore:compatibility-score.create.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\compatibility-score\\compatibility-score.create.zod.ts",
+      "esm": "@gen/validators/compatibilityscore"
+    },
+    "validators:CompatibilityScore:compatibility-score.update.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\compatibility-score\\compatibility-score.update.zod.ts",
+      "esm": "@gen/validators/compatibilityscore"
+    },
+    "validators:CompatibilityScore:compatibility-score.query.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\compatibility-score\\compatibility-score.query.zod.ts",
+      "esm": "@gen/validators/compatibilityscore"
+    },
+    "validators:UserDimensionPriority:user-dimension-priority.create.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\user-dimension-priority\\user-dimension-priority.create.zod.ts",
+      "esm": "@gen/validators/userdimensionpriority"
+    },
+    "validators:UserDimensionPriority:user-dimension-priority.update.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\user-dimension-priority\\user-dimension-priority.update.zod.ts",
+      "esm": "@gen/validators/userdimensionpriority"
+    },
+    "validators:UserDimensionPriority:user-dimension-priority.query.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\user-dimension-priority\\user-dimension-priority.query.zod.ts",
+      "esm": "@gen/validators/userdimensionpriority"
+    },
+    "validators:DimensionMappingRule:dimension-mapping-rule.create.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\dimension-mapping-rule\\dimension-mapping-rule.create.zod.ts",
+      "esm": "@gen/validators/dimensionmappingrule"
+    },
+    "validators:DimensionMappingRule:dimension-mapping-rule.update.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\dimension-mapping-rule\\dimension-mapping-rule.update.zod.ts",
+      "esm": "@gen/validators/dimensionmappingrule"
+    },
+    "validators:DimensionMappingRule:dimension-mapping-rule.query.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\dimension-mapping-rule\\dimension-mapping-rule.query.zod.ts",
+      "esm": "@gen/validators/dimensionmappingrule"
+    },
+    "validators:EventWeightConfig:event-weight-config.create.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\event-weight-config\\event-weight-config.create.zod.ts",
+      "esm": "@gen/validators/eventweightconfig"
+    },
+    "validators:EventWeightConfig:event-weight-config.update.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\event-weight-config\\event-weight-config.update.zod.ts",
+      "esm": "@gen/validators/eventweightconfig"
+    },
+    "validators:EventWeightConfig:event-weight-config.query.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\event-weight-config\\event-weight-config.query.zod.ts",
+      "esm": "@gen/validators/eventweightconfig"
+    },
+    "validators:Block:block.create.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\block\\block.create.zod.ts",
+      "esm": "@gen/validators/block"
+    },
+    "validators:Block:block.update.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\block\\block.update.zod.ts",
+      "esm": "@gen/validators/block"
+    },
+    "validators:Block:block.query.zod.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\block\\block.query.zod.ts",
+      "esm": "@gen/validators/block"
+    },
+    "services:user:user.service.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\user\\user.service.ts",
+      "esm": "@gen/services/user"
+    },
+    "services:profile:profile.service.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\profile\\profile.service.ts",
+      "esm": "@gen/services/profile"
+    },
+    "services:photo:photo.service.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\photo\\photo.service.ts",
+      "esm": "@gen/services/photo"
+    },
+    "services:message:message.service.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\message\\message.service.ts",
+      "esm": "@gen/services/message"
+    },
+    "services:quiz:quiz.service.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\quiz\\quiz.service.ts",
+      "esm": "@gen/services/quiz"
+    },
+    "services:quiz-question:quiz-question.service.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\quiz-question\\quiz-question.service.ts",
+      "esm": "@gen/services/quiz-question"
+    },
+    "services:quiz-answer:quiz-answer.service.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\quiz-answer\\quiz-answer.service.ts",
+      "esm": "@gen/services/quiz-answer"
+    },
+    "services:quiz-result:quiz-result.service.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\quiz-result\\quiz-result.service.ts",
+      "esm": "@gen/services/quiz-result"
+    },
+    "services:behavior-event:behavior-event.service.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\behavior-event\\behavior-event.service.ts",
+      "esm": "@gen/services/behavior-event"
+    },
+    "services:behavior-event-archive:behavior-event-archive.service.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\behavior-event-archive\\behavior-event-archive.service.ts",
+      "esm": "@gen/services/behavior-event-archive"
+    },
+    "services:personality-dimension:personality-dimension.service.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\personality-dimension\\personality-dimension.service.ts",
+      "esm": "@gen/services/personality-dimension"
+    },
+    "services:user-dimension-score:user-dimension-score.service.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\user-dimension-score\\user-dimension-score.service.ts",
+      "esm": "@gen/services/user-dimension-score"
+    },
+    "services:compatibility-score:compatibility-score.service.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\compatibility-score\\compatibility-score.service.ts",
+      "esm": "@gen/services/compatibility-score"
+    },
+    "services:dimension-mapping-rule:dimension-mapping-rule.service.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\dimension-mapping-rule\\dimension-mapping-rule.service.ts",
+      "esm": "@gen/services/dimension-mapping-rule"
+    },
+    "services:admin-config-service:admin-config-service.service.scaffold.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\admin-config-service\\admin-config-service.service.scaffold.ts",
+      "esm": "@gen/services/admin-config-service"
+    },
+    "services:event-weight-config:event-weight-config.service.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\event-weight-config\\event-weight-config.service.ts",
+      "esm": "@gen/services/event-weight-config"
+    },
+    "controllers:user:user.controller.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\user\\user.controller.ts",
+      "esm": "@gen/controllers/user"
+    },
+    "controllers:profile:profile.controller.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\profile\\profile.controller.ts",
+      "esm": "@gen/controllers/profile"
+    },
+    "controllers:photo:photo.controller.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\photo\\photo.controller.ts",
+      "esm": "@gen/controllers/photo"
+    },
+    "controllers:message:message.controller.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\message\\message.controller.ts",
+      "esm": "@gen/controllers/message"
+    },
+    "controllers:quiz:quiz.controller.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\quiz\\quiz.controller.ts",
+      "esm": "@gen/controllers/quiz"
+    },
+    "controllers:quiz-question:quiz-question.controller.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\quiz-question\\quiz-question.controller.ts",
+      "esm": "@gen/controllers/quiz-question"
+    },
+    "controllers:quiz-answer:quiz-answer.controller.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\quiz-answer\\quiz-answer.controller.ts",
+      "esm": "@gen/controllers/quiz-answer"
+    },
+    "controllers:quiz-result:quiz-result.controller.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\quiz-result\\quiz-result.controller.ts",
+      "esm": "@gen/controllers/quiz-result"
+    },
+    "controllers:behavior-event:behavior-event.controller.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\behavior-event\\behavior-event.controller.ts",
+      "esm": "@gen/controllers/behavior-event"
+    },
+    "controllers:behavior-event-archive:behavior-event-archive.controller.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\behavior-event-archive\\behavior-event-archive.controller.ts",
+      "esm": "@gen/controllers/behavior-event-archive"
+    },
+    "controllers:personality-dimension:personality-dimension.controller.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\personality-dimension\\personality-dimension.controller.ts",
+      "esm": "@gen/controllers/personality-dimension"
+    },
+    "controllers:user-dimension-score:user-dimension-score.controller.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\user-dimension-score\\user-dimension-score.controller.ts",
+      "esm": "@gen/controllers/user-dimension-score"
+    },
+    "controllers:compatibility-score:compatibility-score.controller.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\compatibility-score\\compatibility-score.controller.ts",
+      "esm": "@gen/controllers/compatibility-score"
+    },
+    "controllers:admin-config-service:admin-config-service.controller.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\admin-config-service\\admin-config-service.controller.ts",
+      "esm": "@gen/controllers/admin-config-service"
+    },
+    "controllers:event-weight-config:event-weight-config.controller.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\event-weight-config\\event-weight-config.controller.ts",
+      "esm": "@gen/controllers/event-weight-config"
+    },
+    "routes:user:user.routes.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\user\\user.routes.ts",
+      "esm": "@gen/routes/user"
+    },
+    "routes:profile:profile.routes.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\profile\\profile.routes.ts",
+      "esm": "@gen/routes/profile"
+    },
+    "routes:photo:photo.routes.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\photo\\photo.routes.ts",
+      "esm": "@gen/routes/photo"
+    },
+    "routes:message:message.routes.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\message\\message.routes.ts",
+      "esm": "@gen/routes/message"
+    },
+    "routes:quiz:quiz.routes.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\quiz\\quiz.routes.ts",
+      "esm": "@gen/routes/quiz"
+    },
+    "routes:quiz-question:quiz-question.routes.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\quiz-question\\quiz-question.routes.ts",
+      "esm": "@gen/routes/quiz-question"
+    },
+    "routes:quiz-answer:quiz-answer.routes.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\quiz-answer\\quiz-answer.routes.ts",
+      "esm": "@gen/routes/quiz-answer"
+    },
+    "routes:quiz-result:quiz-result.routes.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\quiz-result\\quiz-result.routes.ts",
+      "esm": "@gen/routes/quiz-result"
+    },
+    "routes:behavior-event:behavior-event.routes.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\behavior-event\\behavior-event.routes.ts",
+      "esm": "@gen/routes/behavior-event"
+    },
+    "routes:behavior-event-archive:behavior-event-archive.routes.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\behavior-event-archive\\behavior-event-archive.routes.ts",
+      "esm": "@gen/routes/behavior-event-archive"
+    },
+    "routes:personality-dimension:personality-dimension.routes.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\personality-dimension\\personality-dimension.routes.ts",
+      "esm": "@gen/routes/personality-dimension"
+    },
+    "routes:user-dimension-score:user-dimension-score.routes.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\user-dimension-score\\user-dimension-score.routes.ts",
+      "esm": "@gen/routes/user-dimension-score"
+    },
+    "routes:compatibility-score:compatibility-score.routes.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\compatibility-score\\compatibility-score.routes.ts",
+      "esm": "@gen/routes/compatibility-score"
+    },
+    "routes:admin-config-service:admin-config-service.routes.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\admin-config-service\\admin-config-service.routes.ts",
+      "esm": "@gen/routes/admin-config-service"
+    },
+    "routes:event-weight-config:event-weight-config.routes.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\event-weight-config\\event-weight-config.routes.ts",
+      "esm": "@gen/routes/event-weight-config"
+    },
+    "sdk:models/user.client.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\models\\user.client.ts",
+      "esm": "@gen/sdk"
+    },
+    "sdk:models/profile.client.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\models\\profile.client.ts",
+      "esm": "@gen/sdk"
+    },
+    "sdk:models/photo.client.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\models\\photo.client.ts",
+      "esm": "@gen/sdk"
+    },
+    "sdk:models/message.client.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\models\\message.client.ts",
+      "esm": "@gen/sdk"
+    },
+    "sdk:models/quiz.client.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\models\\quiz.client.ts",
+      "esm": "@gen/sdk"
+    },
+    "sdk:models/quizquestion.client.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\models\\quizquestion.client.ts",
+      "esm": "@gen/sdk"
+    },
+    "sdk:models/quizanswer.client.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\models\\quizanswer.client.ts",
+      "esm": "@gen/sdk"
+    },
+    "sdk:models/quizresult.client.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\models\\quizresult.client.ts",
+      "esm": "@gen/sdk"
+    },
+    "sdk:models/behaviorevent.client.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\models\\behaviorevent.client.ts",
+      "esm": "@gen/sdk"
+    },
+    "sdk:models/behavioreventarchive.client.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\models\\behavioreventarchive.client.ts",
+      "esm": "@gen/sdk"
+    },
+    "sdk:models/personalitydimension.client.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\models\\personalitydimension.client.ts",
+      "esm": "@gen/sdk"
+    },
+    "sdk:models/userdimensionscore.client.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\models\\userdimensionscore.client.ts",
+      "esm": "@gen/sdk"
+    },
+    "sdk:models/compatibilityscore.client.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\models\\compatibilityscore.client.ts",
+      "esm": "@gen/sdk"
+    },
+    "sdk:models/dimensionmappingrule.client.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\models\\dimensionmappingrule.client.ts",
+      "esm": "@gen/sdk"
+    },
+    "sdk:models/eventweightconfig.client.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\models\\eventweightconfig.client.ts",
+      "esm": "@gen/sdk"
+    },
+    "sdk:services/discovery-service.client.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\services\\discovery-service.client.ts",
+      "esm": "@gen/sdk"
+    },
+    "sdk:services/admin-config-service.client.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\services\\admin-config-service.client.ts",
+      "esm": "@gen/sdk"
+    },
+    "sdk:index.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\index.ts",
+      "esm": "@gen/sdk"
+    },
+    "sdk:version.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\version.ts",
+      "esm": "@gen/sdk"
+    },
+    "sdk:README.md": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\README.md",
+      "esm": "@gen/sdk"
+    },
+    "sdk:API-REFERENCE.md": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\API-REFERENCE.md",
+      "esm": "@gen/sdk"
+    },
+    "sdk:ARCHITECTURE.md": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\ARCHITECTURE.md",
+      "esm": "@gen/sdk"
+    },
+    "sdk:quick-start.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\quick-start.ts",
+      "esm": "@gen/sdk"
+    },
+    "sdk:types.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\types.ts",
+      "esm": "@gen/sdk"
+    },
+    "hooks:core:user-queries.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\user-queries.ts",
+      "esm": "@gen/sdk/core/queries/user-queries"
+    },
+    "hooks:core:profile-queries.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\profile-queries.ts",
+      "esm": "@gen/sdk/core/queries/profile-queries"
+    },
+    "hooks:core:photo-queries.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\photo-queries.ts",
+      "esm": "@gen/sdk/core/queries/photo-queries"
+    },
+    "hooks:core:swipe-queries.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\swipe-queries.ts",
+      "esm": "@gen/sdk/core/queries/swipe-queries"
+    },
+    "hooks:core:match-queries.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\match-queries.ts",
+      "esm": "@gen/sdk/core/queries/match-queries"
+    },
+    "hooks:core:message-queries.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\message-queries.ts",
+      "esm": "@gen/sdk/core/queries/message-queries"
+    },
+    "hooks:core:quiz-queries.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\quiz-queries.ts",
+      "esm": "@gen/sdk/core/queries/quiz-queries"
+    },
+    "hooks:core:quizquestion-queries.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\quizquestion-queries.ts",
+      "esm": "@gen/sdk/core/queries/quizquestion-queries"
+    },
+    "hooks:core:quizanswer-queries.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\quizanswer-queries.ts",
+      "esm": "@gen/sdk/core/queries/quizanswer-queries"
+    },
+    "hooks:core:quizresult-queries.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\quizresult-queries.ts",
+      "esm": "@gen/sdk/core/queries/quizresult-queries"
+    },
+    "hooks:core:behaviorevent-queries.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\behaviorevent-queries.ts",
+      "esm": "@gen/sdk/core/queries/behaviorevent-queries"
+    },
+    "hooks:core:behavioreventarchive-queries.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\behavioreventarchive-queries.ts",
+      "esm": "@gen/sdk/core/queries/behavioreventarchive-queries"
+    },
+    "hooks:core:personalitydimension-queries.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\personalitydimension-queries.ts",
+      "esm": "@gen/sdk/core/queries/personalitydimension-queries"
+    },
+    "hooks:core:userdimensionscore-queries.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\userdimensionscore-queries.ts",
+      "esm": "@gen/sdk/core/queries/userdimensionscore-queries"
+    },
+    "hooks:core:compatibilityscore-queries.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\compatibilityscore-queries.ts",
+      "esm": "@gen/sdk/core/queries/compatibilityscore-queries"
+    },
+    "hooks:core:userdimensionpriority-queries.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\userdimensionpriority-queries.ts",
+      "esm": "@gen/sdk/core/queries/userdimensionpriority-queries"
+    },
+    "hooks:core:dimensionmappingrule-queries.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\dimensionmappingrule-queries.ts",
+      "esm": "@gen/sdk/core/queries/dimensionmappingrule-queries"
+    },
+    "hooks:core:eventweightconfig-queries.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\eventweightconfig-queries.ts",
+      "esm": "@gen/sdk/core/queries/eventweightconfig-queries"
+    },
+    "hooks:core:block-queries.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\block-queries.ts",
+      "esm": "@gen/sdk/core/queries/block-queries"
+    },
+    "hooks:core:shared/query-helpers.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\shared\\query-helpers.ts",
+      "esm": "@gen/sdk/core/queries/shared/query-helpers"
+    },
+    "hooks:core:index.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\index.ts",
+      "esm": "@gen/sdk/core/queries/index"
+    },
+    "hooks:react:models/use-user.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-user.ts",
+      "esm": "@gen/sdk/react/models/use-user"
+    },
+    "hooks:react:models/__tests__/use-user.test.tsx": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-user.test.tsx",
+      "esm": "@gen/sdk/react/models/__tests__/use-user.testx"
+    },
+    "hooks:react:models/use-profile.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-profile.ts",
+      "esm": "@gen/sdk/react/models/use-profile"
+    },
+    "hooks:react:models/__tests__/use-profile.test.tsx": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-profile.test.tsx",
+      "esm": "@gen/sdk/react/models/__tests__/use-profile.testx"
+    },
+    "hooks:react:models/use-photo.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-photo.ts",
+      "esm": "@gen/sdk/react/models/use-photo"
+    },
+    "hooks:react:models/__tests__/use-photo.test.tsx": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-photo.test.tsx",
+      "esm": "@gen/sdk/react/models/__tests__/use-photo.testx"
+    },
+    "hooks:react:models/use-swipe.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-swipe.ts",
+      "esm": "@gen/sdk/react/models/use-swipe"
+    },
+    "hooks:react:models/__tests__/use-swipe.test.tsx": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-swipe.test.tsx",
+      "esm": "@gen/sdk/react/models/__tests__/use-swipe.testx"
+    },
+    "hooks:react:models/use-match.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-match.ts",
+      "esm": "@gen/sdk/react/models/use-match"
+    },
+    "hooks:react:models/__tests__/use-match.test.tsx": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-match.test.tsx",
+      "esm": "@gen/sdk/react/models/__tests__/use-match.testx"
+    },
+    "hooks:react:models/use-message.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-message.ts",
+      "esm": "@gen/sdk/react/models/use-message"
+    },
+    "hooks:react:models/__tests__/use-message.test.tsx": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-message.test.tsx",
+      "esm": "@gen/sdk/react/models/__tests__/use-message.testx"
+    },
+    "hooks:react:models/use-quiz.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-quiz.ts",
+      "esm": "@gen/sdk/react/models/use-quiz"
+    },
+    "hooks:react:models/__tests__/use-quiz.test.tsx": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-quiz.test.tsx",
+      "esm": "@gen/sdk/react/models/__tests__/use-quiz.testx"
+    },
+    "hooks:react:models/use-quizquestion.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-quizquestion.ts",
+      "esm": "@gen/sdk/react/models/use-quizquestion"
+    },
+    "hooks:react:models/__tests__/use-quizquestion.test.tsx": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-quizquestion.test.tsx",
+      "esm": "@gen/sdk/react/models/__tests__/use-quizquestion.testx"
+    },
+    "hooks:react:models/use-quizanswer.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-quizanswer.ts",
+      "esm": "@gen/sdk/react/models/use-quizanswer"
+    },
+    "hooks:react:models/__tests__/use-quizanswer.test.tsx": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-quizanswer.test.tsx",
+      "esm": "@gen/sdk/react/models/__tests__/use-quizanswer.testx"
+    },
+    "hooks:react:models/use-quizresult.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-quizresult.ts",
+      "esm": "@gen/sdk/react/models/use-quizresult"
+    },
+    "hooks:react:models/__tests__/use-quizresult.test.tsx": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-quizresult.test.tsx",
+      "esm": "@gen/sdk/react/models/__tests__/use-quizresult.testx"
+    },
+    "hooks:react:models/use-behaviorevent.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-behaviorevent.ts",
+      "esm": "@gen/sdk/react/models/use-behaviorevent"
+    },
+    "hooks:react:models/__tests__/use-behaviorevent.test.tsx": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-behaviorevent.test.tsx",
+      "esm": "@gen/sdk/react/models/__tests__/use-behaviorevent.testx"
+    },
+    "hooks:react:models/use-behavioreventarchive.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-behavioreventarchive.ts",
+      "esm": "@gen/sdk/react/models/use-behavioreventarchive"
+    },
+    "hooks:react:models/__tests__/use-behavioreventarchive.test.tsx": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-behavioreventarchive.test.tsx",
+      "esm": "@gen/sdk/react/models/__tests__/use-behavioreventarchive.testx"
+    },
+    "hooks:react:models/use-personalitydimension.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-personalitydimension.ts",
+      "esm": "@gen/sdk/react/models/use-personalitydimension"
+    },
+    "hooks:react:models/__tests__/use-personalitydimension.test.tsx": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-personalitydimension.test.tsx",
+      "esm": "@gen/sdk/react/models/__tests__/use-personalitydimension.testx"
+    },
+    "hooks:react:models/use-userdimensionscore.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-userdimensionscore.ts",
+      "esm": "@gen/sdk/react/models/use-userdimensionscore"
+    },
+    "hooks:react:models/__tests__/use-userdimensionscore.test.tsx": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-userdimensionscore.test.tsx",
+      "esm": "@gen/sdk/react/models/__tests__/use-userdimensionscore.testx"
+    },
+    "hooks:react:models/use-compatibilityscore.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-compatibilityscore.ts",
+      "esm": "@gen/sdk/react/models/use-compatibilityscore"
+    },
+    "hooks:react:models/__tests__/use-compatibilityscore.test.tsx": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-compatibilityscore.test.tsx",
+      "esm": "@gen/sdk/react/models/__tests__/use-compatibilityscore.testx"
+    },
+    "hooks:react:models/use-userdimensionpriority.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-userdimensionpriority.ts",
+      "esm": "@gen/sdk/react/models/use-userdimensionpriority"
+    },
+    "hooks:react:models/__tests__/use-userdimensionpriority.test.tsx": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-userdimensionpriority.test.tsx",
+      "esm": "@gen/sdk/react/models/__tests__/use-userdimensionpriority.testx"
+    },
+    "hooks:react:models/use-dimensionmappingrule.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-dimensionmappingrule.ts",
+      "esm": "@gen/sdk/react/models/use-dimensionmappingrule"
+    },
+    "hooks:react:models/__tests__/use-dimensionmappingrule.test.tsx": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-dimensionmappingrule.test.tsx",
+      "esm": "@gen/sdk/react/models/__tests__/use-dimensionmappingrule.testx"
+    },
+    "hooks:react:models/use-eventweightconfig.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-eventweightconfig.ts",
+      "esm": "@gen/sdk/react/models/use-eventweightconfig"
+    },
+    "hooks:react:models/__tests__/use-eventweightconfig.test.tsx": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-eventweightconfig.test.tsx",
+      "esm": "@gen/sdk/react/models/__tests__/use-eventweightconfig.testx"
+    },
+    "hooks:react:models/use-block.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-block.ts",
+      "esm": "@gen/sdk/react/models/use-block"
+    },
+    "hooks:react:models/__tests__/use-block.test.tsx": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-block.test.tsx",
+      "esm": "@gen/sdk/react/models/__tests__/use-block.testx"
+    },
+    "hooks:react:index.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\index.ts",
+      "esm": "@gen/sdk/react/index"
+    },
+    "hooks:react:provider.tsx": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\provider.tsx",
+      "esm": "@gen/sdk/react/providerx"
+    },
+    "hooks:react:README.md": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\README.md",
+      "esm": "@gen/sdk/react/README.md"
+    },
+    "hooks:react:__tests__/setup.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\__tests__\\setup.ts",
+      "esm": "@gen/sdk/react/__tests__/setup"
+    },
+    "hooks:react:vitest.config.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\vitest.config.ts",
+      "esm": "@gen/sdk/react/vitest.config"
+    },
+    "checklist:checklist.html": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\checklist\\checklist.html",
+      "esm": "@gen/checklist/checklist.html"
+    },
+    "checklist:checklist.api.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\checklist\\checklist.api.ts",
+      "esm": "@gen/checklist/checklist.api.ts"
+    },
+    "checklist:checklist.tests.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\checklist\\checklist.tests.ts",
+      "esm": "@gen/checklist/checklist.tests.ts"
+    },
+    "base:base-crud-controller.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\base\\base-crud-controller.ts",
+      "esm": "@gen/base"
+    },
+    "base:base-service-controller.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\base\\base-service-controller.ts",
+      "esm": "@gen/base"
+    },
+    "base:index.ts": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\base\\index.ts",
+      "esm": "@gen/base"
+    },
+    "contracts:User:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\user\\index.ts",
+      "esm": "@gen/contracts/user"
+    },
+    "validators:User:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\user\\index.ts",
+      "esm": "@gen/validators/user"
+    },
+    "services:User:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\user\\index.ts",
+      "esm": "@gen/services/user"
+    },
+    "controllers:User:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\user\\index.ts",
+      "esm": "@gen/controllers/user"
+    },
+    "routes:User:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\user\\index.ts",
+      "esm": "@gen/routes/user"
+    },
+    "contracts:Profile:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\profile\\index.ts",
+      "esm": "@gen/contracts/profile"
+    },
+    "validators:Profile:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\profile\\index.ts",
+      "esm": "@gen/validators/profile"
+    },
+    "services:Profile:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\profile\\index.ts",
+      "esm": "@gen/services/profile"
+    },
+    "controllers:Profile:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\profile\\index.ts",
+      "esm": "@gen/controllers/profile"
+    },
+    "routes:Profile:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\profile\\index.ts",
+      "esm": "@gen/routes/profile"
+    },
+    "contracts:Photo:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\photo\\index.ts",
+      "esm": "@gen/contracts/photo"
+    },
+    "validators:Photo:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\photo\\index.ts",
+      "esm": "@gen/validators/photo"
+    },
+    "services:Photo:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\photo\\index.ts",
+      "esm": "@gen/services/photo"
+    },
+    "controllers:Photo:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\photo\\index.ts",
+      "esm": "@gen/controllers/photo"
+    },
+    "routes:Photo:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\photo\\index.ts",
+      "esm": "@gen/routes/photo"
+    },
+    "contracts:Swipe:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\swipe\\index.ts",
+      "esm": "@gen/contracts/swipe"
+    },
+    "validators:Swipe:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\swipe\\index.ts",
+      "esm": "@gen/validators/swipe"
+    },
+    "contracts:Match:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\match\\index.ts",
+      "esm": "@gen/contracts/match"
+    },
+    "validators:Match:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\match\\index.ts",
+      "esm": "@gen/validators/match"
+    },
+    "contracts:Message:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\message\\index.ts",
+      "esm": "@gen/contracts/message"
+    },
+    "validators:Message:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\message\\index.ts",
+      "esm": "@gen/validators/message"
+    },
+    "services:Message:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\message\\index.ts",
+      "esm": "@gen/services/message"
+    },
+    "controllers:Message:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\message\\index.ts",
+      "esm": "@gen/controllers/message"
+    },
+    "routes:Message:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\message\\index.ts",
+      "esm": "@gen/routes/message"
+    },
+    "contracts:Quiz:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz\\index.ts",
+      "esm": "@gen/contracts/quiz"
+    },
+    "validators:Quiz:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz\\index.ts",
+      "esm": "@gen/validators/quiz"
+    },
+    "services:Quiz:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\quiz\\index.ts",
+      "esm": "@gen/services/quiz"
+    },
+    "controllers:Quiz:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\quiz\\index.ts",
+      "esm": "@gen/controllers/quiz"
+    },
+    "routes:Quiz:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\quiz\\index.ts",
+      "esm": "@gen/routes/quiz"
+    },
+    "contracts:QuizQuestion:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz-question\\index.ts",
+      "esm": "@gen/contracts/quizquestion"
+    },
+    "validators:QuizQuestion:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz-question\\index.ts",
+      "esm": "@gen/validators/quizquestion"
+    },
+    "services:QuizQuestion:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\quiz-question\\index.ts",
+      "esm": "@gen/services/quizquestion"
+    },
+    "controllers:QuizQuestion:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\quiz-question\\index.ts",
+      "esm": "@gen/controllers/quizquestion"
+    },
+    "routes:QuizQuestion:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\quiz-question\\index.ts",
+      "esm": "@gen/routes/quizquestion"
+    },
+    "contracts:QuizAnswer:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz-answer\\index.ts",
+      "esm": "@gen/contracts/quizanswer"
+    },
+    "validators:QuizAnswer:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz-answer\\index.ts",
+      "esm": "@gen/validators/quizanswer"
+    },
+    "services:QuizAnswer:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\quiz-answer\\index.ts",
+      "esm": "@gen/services/quizanswer"
+    },
+    "controllers:QuizAnswer:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\quiz-answer\\index.ts",
+      "esm": "@gen/controllers/quizanswer"
+    },
+    "routes:QuizAnswer:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\quiz-answer\\index.ts",
+      "esm": "@gen/routes/quizanswer"
+    },
+    "contracts:QuizResult:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz-result\\index.ts",
+      "esm": "@gen/contracts/quizresult"
+    },
+    "validators:QuizResult:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz-result\\index.ts",
+      "esm": "@gen/validators/quizresult"
+    },
+    "services:QuizResult:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\quiz-result\\index.ts",
+      "esm": "@gen/services/quizresult"
+    },
+    "controllers:QuizResult:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\quiz-result\\index.ts",
+      "esm": "@gen/controllers/quizresult"
+    },
+    "routes:QuizResult:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\quiz-result\\index.ts",
+      "esm": "@gen/routes/quizresult"
+    },
+    "contracts:BehaviorEvent:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\behavior-event\\index.ts",
+      "esm": "@gen/contracts/behaviorevent"
+    },
+    "validators:BehaviorEvent:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\behavior-event\\index.ts",
+      "esm": "@gen/validators/behaviorevent"
+    },
+    "services:BehaviorEvent:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\behavior-event\\index.ts",
+      "esm": "@gen/services/behaviorevent"
+    },
+    "controllers:BehaviorEvent:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\behavior-event\\index.ts",
+      "esm": "@gen/controllers/behaviorevent"
+    },
+    "routes:BehaviorEvent:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\behavior-event\\index.ts",
+      "esm": "@gen/routes/behaviorevent"
+    },
+    "contracts:BehaviorEventArchive:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\behavior-event-archive\\index.ts",
+      "esm": "@gen/contracts/behavioreventarchive"
+    },
+    "validators:BehaviorEventArchive:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\behavior-event-archive\\index.ts",
+      "esm": "@gen/validators/behavioreventarchive"
+    },
+    "services:BehaviorEventArchive:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\behavior-event-archive\\index.ts",
+      "esm": "@gen/services/behavioreventarchive"
+    },
+    "controllers:BehaviorEventArchive:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\behavior-event-archive\\index.ts",
+      "esm": "@gen/controllers/behavioreventarchive"
+    },
+    "routes:BehaviorEventArchive:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\behavior-event-archive\\index.ts",
+      "esm": "@gen/routes/behavioreventarchive"
+    },
+    "contracts:PersonalityDimension:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\personality-dimension\\index.ts",
+      "esm": "@gen/contracts/personalitydimension"
+    },
+    "validators:PersonalityDimension:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\personality-dimension\\index.ts",
+      "esm": "@gen/validators/personalitydimension"
+    },
+    "services:PersonalityDimension:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\personality-dimension\\index.ts",
+      "esm": "@gen/services/personalitydimension"
+    },
+    "controllers:PersonalityDimension:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\personality-dimension\\index.ts",
+      "esm": "@gen/controllers/personalitydimension"
+    },
+    "routes:PersonalityDimension:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\personality-dimension\\index.ts",
+      "esm": "@gen/routes/personalitydimension"
+    },
+    "contracts:UserDimensionScore:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\user-dimension-score\\index.ts",
+      "esm": "@gen/contracts/userdimensionscore"
+    },
+    "validators:UserDimensionScore:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\user-dimension-score\\index.ts",
+      "esm": "@gen/validators/userdimensionscore"
+    },
+    "services:UserDimensionScore:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\user-dimension-score\\index.ts",
+      "esm": "@gen/services/userdimensionscore"
+    },
+    "controllers:UserDimensionScore:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\user-dimension-score\\index.ts",
+      "esm": "@gen/controllers/userdimensionscore"
+    },
+    "routes:UserDimensionScore:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\user-dimension-score\\index.ts",
+      "esm": "@gen/routes/userdimensionscore"
+    },
+    "contracts:CompatibilityScore:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\compatibility-score\\index.ts",
+      "esm": "@gen/contracts/compatibilityscore"
+    },
+    "validators:CompatibilityScore:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\compatibility-score\\index.ts",
+      "esm": "@gen/validators/compatibilityscore"
+    },
+    "services:CompatibilityScore:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\compatibility-score\\index.ts",
+      "esm": "@gen/services/compatibilityscore"
+    },
+    "controllers:CompatibilityScore:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\compatibility-score\\index.ts",
+      "esm": "@gen/controllers/compatibilityscore"
+    },
+    "routes:CompatibilityScore:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\compatibility-score\\index.ts",
+      "esm": "@gen/routes/compatibilityscore"
+    },
+    "contracts:UserDimensionPriority:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\user-dimension-priority\\index.ts",
+      "esm": "@gen/contracts/userdimensionpriority"
+    },
+    "validators:UserDimensionPriority:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\user-dimension-priority\\index.ts",
+      "esm": "@gen/validators/userdimensionpriority"
+    },
+    "contracts:DimensionMappingRule:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\dimension-mapping-rule\\index.ts",
+      "esm": "@gen/contracts/dimensionmappingrule"
+    },
+    "validators:DimensionMappingRule:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\dimension-mapping-rule\\index.ts",
+      "esm": "@gen/validators/dimensionmappingrule"
+    },
+    "services:DimensionMappingRule:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\dimension-mapping-rule\\index.ts",
+      "esm": "@gen/services/dimensionmappingrule"
+    },
+    "contracts:EventWeightConfig:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\event-weight-config\\index.ts",
+      "esm": "@gen/contracts/eventweightconfig"
+    },
+    "validators:EventWeightConfig:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\event-weight-config\\index.ts",
+      "esm": "@gen/validators/eventweightconfig"
+    },
+    "services:EventWeightConfig:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\event-weight-config\\index.ts",
+      "esm": "@gen/services/eventweightconfig"
+    },
+    "controllers:EventWeightConfig:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\event-weight-config\\index.ts",
+      "esm": "@gen/controllers/eventweightconfig"
+    },
+    "routes:EventWeightConfig:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\event-weight-config\\index.ts",
+      "esm": "@gen/routes/eventweightconfig"
+    },
+    "contracts:Block:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\block\\index.ts",
+      "esm": "@gen/contracts/block"
+    },
+    "validators:Block:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\block\\index.ts",
+      "esm": "@gen/validators/block"
+    },
+    "contracts:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\index.ts",
+      "esm": "@gen/contracts"
+    },
+    "validators:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\index.ts",
+      "esm": "@gen/validators"
+    },
+    "services:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\index.ts",
+      "esm": "@gen/services"
+    },
+    "controllers:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\index.ts",
+      "esm": "@gen/controllers"
+    },
+    "routes:index": {
+      "fs": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\index.ts",
+      "esm": "@gen/routes"
+    }
+  },
+  "outputs": [
+    {
+      "id": "contracts:User:user.create.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\user\\user.create.dto.ts",
+      "esmPath": "@gen/contracts/user"
+    },
+    {
+      "id": "contracts:User:user.update.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\user\\user.update.dto.ts",
+      "esmPath": "@gen/contracts/user"
+    },
+    {
+      "id": "contracts:User:user.read.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\user\\user.read.dto.ts",
+      "esmPath": "@gen/contracts/user"
+    },
+    {
+      "id": "contracts:User:user.query.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\user\\user.query.dto.ts",
+      "esmPath": "@gen/contracts/user"
+    },
+    {
+      "id": "contracts:Profile:profile.create.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\profile\\profile.create.dto.ts",
+      "esmPath": "@gen/contracts/profile"
+    },
+    {
+      "id": "contracts:Profile:profile.update.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\profile\\profile.update.dto.ts",
+      "esmPath": "@gen/contracts/profile"
+    },
+    {
+      "id": "contracts:Profile:profile.read.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\profile\\profile.read.dto.ts",
+      "esmPath": "@gen/contracts/profile"
+    },
+    {
+      "id": "contracts:Profile:profile.query.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\profile\\profile.query.dto.ts",
+      "esmPath": "@gen/contracts/profile"
+    },
+    {
+      "id": "contracts:Photo:photo.create.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\photo\\photo.create.dto.ts",
+      "esmPath": "@gen/contracts/photo"
+    },
+    {
+      "id": "contracts:Photo:photo.update.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\photo\\photo.update.dto.ts",
+      "esmPath": "@gen/contracts/photo"
+    },
+    {
+      "id": "contracts:Photo:photo.read.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\photo\\photo.read.dto.ts",
+      "esmPath": "@gen/contracts/photo"
+    },
+    {
+      "id": "contracts:Photo:photo.query.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\photo\\photo.query.dto.ts",
+      "esmPath": "@gen/contracts/photo"
+    },
+    {
+      "id": "contracts:Swipe:swipe.create.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\swipe\\swipe.create.dto.ts",
+      "esmPath": "@gen/contracts/swipe"
+    },
+    {
+      "id": "contracts:Swipe:swipe.update.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\swipe\\swipe.update.dto.ts",
+      "esmPath": "@gen/contracts/swipe"
+    },
+    {
+      "id": "contracts:Swipe:swipe.read.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\swipe\\swipe.read.dto.ts",
+      "esmPath": "@gen/contracts/swipe"
+    },
+    {
+      "id": "contracts:Swipe:swipe.query.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\swipe\\swipe.query.dto.ts",
+      "esmPath": "@gen/contracts/swipe"
+    },
+    {
+      "id": "contracts:Match:match.create.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\match\\match.create.dto.ts",
+      "esmPath": "@gen/contracts/match"
+    },
+    {
+      "id": "contracts:Match:match.update.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\match\\match.update.dto.ts",
+      "esmPath": "@gen/contracts/match"
+    },
+    {
+      "id": "contracts:Match:match.read.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\match\\match.read.dto.ts",
+      "esmPath": "@gen/contracts/match"
+    },
+    {
+      "id": "contracts:Match:match.query.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\match\\match.query.dto.ts",
+      "esmPath": "@gen/contracts/match"
+    },
+    {
+      "id": "contracts:Message:message.create.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\message\\message.create.dto.ts",
+      "esmPath": "@gen/contracts/message"
+    },
+    {
+      "id": "contracts:Message:message.update.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\message\\message.update.dto.ts",
+      "esmPath": "@gen/contracts/message"
+    },
+    {
+      "id": "contracts:Message:message.read.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\message\\message.read.dto.ts",
+      "esmPath": "@gen/contracts/message"
+    },
+    {
+      "id": "contracts:Message:message.query.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\message\\message.query.dto.ts",
+      "esmPath": "@gen/contracts/message"
+    },
+    {
+      "id": "contracts:Quiz:quiz.create.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz\\quiz.create.dto.ts",
+      "esmPath": "@gen/contracts/quiz"
+    },
+    {
+      "id": "contracts:Quiz:quiz.update.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz\\quiz.update.dto.ts",
+      "esmPath": "@gen/contracts/quiz"
+    },
+    {
+      "id": "contracts:Quiz:quiz.read.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz\\quiz.read.dto.ts",
+      "esmPath": "@gen/contracts/quiz"
+    },
+    {
+      "id": "contracts:Quiz:quiz.query.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz\\quiz.query.dto.ts",
+      "esmPath": "@gen/contracts/quiz"
+    },
+    {
+      "id": "contracts:QuizQuestion:quiz-question.create.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz-question\\quiz-question.create.dto.ts",
+      "esmPath": "@gen/contracts/quizquestion"
+    },
+    {
+      "id": "contracts:QuizQuestion:quiz-question.update.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz-question\\quiz-question.update.dto.ts",
+      "esmPath": "@gen/contracts/quizquestion"
+    },
+    {
+      "id": "contracts:QuizQuestion:quiz-question.read.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz-question\\quiz-question.read.dto.ts",
+      "esmPath": "@gen/contracts/quizquestion"
+    },
+    {
+      "id": "contracts:QuizQuestion:quiz-question.query.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz-question\\quiz-question.query.dto.ts",
+      "esmPath": "@gen/contracts/quizquestion"
+    },
+    {
+      "id": "contracts:QuizAnswer:quiz-answer.create.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz-answer\\quiz-answer.create.dto.ts",
+      "esmPath": "@gen/contracts/quizanswer"
+    },
+    {
+      "id": "contracts:QuizAnswer:quiz-answer.update.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz-answer\\quiz-answer.update.dto.ts",
+      "esmPath": "@gen/contracts/quizanswer"
+    },
+    {
+      "id": "contracts:QuizAnswer:quiz-answer.read.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz-answer\\quiz-answer.read.dto.ts",
+      "esmPath": "@gen/contracts/quizanswer"
+    },
+    {
+      "id": "contracts:QuizAnswer:quiz-answer.query.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz-answer\\quiz-answer.query.dto.ts",
+      "esmPath": "@gen/contracts/quizanswer"
+    },
+    {
+      "id": "contracts:QuizResult:quiz-result.create.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz-result\\quiz-result.create.dto.ts",
+      "esmPath": "@gen/contracts/quizresult"
+    },
+    {
+      "id": "contracts:QuizResult:quiz-result.update.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz-result\\quiz-result.update.dto.ts",
+      "esmPath": "@gen/contracts/quizresult"
+    },
+    {
+      "id": "contracts:QuizResult:quiz-result.read.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz-result\\quiz-result.read.dto.ts",
+      "esmPath": "@gen/contracts/quizresult"
+    },
+    {
+      "id": "contracts:QuizResult:quiz-result.query.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz-result\\quiz-result.query.dto.ts",
+      "esmPath": "@gen/contracts/quizresult"
+    },
+    {
+      "id": "contracts:BehaviorEvent:behavior-event.create.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\behavior-event\\behavior-event.create.dto.ts",
+      "esmPath": "@gen/contracts/behaviorevent"
+    },
+    {
+      "id": "contracts:BehaviorEvent:behavior-event.update.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\behavior-event\\behavior-event.update.dto.ts",
+      "esmPath": "@gen/contracts/behaviorevent"
+    },
+    {
+      "id": "contracts:BehaviorEvent:behavior-event.read.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\behavior-event\\behavior-event.read.dto.ts",
+      "esmPath": "@gen/contracts/behaviorevent"
+    },
+    {
+      "id": "contracts:BehaviorEvent:behavior-event.query.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\behavior-event\\behavior-event.query.dto.ts",
+      "esmPath": "@gen/contracts/behaviorevent"
+    },
+    {
+      "id": "contracts:BehaviorEventArchive:behavior-event-archive.create.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\behavior-event-archive\\behavior-event-archive.create.dto.ts",
+      "esmPath": "@gen/contracts/behavioreventarchive"
+    },
+    {
+      "id": "contracts:BehaviorEventArchive:behavior-event-archive.update.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\behavior-event-archive\\behavior-event-archive.update.dto.ts",
+      "esmPath": "@gen/contracts/behavioreventarchive"
+    },
+    {
+      "id": "contracts:BehaviorEventArchive:behavior-event-archive.read.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\behavior-event-archive\\behavior-event-archive.read.dto.ts",
+      "esmPath": "@gen/contracts/behavioreventarchive"
+    },
+    {
+      "id": "contracts:BehaviorEventArchive:behavior-event-archive.query.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\behavior-event-archive\\behavior-event-archive.query.dto.ts",
+      "esmPath": "@gen/contracts/behavioreventarchive"
+    },
+    {
+      "id": "contracts:PersonalityDimension:personality-dimension.create.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\personality-dimension\\personality-dimension.create.dto.ts",
+      "esmPath": "@gen/contracts/personalitydimension"
+    },
+    {
+      "id": "contracts:PersonalityDimension:personality-dimension.update.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\personality-dimension\\personality-dimension.update.dto.ts",
+      "esmPath": "@gen/contracts/personalitydimension"
+    },
+    {
+      "id": "contracts:PersonalityDimension:personality-dimension.read.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\personality-dimension\\personality-dimension.read.dto.ts",
+      "esmPath": "@gen/contracts/personalitydimension"
+    },
+    {
+      "id": "contracts:PersonalityDimension:personality-dimension.query.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\personality-dimension\\personality-dimension.query.dto.ts",
+      "esmPath": "@gen/contracts/personalitydimension"
+    },
+    {
+      "id": "contracts:UserDimensionScore:user-dimension-score.create.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\user-dimension-score\\user-dimension-score.create.dto.ts",
+      "esmPath": "@gen/contracts/userdimensionscore"
+    },
+    {
+      "id": "contracts:UserDimensionScore:user-dimension-score.update.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\user-dimension-score\\user-dimension-score.update.dto.ts",
+      "esmPath": "@gen/contracts/userdimensionscore"
+    },
+    {
+      "id": "contracts:UserDimensionScore:user-dimension-score.read.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\user-dimension-score\\user-dimension-score.read.dto.ts",
+      "esmPath": "@gen/contracts/userdimensionscore"
+    },
+    {
+      "id": "contracts:UserDimensionScore:user-dimension-score.query.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\user-dimension-score\\user-dimension-score.query.dto.ts",
+      "esmPath": "@gen/contracts/userdimensionscore"
+    },
+    {
+      "id": "contracts:CompatibilityScore:compatibility-score.create.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\compatibility-score\\compatibility-score.create.dto.ts",
+      "esmPath": "@gen/contracts/compatibilityscore"
+    },
+    {
+      "id": "contracts:CompatibilityScore:compatibility-score.update.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\compatibility-score\\compatibility-score.update.dto.ts",
+      "esmPath": "@gen/contracts/compatibilityscore"
+    },
+    {
+      "id": "contracts:CompatibilityScore:compatibility-score.read.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\compatibility-score\\compatibility-score.read.dto.ts",
+      "esmPath": "@gen/contracts/compatibilityscore"
+    },
+    {
+      "id": "contracts:CompatibilityScore:compatibility-score.query.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\compatibility-score\\compatibility-score.query.dto.ts",
+      "esmPath": "@gen/contracts/compatibilityscore"
+    },
+    {
+      "id": "contracts:UserDimensionPriority:user-dimension-priority.create.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\user-dimension-priority\\user-dimension-priority.create.dto.ts",
+      "esmPath": "@gen/contracts/userdimensionpriority"
+    },
+    {
+      "id": "contracts:UserDimensionPriority:user-dimension-priority.update.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\user-dimension-priority\\user-dimension-priority.update.dto.ts",
+      "esmPath": "@gen/contracts/userdimensionpriority"
+    },
+    {
+      "id": "contracts:UserDimensionPriority:user-dimension-priority.read.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\user-dimension-priority\\user-dimension-priority.read.dto.ts",
+      "esmPath": "@gen/contracts/userdimensionpriority"
+    },
+    {
+      "id": "contracts:UserDimensionPriority:user-dimension-priority.query.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\user-dimension-priority\\user-dimension-priority.query.dto.ts",
+      "esmPath": "@gen/contracts/userdimensionpriority"
+    },
+    {
+      "id": "contracts:DimensionMappingRule:dimension-mapping-rule.create.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\dimension-mapping-rule\\dimension-mapping-rule.create.dto.ts",
+      "esmPath": "@gen/contracts/dimensionmappingrule"
+    },
+    {
+      "id": "contracts:DimensionMappingRule:dimension-mapping-rule.update.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\dimension-mapping-rule\\dimension-mapping-rule.update.dto.ts",
+      "esmPath": "@gen/contracts/dimensionmappingrule"
+    },
+    {
+      "id": "contracts:DimensionMappingRule:dimension-mapping-rule.read.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\dimension-mapping-rule\\dimension-mapping-rule.read.dto.ts",
+      "esmPath": "@gen/contracts/dimensionmappingrule"
+    },
+    {
+      "id": "contracts:DimensionMappingRule:dimension-mapping-rule.query.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\dimension-mapping-rule\\dimension-mapping-rule.query.dto.ts",
+      "esmPath": "@gen/contracts/dimensionmappingrule"
+    },
+    {
+      "id": "contracts:EventWeightConfig:event-weight-config.create.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\event-weight-config\\event-weight-config.create.dto.ts",
+      "esmPath": "@gen/contracts/eventweightconfig"
+    },
+    {
+      "id": "contracts:EventWeightConfig:event-weight-config.update.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\event-weight-config\\event-weight-config.update.dto.ts",
+      "esmPath": "@gen/contracts/eventweightconfig"
+    },
+    {
+      "id": "contracts:EventWeightConfig:event-weight-config.read.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\event-weight-config\\event-weight-config.read.dto.ts",
+      "esmPath": "@gen/contracts/eventweightconfig"
+    },
+    {
+      "id": "contracts:EventWeightConfig:event-weight-config.query.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\event-weight-config\\event-weight-config.query.dto.ts",
+      "esmPath": "@gen/contracts/eventweightconfig"
+    },
+    {
+      "id": "contracts:Block:block.create.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\block\\block.create.dto.ts",
+      "esmPath": "@gen/contracts/block"
+    },
+    {
+      "id": "contracts:Block:block.update.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\block\\block.update.dto.ts",
+      "esmPath": "@gen/contracts/block"
+    },
+    {
+      "id": "contracts:Block:block.read.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\block\\block.read.dto.ts",
+      "esmPath": "@gen/contracts/block"
+    },
+    {
+      "id": "contracts:Block:block.query.dto.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\block\\block.query.dto.ts",
+      "esmPath": "@gen/contracts/block"
+    },
+    {
+      "id": "validators:User:user.create.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\user\\user.create.zod.ts",
+      "esmPath": "@gen/validators/user"
+    },
+    {
+      "id": "validators:User:user.update.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\user\\user.update.zod.ts",
+      "esmPath": "@gen/validators/user"
+    },
+    {
+      "id": "validators:User:user.query.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\user\\user.query.zod.ts",
+      "esmPath": "@gen/validators/user"
+    },
+    {
+      "id": "validators:Profile:profile.create.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\profile\\profile.create.zod.ts",
+      "esmPath": "@gen/validators/profile"
+    },
+    {
+      "id": "validators:Profile:profile.update.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\profile\\profile.update.zod.ts",
+      "esmPath": "@gen/validators/profile"
+    },
+    {
+      "id": "validators:Profile:profile.query.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\profile\\profile.query.zod.ts",
+      "esmPath": "@gen/validators/profile"
+    },
+    {
+      "id": "validators:Photo:photo.create.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\photo\\photo.create.zod.ts",
+      "esmPath": "@gen/validators/photo"
+    },
+    {
+      "id": "validators:Photo:photo.update.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\photo\\photo.update.zod.ts",
+      "esmPath": "@gen/validators/photo"
+    },
+    {
+      "id": "validators:Photo:photo.query.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\photo\\photo.query.zod.ts",
+      "esmPath": "@gen/validators/photo"
+    },
+    {
+      "id": "validators:Swipe:swipe.create.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\swipe\\swipe.create.zod.ts",
+      "esmPath": "@gen/validators/swipe"
+    },
+    {
+      "id": "validators:Swipe:swipe.update.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\swipe\\swipe.update.zod.ts",
+      "esmPath": "@gen/validators/swipe"
+    },
+    {
+      "id": "validators:Swipe:swipe.query.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\swipe\\swipe.query.zod.ts",
+      "esmPath": "@gen/validators/swipe"
+    },
+    {
+      "id": "validators:Match:match.create.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\match\\match.create.zod.ts",
+      "esmPath": "@gen/validators/match"
+    },
+    {
+      "id": "validators:Match:match.update.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\match\\match.update.zod.ts",
+      "esmPath": "@gen/validators/match"
+    },
+    {
+      "id": "validators:Match:match.query.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\match\\match.query.zod.ts",
+      "esmPath": "@gen/validators/match"
+    },
+    {
+      "id": "validators:Message:message.create.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\message\\message.create.zod.ts",
+      "esmPath": "@gen/validators/message"
+    },
+    {
+      "id": "validators:Message:message.update.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\message\\message.update.zod.ts",
+      "esmPath": "@gen/validators/message"
+    },
+    {
+      "id": "validators:Message:message.query.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\message\\message.query.zod.ts",
+      "esmPath": "@gen/validators/message"
+    },
+    {
+      "id": "validators:Quiz:quiz.create.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz\\quiz.create.zod.ts",
+      "esmPath": "@gen/validators/quiz"
+    },
+    {
+      "id": "validators:Quiz:quiz.update.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz\\quiz.update.zod.ts",
+      "esmPath": "@gen/validators/quiz"
+    },
+    {
+      "id": "validators:Quiz:quiz.query.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz\\quiz.query.zod.ts",
+      "esmPath": "@gen/validators/quiz"
+    },
+    {
+      "id": "validators:QuizQuestion:quiz-question.create.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz-question\\quiz-question.create.zod.ts",
+      "esmPath": "@gen/validators/quizquestion"
+    },
+    {
+      "id": "validators:QuizQuestion:quiz-question.update.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz-question\\quiz-question.update.zod.ts",
+      "esmPath": "@gen/validators/quizquestion"
+    },
+    {
+      "id": "validators:QuizQuestion:quiz-question.query.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz-question\\quiz-question.query.zod.ts",
+      "esmPath": "@gen/validators/quizquestion"
+    },
+    {
+      "id": "validators:QuizAnswer:quiz-answer.create.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz-answer\\quiz-answer.create.zod.ts",
+      "esmPath": "@gen/validators/quizanswer"
+    },
+    {
+      "id": "validators:QuizAnswer:quiz-answer.update.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz-answer\\quiz-answer.update.zod.ts",
+      "esmPath": "@gen/validators/quizanswer"
+    },
+    {
+      "id": "validators:QuizAnswer:quiz-answer.query.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz-answer\\quiz-answer.query.zod.ts",
+      "esmPath": "@gen/validators/quizanswer"
+    },
+    {
+      "id": "validators:QuizResult:quiz-result.create.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz-result\\quiz-result.create.zod.ts",
+      "esmPath": "@gen/validators/quizresult"
+    },
+    {
+      "id": "validators:QuizResult:quiz-result.update.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz-result\\quiz-result.update.zod.ts",
+      "esmPath": "@gen/validators/quizresult"
+    },
+    {
+      "id": "validators:QuizResult:quiz-result.query.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz-result\\quiz-result.query.zod.ts",
+      "esmPath": "@gen/validators/quizresult"
+    },
+    {
+      "id": "validators:BehaviorEvent:behavior-event.create.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\behavior-event\\behavior-event.create.zod.ts",
+      "esmPath": "@gen/validators/behaviorevent"
+    },
+    {
+      "id": "validators:BehaviorEvent:behavior-event.update.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\behavior-event\\behavior-event.update.zod.ts",
+      "esmPath": "@gen/validators/behaviorevent"
+    },
+    {
+      "id": "validators:BehaviorEvent:behavior-event.query.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\behavior-event\\behavior-event.query.zod.ts",
+      "esmPath": "@gen/validators/behaviorevent"
+    },
+    {
+      "id": "validators:BehaviorEventArchive:behavior-event-archive.create.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\behavior-event-archive\\behavior-event-archive.create.zod.ts",
+      "esmPath": "@gen/validators/behavioreventarchive"
+    },
+    {
+      "id": "validators:BehaviorEventArchive:behavior-event-archive.update.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\behavior-event-archive\\behavior-event-archive.update.zod.ts",
+      "esmPath": "@gen/validators/behavioreventarchive"
+    },
+    {
+      "id": "validators:BehaviorEventArchive:behavior-event-archive.query.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\behavior-event-archive\\behavior-event-archive.query.zod.ts",
+      "esmPath": "@gen/validators/behavioreventarchive"
+    },
+    {
+      "id": "validators:PersonalityDimension:personality-dimension.create.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\personality-dimension\\personality-dimension.create.zod.ts",
+      "esmPath": "@gen/validators/personalitydimension"
+    },
+    {
+      "id": "validators:PersonalityDimension:personality-dimension.update.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\personality-dimension\\personality-dimension.update.zod.ts",
+      "esmPath": "@gen/validators/personalitydimension"
+    },
+    {
+      "id": "validators:PersonalityDimension:personality-dimension.query.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\personality-dimension\\personality-dimension.query.zod.ts",
+      "esmPath": "@gen/validators/personalitydimension"
+    },
+    {
+      "id": "validators:UserDimensionScore:user-dimension-score.create.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\user-dimension-score\\user-dimension-score.create.zod.ts",
+      "esmPath": "@gen/validators/userdimensionscore"
+    },
+    {
+      "id": "validators:UserDimensionScore:user-dimension-score.update.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\user-dimension-score\\user-dimension-score.update.zod.ts",
+      "esmPath": "@gen/validators/userdimensionscore"
+    },
+    {
+      "id": "validators:UserDimensionScore:user-dimension-score.query.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\user-dimension-score\\user-dimension-score.query.zod.ts",
+      "esmPath": "@gen/validators/userdimensionscore"
+    },
+    {
+      "id": "validators:CompatibilityScore:compatibility-score.create.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\compatibility-score\\compatibility-score.create.zod.ts",
+      "esmPath": "@gen/validators/compatibilityscore"
+    },
+    {
+      "id": "validators:CompatibilityScore:compatibility-score.update.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\compatibility-score\\compatibility-score.update.zod.ts",
+      "esmPath": "@gen/validators/compatibilityscore"
+    },
+    {
+      "id": "validators:CompatibilityScore:compatibility-score.query.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\compatibility-score\\compatibility-score.query.zod.ts",
+      "esmPath": "@gen/validators/compatibilityscore"
+    },
+    {
+      "id": "validators:UserDimensionPriority:user-dimension-priority.create.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\user-dimension-priority\\user-dimension-priority.create.zod.ts",
+      "esmPath": "@gen/validators/userdimensionpriority"
+    },
+    {
+      "id": "validators:UserDimensionPriority:user-dimension-priority.update.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\user-dimension-priority\\user-dimension-priority.update.zod.ts",
+      "esmPath": "@gen/validators/userdimensionpriority"
+    },
+    {
+      "id": "validators:UserDimensionPriority:user-dimension-priority.query.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\user-dimension-priority\\user-dimension-priority.query.zod.ts",
+      "esmPath": "@gen/validators/userdimensionpriority"
+    },
+    {
+      "id": "validators:DimensionMappingRule:dimension-mapping-rule.create.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\dimension-mapping-rule\\dimension-mapping-rule.create.zod.ts",
+      "esmPath": "@gen/validators/dimensionmappingrule"
+    },
+    {
+      "id": "validators:DimensionMappingRule:dimension-mapping-rule.update.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\dimension-mapping-rule\\dimension-mapping-rule.update.zod.ts",
+      "esmPath": "@gen/validators/dimensionmappingrule"
+    },
+    {
+      "id": "validators:DimensionMappingRule:dimension-mapping-rule.query.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\dimension-mapping-rule\\dimension-mapping-rule.query.zod.ts",
+      "esmPath": "@gen/validators/dimensionmappingrule"
+    },
+    {
+      "id": "validators:EventWeightConfig:event-weight-config.create.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\event-weight-config\\event-weight-config.create.zod.ts",
+      "esmPath": "@gen/validators/eventweightconfig"
+    },
+    {
+      "id": "validators:EventWeightConfig:event-weight-config.update.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\event-weight-config\\event-weight-config.update.zod.ts",
+      "esmPath": "@gen/validators/eventweightconfig"
+    },
+    {
+      "id": "validators:EventWeightConfig:event-weight-config.query.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\event-weight-config\\event-weight-config.query.zod.ts",
+      "esmPath": "@gen/validators/eventweightconfig"
+    },
+    {
+      "id": "validators:Block:block.create.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\block\\block.create.zod.ts",
+      "esmPath": "@gen/validators/block"
+    },
+    {
+      "id": "validators:Block:block.update.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\block\\block.update.zod.ts",
+      "esmPath": "@gen/validators/block"
+    },
+    {
+      "id": "validators:Block:block.query.zod.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\block\\block.query.zod.ts",
+      "esmPath": "@gen/validators/block"
+    },
+    {
+      "id": "services:user:user.service.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\user\\user.service.ts",
+      "esmPath": "@gen/services/user"
+    },
+    {
+      "id": "services:profile:profile.service.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\profile\\profile.service.ts",
+      "esmPath": "@gen/services/profile"
+    },
+    {
+      "id": "services:photo:photo.service.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\photo\\photo.service.ts",
+      "esmPath": "@gen/services/photo"
+    },
+    {
+      "id": "services:message:message.service.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\message\\message.service.ts",
+      "esmPath": "@gen/services/message"
+    },
+    {
+      "id": "services:quiz:quiz.service.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\quiz\\quiz.service.ts",
+      "esmPath": "@gen/services/quiz"
+    },
+    {
+      "id": "services:quiz-question:quiz-question.service.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\quiz-question\\quiz-question.service.ts",
+      "esmPath": "@gen/services/quiz-question"
+    },
+    {
+      "id": "services:quiz-answer:quiz-answer.service.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\quiz-answer\\quiz-answer.service.ts",
+      "esmPath": "@gen/services/quiz-answer"
+    },
+    {
+      "id": "services:quiz-result:quiz-result.service.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\quiz-result\\quiz-result.service.ts",
+      "esmPath": "@gen/services/quiz-result"
+    },
+    {
+      "id": "services:behavior-event:behavior-event.service.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\behavior-event\\behavior-event.service.ts",
+      "esmPath": "@gen/services/behavior-event"
+    },
+    {
+      "id": "services:behavior-event-archive:behavior-event-archive.service.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\behavior-event-archive\\behavior-event-archive.service.ts",
+      "esmPath": "@gen/services/behavior-event-archive"
+    },
+    {
+      "id": "services:personality-dimension:personality-dimension.service.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\personality-dimension\\personality-dimension.service.ts",
+      "esmPath": "@gen/services/personality-dimension"
+    },
+    {
+      "id": "services:user-dimension-score:user-dimension-score.service.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\user-dimension-score\\user-dimension-score.service.ts",
+      "esmPath": "@gen/services/user-dimension-score"
+    },
+    {
+      "id": "services:compatibility-score:compatibility-score.service.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\compatibility-score\\compatibility-score.service.ts",
+      "esmPath": "@gen/services/compatibility-score"
+    },
+    {
+      "id": "services:dimension-mapping-rule:dimension-mapping-rule.service.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\dimension-mapping-rule\\dimension-mapping-rule.service.ts",
+      "esmPath": "@gen/services/dimension-mapping-rule"
+    },
+    {
+      "id": "services:admin-config-service:admin-config-service.service.scaffold.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\admin-config-service\\admin-config-service.service.scaffold.ts",
+      "esmPath": "@gen/services/admin-config-service"
+    },
+    {
+      "id": "services:event-weight-config:event-weight-config.service.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\event-weight-config\\event-weight-config.service.ts",
+      "esmPath": "@gen/services/event-weight-config"
+    },
+    {
+      "id": "controllers:user:user.controller.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\user\\user.controller.ts",
+      "esmPath": "@gen/controllers/user"
+    },
+    {
+      "id": "controllers:profile:profile.controller.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\profile\\profile.controller.ts",
+      "esmPath": "@gen/controllers/profile"
+    },
+    {
+      "id": "controllers:photo:photo.controller.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\photo\\photo.controller.ts",
+      "esmPath": "@gen/controllers/photo"
+    },
+    {
+      "id": "controllers:message:message.controller.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\message\\message.controller.ts",
+      "esmPath": "@gen/controllers/message"
+    },
+    {
+      "id": "controllers:quiz:quiz.controller.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\quiz\\quiz.controller.ts",
+      "esmPath": "@gen/controllers/quiz"
+    },
+    {
+      "id": "controllers:quiz-question:quiz-question.controller.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\quiz-question\\quiz-question.controller.ts",
+      "esmPath": "@gen/controllers/quiz-question"
+    },
+    {
+      "id": "controllers:quiz-answer:quiz-answer.controller.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\quiz-answer\\quiz-answer.controller.ts",
+      "esmPath": "@gen/controllers/quiz-answer"
+    },
+    {
+      "id": "controllers:quiz-result:quiz-result.controller.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\quiz-result\\quiz-result.controller.ts",
+      "esmPath": "@gen/controllers/quiz-result"
+    },
+    {
+      "id": "controllers:behavior-event:behavior-event.controller.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\behavior-event\\behavior-event.controller.ts",
+      "esmPath": "@gen/controllers/behavior-event"
+    },
+    {
+      "id": "controllers:behavior-event-archive:behavior-event-archive.controller.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\behavior-event-archive\\behavior-event-archive.controller.ts",
+      "esmPath": "@gen/controllers/behavior-event-archive"
+    },
+    {
+      "id": "controllers:personality-dimension:personality-dimension.controller.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\personality-dimension\\personality-dimension.controller.ts",
+      "esmPath": "@gen/controllers/personality-dimension"
+    },
+    {
+      "id": "controllers:user-dimension-score:user-dimension-score.controller.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\user-dimension-score\\user-dimension-score.controller.ts",
+      "esmPath": "@gen/controllers/user-dimension-score"
+    },
+    {
+      "id": "controllers:compatibility-score:compatibility-score.controller.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\compatibility-score\\compatibility-score.controller.ts",
+      "esmPath": "@gen/controllers/compatibility-score"
+    },
+    {
+      "id": "controllers:admin-config-service:admin-config-service.controller.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\admin-config-service\\admin-config-service.controller.ts",
+      "esmPath": "@gen/controllers/admin-config-service"
+    },
+    {
+      "id": "controllers:event-weight-config:event-weight-config.controller.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\event-weight-config\\event-weight-config.controller.ts",
+      "esmPath": "@gen/controllers/event-weight-config"
+    },
+    {
+      "id": "routes:user:user.routes.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\user\\user.routes.ts",
+      "esmPath": "@gen/routes/user"
+    },
+    {
+      "id": "routes:profile:profile.routes.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\profile\\profile.routes.ts",
+      "esmPath": "@gen/routes/profile"
+    },
+    {
+      "id": "routes:photo:photo.routes.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\photo\\photo.routes.ts",
+      "esmPath": "@gen/routes/photo"
+    },
+    {
+      "id": "routes:message:message.routes.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\message\\message.routes.ts",
+      "esmPath": "@gen/routes/message"
+    },
+    {
+      "id": "routes:quiz:quiz.routes.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\quiz\\quiz.routes.ts",
+      "esmPath": "@gen/routes/quiz"
+    },
+    {
+      "id": "routes:quiz-question:quiz-question.routes.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\quiz-question\\quiz-question.routes.ts",
+      "esmPath": "@gen/routes/quiz-question"
+    },
+    {
+      "id": "routes:quiz-answer:quiz-answer.routes.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\quiz-answer\\quiz-answer.routes.ts",
+      "esmPath": "@gen/routes/quiz-answer"
+    },
+    {
+      "id": "routes:quiz-result:quiz-result.routes.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\quiz-result\\quiz-result.routes.ts",
+      "esmPath": "@gen/routes/quiz-result"
+    },
+    {
+      "id": "routes:behavior-event:behavior-event.routes.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\behavior-event\\behavior-event.routes.ts",
+      "esmPath": "@gen/routes/behavior-event"
+    },
+    {
+      "id": "routes:behavior-event-archive:behavior-event-archive.routes.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\behavior-event-archive\\behavior-event-archive.routes.ts",
+      "esmPath": "@gen/routes/behavior-event-archive"
+    },
+    {
+      "id": "routes:personality-dimension:personality-dimension.routes.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\personality-dimension\\personality-dimension.routes.ts",
+      "esmPath": "@gen/routes/personality-dimension"
+    },
+    {
+      "id": "routes:user-dimension-score:user-dimension-score.routes.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\user-dimension-score\\user-dimension-score.routes.ts",
+      "esmPath": "@gen/routes/user-dimension-score"
+    },
+    {
+      "id": "routes:compatibility-score:compatibility-score.routes.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\compatibility-score\\compatibility-score.routes.ts",
+      "esmPath": "@gen/routes/compatibility-score"
+    },
+    {
+      "id": "routes:admin-config-service:admin-config-service.routes.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\admin-config-service\\admin-config-service.routes.ts",
+      "esmPath": "@gen/routes/admin-config-service"
+    },
+    {
+      "id": "routes:event-weight-config:event-weight-config.routes.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\event-weight-config\\event-weight-config.routes.ts",
+      "esmPath": "@gen/routes/event-weight-config"
+    },
+    {
+      "id": "sdk:models/user.client.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\models\\user.client.ts",
+      "esmPath": "@gen/sdk"
+    },
+    {
+      "id": "sdk:models/profile.client.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\models\\profile.client.ts",
+      "esmPath": "@gen/sdk"
+    },
+    {
+      "id": "sdk:models/photo.client.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\models\\photo.client.ts",
+      "esmPath": "@gen/sdk"
+    },
+    {
+      "id": "sdk:models/message.client.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\models\\message.client.ts",
+      "esmPath": "@gen/sdk"
+    },
+    {
+      "id": "sdk:models/quiz.client.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\models\\quiz.client.ts",
+      "esmPath": "@gen/sdk"
+    },
+    {
+      "id": "sdk:models/quizquestion.client.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\models\\quizquestion.client.ts",
+      "esmPath": "@gen/sdk"
+    },
+    {
+      "id": "sdk:models/quizanswer.client.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\models\\quizanswer.client.ts",
+      "esmPath": "@gen/sdk"
+    },
+    {
+      "id": "sdk:models/quizresult.client.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\models\\quizresult.client.ts",
+      "esmPath": "@gen/sdk"
+    },
+    {
+      "id": "sdk:models/behaviorevent.client.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\models\\behaviorevent.client.ts",
+      "esmPath": "@gen/sdk"
+    },
+    {
+      "id": "sdk:models/behavioreventarchive.client.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\models\\behavioreventarchive.client.ts",
+      "esmPath": "@gen/sdk"
+    },
+    {
+      "id": "sdk:models/personalitydimension.client.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\models\\personalitydimension.client.ts",
+      "esmPath": "@gen/sdk"
+    },
+    {
+      "id": "sdk:models/userdimensionscore.client.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\models\\userdimensionscore.client.ts",
+      "esmPath": "@gen/sdk"
+    },
+    {
+      "id": "sdk:models/compatibilityscore.client.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\models\\compatibilityscore.client.ts",
+      "esmPath": "@gen/sdk"
+    },
+    {
+      "id": "sdk:models/dimensionmappingrule.client.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\models\\dimensionmappingrule.client.ts",
+      "esmPath": "@gen/sdk"
+    },
+    {
+      "id": "sdk:models/eventweightconfig.client.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\models\\eventweightconfig.client.ts",
+      "esmPath": "@gen/sdk"
+    },
+    {
+      "id": "sdk:services/discovery-service.client.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\services\\discovery-service.client.ts",
+      "esmPath": "@gen/sdk"
+    },
+    {
+      "id": "sdk:services/admin-config-service.client.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\services\\admin-config-service.client.ts",
+      "esmPath": "@gen/sdk"
+    },
+    {
+      "id": "sdk:index.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\index.ts",
+      "esmPath": "@gen/sdk"
+    },
+    {
+      "id": "sdk:version.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\version.ts",
+      "esmPath": "@gen/sdk"
+    },
+    {
+      "id": "sdk:README.md",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\README.md",
+      "esmPath": "@gen/sdk"
+    },
+    {
+      "id": "sdk:API-REFERENCE.md",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\API-REFERENCE.md",
+      "esmPath": "@gen/sdk"
+    },
+    {
+      "id": "sdk:ARCHITECTURE.md",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\ARCHITECTURE.md",
+      "esmPath": "@gen/sdk"
+    },
+    {
+      "id": "sdk:quick-start.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\quick-start.ts",
+      "esmPath": "@gen/sdk"
+    },
+    {
+      "id": "sdk:types.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\types.ts",
+      "esmPath": "@gen/sdk"
+    },
+    {
+      "id": "hooks:core:user-queries.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\user-queries.ts",
+      "esmPath": "@gen/sdk/core/queries/user-queries"
+    },
+    {
+      "id": "hooks:core:profile-queries.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\profile-queries.ts",
+      "esmPath": "@gen/sdk/core/queries/profile-queries"
+    },
+    {
+      "id": "hooks:core:photo-queries.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\photo-queries.ts",
+      "esmPath": "@gen/sdk/core/queries/photo-queries"
+    },
+    {
+      "id": "hooks:core:swipe-queries.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\swipe-queries.ts",
+      "esmPath": "@gen/sdk/core/queries/swipe-queries"
+    },
+    {
+      "id": "hooks:core:match-queries.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\match-queries.ts",
+      "esmPath": "@gen/sdk/core/queries/match-queries"
+    },
+    {
+      "id": "hooks:core:message-queries.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\message-queries.ts",
+      "esmPath": "@gen/sdk/core/queries/message-queries"
+    },
+    {
+      "id": "hooks:core:quiz-queries.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\quiz-queries.ts",
+      "esmPath": "@gen/sdk/core/queries/quiz-queries"
+    },
+    {
+      "id": "hooks:core:quizquestion-queries.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\quizquestion-queries.ts",
+      "esmPath": "@gen/sdk/core/queries/quizquestion-queries"
+    },
+    {
+      "id": "hooks:core:quizanswer-queries.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\quizanswer-queries.ts",
+      "esmPath": "@gen/sdk/core/queries/quizanswer-queries"
+    },
+    {
+      "id": "hooks:core:quizresult-queries.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\quizresult-queries.ts",
+      "esmPath": "@gen/sdk/core/queries/quizresult-queries"
+    },
+    {
+      "id": "hooks:core:behaviorevent-queries.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\behaviorevent-queries.ts",
+      "esmPath": "@gen/sdk/core/queries/behaviorevent-queries"
+    },
+    {
+      "id": "hooks:core:behavioreventarchive-queries.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\behavioreventarchive-queries.ts",
+      "esmPath": "@gen/sdk/core/queries/behavioreventarchive-queries"
+    },
+    {
+      "id": "hooks:core:personalitydimension-queries.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\personalitydimension-queries.ts",
+      "esmPath": "@gen/sdk/core/queries/personalitydimension-queries"
+    },
+    {
+      "id": "hooks:core:userdimensionscore-queries.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\userdimensionscore-queries.ts",
+      "esmPath": "@gen/sdk/core/queries/userdimensionscore-queries"
+    },
+    {
+      "id": "hooks:core:compatibilityscore-queries.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\compatibilityscore-queries.ts",
+      "esmPath": "@gen/sdk/core/queries/compatibilityscore-queries"
+    },
+    {
+      "id": "hooks:core:userdimensionpriority-queries.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\userdimensionpriority-queries.ts",
+      "esmPath": "@gen/sdk/core/queries/userdimensionpriority-queries"
+    },
+    {
+      "id": "hooks:core:dimensionmappingrule-queries.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\dimensionmappingrule-queries.ts",
+      "esmPath": "@gen/sdk/core/queries/dimensionmappingrule-queries"
+    },
+    {
+      "id": "hooks:core:eventweightconfig-queries.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\eventweightconfig-queries.ts",
+      "esmPath": "@gen/sdk/core/queries/eventweightconfig-queries"
+    },
+    {
+      "id": "hooks:core:block-queries.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\block-queries.ts",
+      "esmPath": "@gen/sdk/core/queries/block-queries"
+    },
+    {
+      "id": "hooks:core:shared/query-helpers.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\shared\\query-helpers.ts",
+      "esmPath": "@gen/sdk/core/queries/shared/query-helpers"
+    },
+    {
+      "id": "hooks:core:index.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\core\\queries\\index.ts",
+      "esmPath": "@gen/sdk/core/queries/index"
+    },
+    {
+      "id": "hooks:react:models/use-user.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-user.ts",
+      "esmPath": "@gen/sdk/react/models/use-user"
+    },
+    {
+      "id": "hooks:react:models/__tests__/use-user.test.tsx",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-user.test.tsx",
+      "esmPath": "@gen/sdk/react/models/__tests__/use-user.testx"
+    },
+    {
+      "id": "hooks:react:models/use-profile.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-profile.ts",
+      "esmPath": "@gen/sdk/react/models/use-profile"
+    },
+    {
+      "id": "hooks:react:models/__tests__/use-profile.test.tsx",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-profile.test.tsx",
+      "esmPath": "@gen/sdk/react/models/__tests__/use-profile.testx"
+    },
+    {
+      "id": "hooks:react:models/use-photo.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-photo.ts",
+      "esmPath": "@gen/sdk/react/models/use-photo"
+    },
+    {
+      "id": "hooks:react:models/__tests__/use-photo.test.tsx",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-photo.test.tsx",
+      "esmPath": "@gen/sdk/react/models/__tests__/use-photo.testx"
+    },
+    {
+      "id": "hooks:react:models/use-swipe.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-swipe.ts",
+      "esmPath": "@gen/sdk/react/models/use-swipe"
+    },
+    {
+      "id": "hooks:react:models/__tests__/use-swipe.test.tsx",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-swipe.test.tsx",
+      "esmPath": "@gen/sdk/react/models/__tests__/use-swipe.testx"
+    },
+    {
+      "id": "hooks:react:models/use-match.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-match.ts",
+      "esmPath": "@gen/sdk/react/models/use-match"
+    },
+    {
+      "id": "hooks:react:models/__tests__/use-match.test.tsx",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-match.test.tsx",
+      "esmPath": "@gen/sdk/react/models/__tests__/use-match.testx"
+    },
+    {
+      "id": "hooks:react:models/use-message.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-message.ts",
+      "esmPath": "@gen/sdk/react/models/use-message"
+    },
+    {
+      "id": "hooks:react:models/__tests__/use-message.test.tsx",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-message.test.tsx",
+      "esmPath": "@gen/sdk/react/models/__tests__/use-message.testx"
+    },
+    {
+      "id": "hooks:react:models/use-quiz.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-quiz.ts",
+      "esmPath": "@gen/sdk/react/models/use-quiz"
+    },
+    {
+      "id": "hooks:react:models/__tests__/use-quiz.test.tsx",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-quiz.test.tsx",
+      "esmPath": "@gen/sdk/react/models/__tests__/use-quiz.testx"
+    },
+    {
+      "id": "hooks:react:models/use-quizquestion.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-quizquestion.ts",
+      "esmPath": "@gen/sdk/react/models/use-quizquestion"
+    },
+    {
+      "id": "hooks:react:models/__tests__/use-quizquestion.test.tsx",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-quizquestion.test.tsx",
+      "esmPath": "@gen/sdk/react/models/__tests__/use-quizquestion.testx"
+    },
+    {
+      "id": "hooks:react:models/use-quizanswer.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-quizanswer.ts",
+      "esmPath": "@gen/sdk/react/models/use-quizanswer"
+    },
+    {
+      "id": "hooks:react:models/__tests__/use-quizanswer.test.tsx",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-quizanswer.test.tsx",
+      "esmPath": "@gen/sdk/react/models/__tests__/use-quizanswer.testx"
+    },
+    {
+      "id": "hooks:react:models/use-quizresult.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-quizresult.ts",
+      "esmPath": "@gen/sdk/react/models/use-quizresult"
+    },
+    {
+      "id": "hooks:react:models/__tests__/use-quizresult.test.tsx",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-quizresult.test.tsx",
+      "esmPath": "@gen/sdk/react/models/__tests__/use-quizresult.testx"
+    },
+    {
+      "id": "hooks:react:models/use-behaviorevent.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-behaviorevent.ts",
+      "esmPath": "@gen/sdk/react/models/use-behaviorevent"
+    },
+    {
+      "id": "hooks:react:models/__tests__/use-behaviorevent.test.tsx",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-behaviorevent.test.tsx",
+      "esmPath": "@gen/sdk/react/models/__tests__/use-behaviorevent.testx"
+    },
+    {
+      "id": "hooks:react:models/use-behavioreventarchive.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-behavioreventarchive.ts",
+      "esmPath": "@gen/sdk/react/models/use-behavioreventarchive"
+    },
+    {
+      "id": "hooks:react:models/__tests__/use-behavioreventarchive.test.tsx",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-behavioreventarchive.test.tsx",
+      "esmPath": "@gen/sdk/react/models/__tests__/use-behavioreventarchive.testx"
+    },
+    {
+      "id": "hooks:react:models/use-personalitydimension.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-personalitydimension.ts",
+      "esmPath": "@gen/sdk/react/models/use-personalitydimension"
+    },
+    {
+      "id": "hooks:react:models/__tests__/use-personalitydimension.test.tsx",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-personalitydimension.test.tsx",
+      "esmPath": "@gen/sdk/react/models/__tests__/use-personalitydimension.testx"
+    },
+    {
+      "id": "hooks:react:models/use-userdimensionscore.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-userdimensionscore.ts",
+      "esmPath": "@gen/sdk/react/models/use-userdimensionscore"
+    },
+    {
+      "id": "hooks:react:models/__tests__/use-userdimensionscore.test.tsx",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-userdimensionscore.test.tsx",
+      "esmPath": "@gen/sdk/react/models/__tests__/use-userdimensionscore.testx"
+    },
+    {
+      "id": "hooks:react:models/use-compatibilityscore.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-compatibilityscore.ts",
+      "esmPath": "@gen/sdk/react/models/use-compatibilityscore"
+    },
+    {
+      "id": "hooks:react:models/__tests__/use-compatibilityscore.test.tsx",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-compatibilityscore.test.tsx",
+      "esmPath": "@gen/sdk/react/models/__tests__/use-compatibilityscore.testx"
+    },
+    {
+      "id": "hooks:react:models/use-userdimensionpriority.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-userdimensionpriority.ts",
+      "esmPath": "@gen/sdk/react/models/use-userdimensionpriority"
+    },
+    {
+      "id": "hooks:react:models/__tests__/use-userdimensionpriority.test.tsx",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-userdimensionpriority.test.tsx",
+      "esmPath": "@gen/sdk/react/models/__tests__/use-userdimensionpriority.testx"
+    },
+    {
+      "id": "hooks:react:models/use-dimensionmappingrule.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-dimensionmappingrule.ts",
+      "esmPath": "@gen/sdk/react/models/use-dimensionmappingrule"
+    },
+    {
+      "id": "hooks:react:models/__tests__/use-dimensionmappingrule.test.tsx",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-dimensionmappingrule.test.tsx",
+      "esmPath": "@gen/sdk/react/models/__tests__/use-dimensionmappingrule.testx"
+    },
+    {
+      "id": "hooks:react:models/use-eventweightconfig.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-eventweightconfig.ts",
+      "esmPath": "@gen/sdk/react/models/use-eventweightconfig"
+    },
+    {
+      "id": "hooks:react:models/__tests__/use-eventweightconfig.test.tsx",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-eventweightconfig.test.tsx",
+      "esmPath": "@gen/sdk/react/models/__tests__/use-eventweightconfig.testx"
+    },
+    {
+      "id": "hooks:react:models/use-block.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\use-block.ts",
+      "esmPath": "@gen/sdk/react/models/use-block"
+    },
+    {
+      "id": "hooks:react:models/__tests__/use-block.test.tsx",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\models\\__tests__\\use-block.test.tsx",
+      "esmPath": "@gen/sdk/react/models/__tests__/use-block.testx"
+    },
+    {
+      "id": "hooks:react:index.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\index.ts",
+      "esmPath": "@gen/sdk/react/index"
+    },
+    {
+      "id": "hooks:react:provider.tsx",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\provider.tsx",
+      "esmPath": "@gen/sdk/react/providerx"
+    },
+    {
+      "id": "hooks:react:README.md",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\README.md",
+      "esmPath": "@gen/sdk/react/README.md"
+    },
+    {
+      "id": "hooks:react:__tests__/setup.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\__tests__\\setup.ts",
+      "esmPath": "@gen/sdk/react/__tests__/setup"
+    },
+    {
+      "id": "hooks:react:vitest.config.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\sdk\\react\\vitest.config.ts",
+      "esmPath": "@gen/sdk/react/vitest.config"
+    },
+    {
+      "id": "checklist:checklist.html",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\checklist\\checklist.html",
+      "esmPath": "@gen/checklist/checklist.html"
+    },
+    {
+      "id": "checklist:checklist.api.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\checklist\\checklist.api.ts",
+      "esmPath": "@gen/checklist/checklist.api.ts"
+    },
+    {
+      "id": "checklist:checklist.tests.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\checklist\\checklist.tests.ts",
+      "esmPath": "@gen/checklist/checklist.tests.ts"
+    },
+    {
+      "id": "base:base-crud-controller.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\base\\base-crud-controller.ts",
+      "esmPath": "@gen/base"
+    },
+    {
+      "id": "base:base-service-controller.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\base\\base-service-controller.ts",
+      "esmPath": "@gen/base"
+    },
+    {
+      "id": "base:index.ts",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\base\\index.ts",
+      "esmPath": "@gen/base"
+    },
+    {
+      "id": "contracts:User:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\user\\index.ts",
+      "esmPath": "@gen/contracts/user"
+    },
+    {
+      "id": "validators:User:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\user\\index.ts",
+      "esmPath": "@gen/validators/user"
+    },
+    {
+      "id": "services:User:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\user\\index.ts",
+      "esmPath": "@gen/services/user"
+    },
+    {
+      "id": "controllers:User:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\user\\index.ts",
+      "esmPath": "@gen/controllers/user"
+    },
+    {
+      "id": "routes:User:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\user\\index.ts",
+      "esmPath": "@gen/routes/user"
+    },
+    {
+      "id": "contracts:Profile:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\profile\\index.ts",
+      "esmPath": "@gen/contracts/profile"
+    },
+    {
+      "id": "validators:Profile:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\profile\\index.ts",
+      "esmPath": "@gen/validators/profile"
+    },
+    {
+      "id": "services:Profile:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\profile\\index.ts",
+      "esmPath": "@gen/services/profile"
+    },
+    {
+      "id": "controllers:Profile:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\profile\\index.ts",
+      "esmPath": "@gen/controllers/profile"
+    },
+    {
+      "id": "routes:Profile:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\profile\\index.ts",
+      "esmPath": "@gen/routes/profile"
+    },
+    {
+      "id": "contracts:Photo:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\photo\\index.ts",
+      "esmPath": "@gen/contracts/photo"
+    },
+    {
+      "id": "validators:Photo:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\photo\\index.ts",
+      "esmPath": "@gen/validators/photo"
+    },
+    {
+      "id": "services:Photo:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\photo\\index.ts",
+      "esmPath": "@gen/services/photo"
+    },
+    {
+      "id": "controllers:Photo:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\photo\\index.ts",
+      "esmPath": "@gen/controllers/photo"
+    },
+    {
+      "id": "routes:Photo:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\photo\\index.ts",
+      "esmPath": "@gen/routes/photo"
+    },
+    {
+      "id": "contracts:Swipe:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\swipe\\index.ts",
+      "esmPath": "@gen/contracts/swipe"
+    },
+    {
+      "id": "validators:Swipe:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\swipe\\index.ts",
+      "esmPath": "@gen/validators/swipe"
+    },
+    {
+      "id": "contracts:Match:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\match\\index.ts",
+      "esmPath": "@gen/contracts/match"
+    },
+    {
+      "id": "validators:Match:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\match\\index.ts",
+      "esmPath": "@gen/validators/match"
+    },
+    {
+      "id": "contracts:Message:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\message\\index.ts",
+      "esmPath": "@gen/contracts/message"
+    },
+    {
+      "id": "validators:Message:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\message\\index.ts",
+      "esmPath": "@gen/validators/message"
+    },
+    {
+      "id": "services:Message:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\message\\index.ts",
+      "esmPath": "@gen/services/message"
+    },
+    {
+      "id": "controllers:Message:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\message\\index.ts",
+      "esmPath": "@gen/controllers/message"
+    },
+    {
+      "id": "routes:Message:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\message\\index.ts",
+      "esmPath": "@gen/routes/message"
+    },
+    {
+      "id": "contracts:Quiz:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz\\index.ts",
+      "esmPath": "@gen/contracts/quiz"
+    },
+    {
+      "id": "validators:Quiz:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz\\index.ts",
+      "esmPath": "@gen/validators/quiz"
+    },
+    {
+      "id": "services:Quiz:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\quiz\\index.ts",
+      "esmPath": "@gen/services/quiz"
+    },
+    {
+      "id": "controllers:Quiz:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\quiz\\index.ts",
+      "esmPath": "@gen/controllers/quiz"
+    },
+    {
+      "id": "routes:Quiz:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\quiz\\index.ts",
+      "esmPath": "@gen/routes/quiz"
+    },
+    {
+      "id": "contracts:QuizQuestion:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz-question\\index.ts",
+      "esmPath": "@gen/contracts/quizquestion"
+    },
+    {
+      "id": "validators:QuizQuestion:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz-question\\index.ts",
+      "esmPath": "@gen/validators/quizquestion"
+    },
+    {
+      "id": "services:QuizQuestion:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\quiz-question\\index.ts",
+      "esmPath": "@gen/services/quizquestion"
+    },
+    {
+      "id": "controllers:QuizQuestion:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\quiz-question\\index.ts",
+      "esmPath": "@gen/controllers/quizquestion"
+    },
+    {
+      "id": "routes:QuizQuestion:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\quiz-question\\index.ts",
+      "esmPath": "@gen/routes/quizquestion"
+    },
+    {
+      "id": "contracts:QuizAnswer:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz-answer\\index.ts",
+      "esmPath": "@gen/contracts/quizanswer"
+    },
+    {
+      "id": "validators:QuizAnswer:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz-answer\\index.ts",
+      "esmPath": "@gen/validators/quizanswer"
+    },
+    {
+      "id": "services:QuizAnswer:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\quiz-answer\\index.ts",
+      "esmPath": "@gen/services/quizanswer"
+    },
+    {
+      "id": "controllers:QuizAnswer:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\quiz-answer\\index.ts",
+      "esmPath": "@gen/controllers/quizanswer"
+    },
+    {
+      "id": "routes:QuizAnswer:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\quiz-answer\\index.ts",
+      "esmPath": "@gen/routes/quizanswer"
+    },
+    {
+      "id": "contracts:QuizResult:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\quiz-result\\index.ts",
+      "esmPath": "@gen/contracts/quizresult"
+    },
+    {
+      "id": "validators:QuizResult:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\quiz-result\\index.ts",
+      "esmPath": "@gen/validators/quizresult"
+    },
+    {
+      "id": "services:QuizResult:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\quiz-result\\index.ts",
+      "esmPath": "@gen/services/quizresult"
+    },
+    {
+      "id": "controllers:QuizResult:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\quiz-result\\index.ts",
+      "esmPath": "@gen/controllers/quizresult"
+    },
+    {
+      "id": "routes:QuizResult:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\quiz-result\\index.ts",
+      "esmPath": "@gen/routes/quizresult"
+    },
+    {
+      "id": "contracts:BehaviorEvent:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\behavior-event\\index.ts",
+      "esmPath": "@gen/contracts/behaviorevent"
+    },
+    {
+      "id": "validators:BehaviorEvent:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\behavior-event\\index.ts",
+      "esmPath": "@gen/validators/behaviorevent"
+    },
+    {
+      "id": "services:BehaviorEvent:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\behavior-event\\index.ts",
+      "esmPath": "@gen/services/behaviorevent"
+    },
+    {
+      "id": "controllers:BehaviorEvent:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\behavior-event\\index.ts",
+      "esmPath": "@gen/controllers/behaviorevent"
+    },
+    {
+      "id": "routes:BehaviorEvent:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\behavior-event\\index.ts",
+      "esmPath": "@gen/routes/behaviorevent"
+    },
+    {
+      "id": "contracts:BehaviorEventArchive:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\behavior-event-archive\\index.ts",
+      "esmPath": "@gen/contracts/behavioreventarchive"
+    },
+    {
+      "id": "validators:BehaviorEventArchive:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\behavior-event-archive\\index.ts",
+      "esmPath": "@gen/validators/behavioreventarchive"
+    },
+    {
+      "id": "services:BehaviorEventArchive:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\behavior-event-archive\\index.ts",
+      "esmPath": "@gen/services/behavioreventarchive"
+    },
+    {
+      "id": "controllers:BehaviorEventArchive:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\behavior-event-archive\\index.ts",
+      "esmPath": "@gen/controllers/behavioreventarchive"
+    },
+    {
+      "id": "routes:BehaviorEventArchive:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\behavior-event-archive\\index.ts",
+      "esmPath": "@gen/routes/behavioreventarchive"
+    },
+    {
+      "id": "contracts:PersonalityDimension:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\personality-dimension\\index.ts",
+      "esmPath": "@gen/contracts/personalitydimension"
+    },
+    {
+      "id": "validators:PersonalityDimension:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\personality-dimension\\index.ts",
+      "esmPath": "@gen/validators/personalitydimension"
+    },
+    {
+      "id": "services:PersonalityDimension:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\personality-dimension\\index.ts",
+      "esmPath": "@gen/services/personalitydimension"
+    },
+    {
+      "id": "controllers:PersonalityDimension:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\personality-dimension\\index.ts",
+      "esmPath": "@gen/controllers/personalitydimension"
+    },
+    {
+      "id": "routes:PersonalityDimension:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\personality-dimension\\index.ts",
+      "esmPath": "@gen/routes/personalitydimension"
+    },
+    {
+      "id": "contracts:UserDimensionScore:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\user-dimension-score\\index.ts",
+      "esmPath": "@gen/contracts/userdimensionscore"
+    },
+    {
+      "id": "validators:UserDimensionScore:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\user-dimension-score\\index.ts",
+      "esmPath": "@gen/validators/userdimensionscore"
+    },
+    {
+      "id": "services:UserDimensionScore:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\user-dimension-score\\index.ts",
+      "esmPath": "@gen/services/userdimensionscore"
+    },
+    {
+      "id": "controllers:UserDimensionScore:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\user-dimension-score\\index.ts",
+      "esmPath": "@gen/controllers/userdimensionscore"
+    },
+    {
+      "id": "routes:UserDimensionScore:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\user-dimension-score\\index.ts",
+      "esmPath": "@gen/routes/userdimensionscore"
+    },
+    {
+      "id": "contracts:CompatibilityScore:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\compatibility-score\\index.ts",
+      "esmPath": "@gen/contracts/compatibilityscore"
+    },
+    {
+      "id": "validators:CompatibilityScore:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\compatibility-score\\index.ts",
+      "esmPath": "@gen/validators/compatibilityscore"
+    },
+    {
+      "id": "services:CompatibilityScore:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\compatibility-score\\index.ts",
+      "esmPath": "@gen/services/compatibilityscore"
+    },
+    {
+      "id": "controllers:CompatibilityScore:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\compatibility-score\\index.ts",
+      "esmPath": "@gen/controllers/compatibilityscore"
+    },
+    {
+      "id": "routes:CompatibilityScore:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\compatibility-score\\index.ts",
+      "esmPath": "@gen/routes/compatibilityscore"
+    },
+    {
+      "id": "contracts:UserDimensionPriority:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\user-dimension-priority\\index.ts",
+      "esmPath": "@gen/contracts/userdimensionpriority"
+    },
+    {
+      "id": "validators:UserDimensionPriority:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\user-dimension-priority\\index.ts",
+      "esmPath": "@gen/validators/userdimensionpriority"
+    },
+    {
+      "id": "contracts:DimensionMappingRule:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\dimension-mapping-rule\\index.ts",
+      "esmPath": "@gen/contracts/dimensionmappingrule"
+    },
+    {
+      "id": "validators:DimensionMappingRule:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\dimension-mapping-rule\\index.ts",
+      "esmPath": "@gen/validators/dimensionmappingrule"
+    },
+    {
+      "id": "services:DimensionMappingRule:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\dimension-mapping-rule\\index.ts",
+      "esmPath": "@gen/services/dimensionmappingrule"
+    },
+    {
+      "id": "contracts:EventWeightConfig:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\event-weight-config\\index.ts",
+      "esmPath": "@gen/contracts/eventweightconfig"
+    },
+    {
+      "id": "validators:EventWeightConfig:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\event-weight-config\\index.ts",
+      "esmPath": "@gen/validators/eventweightconfig"
+    },
+    {
+      "id": "services:EventWeightConfig:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\event-weight-config\\index.ts",
+      "esmPath": "@gen/services/eventweightconfig"
+    },
+    {
+      "id": "controllers:EventWeightConfig:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\event-weight-config\\index.ts",
+      "esmPath": "@gen/controllers/eventweightconfig"
+    },
+    {
+      "id": "routes:EventWeightConfig:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\event-weight-config\\index.ts",
+      "esmPath": "@gen/routes/eventweightconfig"
+    },
+    {
+      "id": "contracts:Block:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\block\\index.ts",
+      "esmPath": "@gen/contracts/block"
+    },
+    {
+      "id": "validators:Block:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\block\\index.ts",
+      "esmPath": "@gen/validators/block"
+    },
+    {
+      "id": "contracts:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\contracts\\index.ts",
+      "esmPath": "@gen/contracts"
+    },
+    {
+      "id": "validators:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\validators\\index.ts",
+      "esmPath": "@gen/validators"
+    },
+    {
+      "id": "services:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\services\\index.ts",
+      "esmPath": "@gen/services"
+    },
+    {
+      "id": "controllers:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\controllers\\index.ts",
+      "esmPath": "@gen/controllers"
+    },
+    {
+      "id": "routes:index",
+      "fsPath": "C:\\wamp64\\www\\ssot-codegen\\websites\\dating-app\\src\\src\\routes\\index.ts",
+      "esmPath": "@gen/routes"
+    }
+  ]
+}
