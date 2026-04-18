@@ -749,7 +749,7 @@ Create `websites/configs/clients/client-a.json`:
 ### Step 3: Generate
 
 ```bash
-npx ssot-gen bulk --config websites/configs/clients/client-a.json
+pnpm ssot bulk --config websites/configs/clients/client-a.json
 ```
 
 ### Step 4: Review Output

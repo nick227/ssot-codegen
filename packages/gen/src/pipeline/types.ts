@@ -48,7 +48,7 @@ export interface GeneratedFiles {
  * 
  * Strongly-typed plugin feature flags and configuration
  */
-export interface PluginFeaturesConfig {
+interface PluginFeaturesConfig {
   // Core generator features
   generateValidators?: boolean
   generateOpenAPI?: boolean
@@ -106,7 +106,7 @@ export interface GeneratorResult {
   outputDir?: string
 }
 
-export interface StandaloneProjectOptions {
+interface StandaloneProjectOptions {
   outputDir: string
   projectName: string
   framework: 'express' | 'fastify'
@@ -118,7 +118,7 @@ export interface StandaloneProjectOptions {
   hasPlugins?: boolean
 }
 
-export interface TestSuiteOptions {
+interface TestSuiteOptions {
   outputDir: string
   models: ParsedModel[]
   framework: 'express' | 'fastify'

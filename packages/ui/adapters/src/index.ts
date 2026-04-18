@@ -25,10 +25,5 @@ export * from './interfaces/auth.js'
 export * from './interfaces/router.js'
 export * from './interfaces/format.js'
 
-// Implementations (consolidated from 5 separate packages)
-export * from './implementations/auth-nextauth/index.js'
-export * from './implementations/data-prisma/index.js'
-export * from './implementations/format-intl/index.js'
-export * from './implementations/router-next/index.js'
-export * from './implementations/ui-internal/index.js'
+// Implementations are provided by separate packages and are not bundled here.
 

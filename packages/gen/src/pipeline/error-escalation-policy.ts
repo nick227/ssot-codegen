@@ -23,26 +23,6 @@ import { ErrorSeverity, type GenerationError } from './generation-types.js'
 /**
  * Error handling configuration
  */
-export interface ErrorHandlingConfig {
-  /**
-   * Stop on first ERROR (not WARNING)
-   * Default: false
-   */
-  failFast: boolean
-  
-  /**
-   * Continue generation despite ERROR-level issues
-   * Default: true
-   */
-  continueOnError: boolean
-  
-  /**
-   * Fail if plugins have validation errors
-   * Default: false
-   */
-  strictPluginValidation: boolean
-}
-
 /**
  * Centralized policy for error escalation
  * 
@@ -67,7 +47,25 @@ export interface ErrorHandlingConfig {
  * ```
  */
 export class ErrorEscalationPolicy {
-  constructor(private readonly config: ErrorHandlingConfig) {}
+  constructor(private readonly config: {
+    /**
+     * Stop on first ERROR (not WARNING)
+     * Default: false
+     */
+    failFast: boolean
+    
+    /**
+     * Continue generation despite ERROR-level issues
+     * Default: true
+     */
+    continueOnError: boolean
+    
+    /**
+     * Fail if plugins have validation errors
+     * Default: false
+     */
+    strictPluginValidation: boolean
+  }) {}
   
   /**
    * Determine if error should throw immediately

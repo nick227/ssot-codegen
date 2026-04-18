@@ -7,7 +7,7 @@
  * SRP: Only handles policy evaluation and enforcement
  */
 
-import { evaluate, type Expression, type ExpressionContext } from '@ssot-ui/expressions'
+import { evaluate, type ExpressionContext } from '@ssot-ui/expressions'
 import type { PolicyRule, PolicyContext, PolicyResult, AllowedFields, Policies } from './types.js'
 import { PoliciesSchema } from './types.js'
 import { applyRowFilters } from './row-filter.js'

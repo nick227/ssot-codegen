@@ -13,7 +13,7 @@ import path from 'node:path'
 import { GenerationPhase, type PhaseContext, type PhaseResult } from '../phase-runner.js'
 import { writeFile } from '../phase-utilities.js'
 import { stringifyWithCache } from '../json-cache.js'
-import { generateOpenAPISpec, type OpenAPIConfig } from '@/api/openapi-generator.js'
+import { generateOpenAPISpec, type OpenAPIConfig, type OpenAPISpec } from '@/api/openapi-generator.js'
 
 export class GenerateOpenAPIPhase extends GenerationPhase {
   readonly name = 'generateOpenAPI'
@@ -55,7 +55,7 @@ export class GenerateOpenAPIPhase extends GenerationPhase {
     }
     
     // Generate complete OpenAPI spec using parsed models with real enum values
-    const spec = generateOpenAPISpec(parsedModels, config, schema)
+    const spec: OpenAPISpec = generateOpenAPISpec(parsedModels, config, schema)
     
     // Store spec in context for reuse (e.g., manifest, SDK generation)
     context.openApiSpec = spec

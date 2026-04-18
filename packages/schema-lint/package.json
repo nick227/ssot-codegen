@@ -11,7 +11,5 @@
   "scripts": {
     "build": "tsc -p tsconfig.json"
   },
-  "dependencies": {
-    "@ssot-codegen/core": "workspace:*"
-  }
+  "dependencies": {}
 }

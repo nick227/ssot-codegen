@@ -207,7 +207,7 @@ export class PathCollisionError extends Error {
 /**
  * Create path registry (convenience function)
  */
-export function createPathRegistry(): FilePathRegistry {
+function createPathRegistry(): FilePathRegistry {
   return new FilePathRegistry()
 }
 

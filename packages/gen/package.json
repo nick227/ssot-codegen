@@ -60,7 +60,6 @@
     "prisma": "^5.0.0"
   },
   "devDependencies": {
-    "@ssot-codegen/core": "workspace:*",
     "@types/prettier": "^2.7.3",
     "@vitest/coverage-v8": "^2.1.0",
     "tsc-alias": "^1.8.10",

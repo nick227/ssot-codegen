@@ -109,31 +109,31 @@ export const PermissionExpressionSchema = z.object({
  * Computed field expression
  * Calculates field value from other fields
  */
-export const ComputedFieldSchema = ExpressionSchema
+const ComputedFieldSchema = ExpressionSchema
 
 /**
  * Conditional visibility expression
  * Shows/hides field based on condition
  */
-export const VisibilityConditionSchema = ExpressionSchema
+const VisibilityConditionSchema = ExpressionSchema
 
 /**
  * Conditional enabled expression
  * Enables/disables field based on condition
  */
-export const EnabledConditionSchema = ExpressionSchema
+const EnabledConditionSchema = ExpressionSchema
 
 /**
  * Read permission expression
  * Determines if user can read field
  */
-export const ReadPermissionSchema = ExpressionSchema
+const ReadPermissionSchema = ExpressionSchema
 
 /**
  * Write permission expression
  * Determines if user can write field
  */
-export const WritePermissionSchema = ExpressionSchema
+const WritePermissionSchema = ExpressionSchema
 
 // ============================================================================
 // Type Exports
@@ -144,10 +144,10 @@ export type FieldAccessExpression = z.infer<typeof FieldAccessExpressionSchema>
 export type OperationExpression = z.infer<typeof OperationExpressionSchema>
 export type ConditionExpression = z.infer<typeof ConditionExpressionSchema>
 export type PermissionExpression = z.infer<typeof PermissionExpressionSchema>
-export type ComputedField = z.infer<typeof ComputedFieldSchema>
-export type VisibilityCondition = z.infer<typeof VisibilityConditionSchema>
-export type EnabledCondition = z.infer<typeof EnabledConditionSchema>
-export type ReadPermission = z.infer<typeof ReadPermissionSchema>
-export type WritePermission = z.infer<typeof WritePermissionSchema>
+type ComputedField = z.infer<typeof ComputedFieldSchema>
+type VisibilityCondition = z.infer<typeof VisibilityConditionSchema>
+type EnabledCondition = z.infer<typeof EnabledConditionSchema>
+type ReadPermission = z.infer<typeof ReadPermissionSchema>
+type WritePermission = z.infer<typeof WritePermissionSchema>
 
 

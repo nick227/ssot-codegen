@@ -9,6 +9,7 @@
 
 import path from 'node:path'
 import { analyzeModel } from '@/utils/relationship-analyzer.js'
+import { toKebabCase } from '@/utils/naming.js'
 import { TypedPhaseAdapter } from '../typed-phase-adapter.js'
 import * as standaloneTemplates from '@/templates/standalone-project.template.js'
 import { writeFile } from '../phase-utilities.js'
@@ -63,12 +64,44 @@ export class WriteStandalonePhaseTyped extends TypedPhaseAdapter<
       : schemaContent.includes('provider = "mysql"')
       ? 'mysql'
       : 'sqlite'
+
+    // Filter models to those that actually have routes generated
+    // (Models converted to services, like DimensionMappingRule -> admin-config-service, won't have standard routes)
+    const routesMap = generatedFiles.routes as Map<string, string>
+    
+    const availableModelNames = modelNames.filter(name => {
+      const kebab = toKebabCase(name)
+      // Check for kebab-case or lowercase match (standard generation patterns)
+      return routesMap.has(`${kebab}.routes.ts`) || routesMap.has(`${name.toLowerCase()}.routes.ts`)
+    })
+    
+    // Identify service routes (routes that don't match any standard model pattern)
+    const serviceNames: string[] = []
+    for (const [filename] of routesMap) {
+      if (filename.endsWith('.routes.ts')) {
+        const routeName = filename.replace('.routes.ts', '')
+        
+        // Check if this route belongs to a model
+        const isModelRoute = modelNames.some(m => {
+          const kebab = toKebabCase(m)
+          return routeName === kebab || routeName === m.toLowerCase()
+        })
+        
+        if (!isModelRoute) {
+          serviceNames.push(routeName)
+        }
+      }
+    }
     
     const standaloneOptions: standaloneTemplates.StandaloneProjectOptions = {
       projectName: config.projectName || path.basename(outputDir),
       framework,
       databaseProvider,
-      models: modelNames
+      models: availableModelNames,
+      serviceNames,
+      hasPlugins: generatedFiles.plugins && generatedFiles.plugins.size > 0,
+      hasUI: !!config.ui,
+      uiFramework: config.ui?.framework
     }
     
     const writes: Promise<void>[] = []
@@ -101,6 +134,10 @@ export class WriteStandalonePhaseTyped extends TypedPhaseAdapter<
     
     writes.push(writeFile(envPath, envContent))
     
+    // Write .npmrc to ensure independent install
+    const npmrcPath = path.join(outputDir, '.npmrc')
+    writes.push(writeFile(npmrcPath, 'shared-workspace-lockfile=false\n'))
+
     // Write .gitignore
     const gitignorePath = path.join(outputDir, '.gitignore')
     writes.push(writeFile(gitignorePath, standaloneTemplates.gitignoreTemplate()))
@@ -115,7 +152,11 @@ export class WriteStandalonePhaseTyped extends TypedPhaseAdapter<
     writes.push(writeFile(path.join(srcDir, 'db.ts'), standaloneTemplates.dbTemplate()))
     writes.push(writeFile(path.join(srcDir, 'logger.ts'), standaloneTemplates.loggerTemplate()))
     writes.push(writeFile(path.join(srcDir, 'middleware.ts'), standaloneTemplates.middlewareTemplate()))
-    writes.push(writeFile(path.join(srcDir, 'app.ts'), standaloneTemplates.appTemplate(modelNames)))
+    writes.push(writeFile(path.join(srcDir, 'app.ts'), standaloneTemplates.appTemplate(
+      availableModelNames, 
+      serviceNames, 
+      generatedFiles.plugins && generatedFiles.plugins.size > 0
+    )))
     writes.push(writeFile(path.join(srcDir, 'server.ts'), standaloneTemplates.serverTemplate()))
     
     // Copy prisma schema to new project

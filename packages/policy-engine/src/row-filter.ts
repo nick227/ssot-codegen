@@ -6,7 +6,7 @@
  * SRP: Only handles row-level filter generation
  */
 
-import type { Expression, ExpressionContext } from '@ssot-ui/expressions'
+import type { Expression } from '@ssot-ui/expressions'
 import type { PolicyContext } from './types.js'
 
 /**

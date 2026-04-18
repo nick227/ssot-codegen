@@ -7,10 +7,10 @@
 import { Command } from 'commander'
 import path from 'path'
 import fs from 'fs/promises'
+import { pathToFileURL } from 'url'
 import { 
   generateUI,
   generateSite,
-  loadSiteConfig,
   validateSiteConfig,
   getTemplate,
   listTemplates,
@@ -46,6 +46,11 @@ export function registerUiCommand(program: Command) {
 
         console.log('🎨 SSOT UI Generator\n')
 
+        if (options.componentsOnly && options.pagesOnly) {
+          console.error('❌ Error: --components-only and --pages-only cannot be used together')
+          process.exit(1)
+        }
+
         // Load Prisma schema
         const schemaPath = path.resolve(process.cwd(), options.schema)
         console.log(`📄 Loading schema: ${schemaPath}`)
@@ -53,7 +58,7 @@ export function registerUiCommand(program: Command) {
         let schemaContent: string
         try {
           schemaContent = await fs.readFile(schemaPath, 'utf-8')
-        } catch (err: unknown) {
+        } catch {
           console.error(`❌ Error: Could not read schema file at ${schemaPath}`)
           process.exit(1)
         }
@@ -110,13 +115,16 @@ export function registerUiCommand(program: Command) {
           if (configExists) {
             console.log(`⚙️  Loading UI config: ${configPath}`)
             // Dynamic import of config file
-            const configModule = await import(configPath)
+            if (isTypeScriptConfig(configPath)) {
+              await ensureTsxLoader()
+            }
+            const configModule = await import(pathToFileURL(configPath).href)
             uiConfig = configModule.default || configModule.uiConfig
             console.log('✓ Loaded UI configuration\n')
           } else {
             console.log('ℹ️  No UI config found, using auto-generation\n')
           }
-        } catch (err) {
+        } catch {
           console.warn(`⚠️  Could not load UI config, using auto-generation`)
         }
 
@@ -140,7 +148,9 @@ export function registerUiCommand(program: Command) {
         }
 
         // Simple UI generation mode
-        const models = options.models ? options.models.split(',') : undefined
+        const models = options.models
+          ? options.models.split(',').map((model: string) => model.trim()).filter(Boolean)
+          : undefined
         
         const result = generateUI(schema, {
           outputDir,
@@ -258,6 +268,25 @@ function uiConfigToSiteConfig(uiConfig: UiConfig): SiteConfig {
       search: uiConfig.generation?.crudPages?.list?.features?.includes('search'),
       darkMode: uiConfig.theme?.darkMode
     }
+  }
+}
+
+let tsxLoaderReady = false
+
+function isTypeScriptConfig(configPath: string): boolean {
+  const ext = path.extname(configPath).toLowerCase()
+  return ext === '.ts' || ext === '.tsx' || ext === '.mts' || ext === '.cts'
+}
+
+async function ensureTsxLoader(): Promise<void> {
+  if (tsxLoaderReady) return
+  try {
+    await import('tsx/esm')
+    tsxLoaderReady = true
+  } catch {
+    console.error('❌ Error: TypeScript config detected but tsx is not available.')
+    console.error('   Install with: pnpm add -D tsx')
+    process.exit(1)
   }
 }
 

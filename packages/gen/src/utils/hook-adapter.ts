@@ -40,7 +40,7 @@ export type HookAdapter<T = any> =
  * // Custom adapter pattern
  * const hook = resolveHook({ model: 'conversation', adapter: (m) => hooks[`use${capitalize(m)}s`] }, hooks)
  */
-export function resolveHook<T = any>(
+function resolveHook<T = any>(
   adapter: HookAdapter<T>,
   hooks?: Record<string, any>
 ): ((params?: any) => T) | null {
@@ -206,7 +206,7 @@ export function useModel<T = any>(
  * // Now use it anywhere
  * const { data, isLoading } = useConversationAdapter({ take: 20 })
  */
-export function createModelAdapter<T = any>(
+function createModelAdapter<T = any>(
   modelName: string,
   hooksRegistry: Record<string, any>
 ): (params?: any) => ReturnType<typeof useModel<T>> {

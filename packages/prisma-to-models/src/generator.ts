@@ -7,7 +7,7 @@
 
 import pkg from '@prisma/internals'
 const { getDMMF } = pkg
-import type { Models, Model, Field, Enum } from '@ssot-ui/schemas'
+import type { Models, Model, Enum } from '@ssot-ui/schemas'
 import fs from 'node:fs'
 import path from 'node:path'
 

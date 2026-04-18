@@ -6,19 +6,19 @@ import type { TokenSet } from '../types.js'
 import { compileTailwindConfig } from '../compilers/tailwind.js'
 import { compileReactNativeTokens } from '../compilers/react-native.js'
 
-export interface ValidationResult {
+interface ValidationResult {
   valid: boolean
   errors: ValidationError[]
   warnings: ValidationWarning[]
 }
 
-export interface ValidationError {
+interface ValidationError {
   type: 'missing_token' | 'type_mismatch' | 'invalid_value'
   path: string
   message: string
 }
 
-export interface ValidationWarning {
+interface ValidationWarning {
   type: 'platform_difference' | 'deprecated_token'
   path: string
   message: string

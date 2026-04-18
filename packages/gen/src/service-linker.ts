@@ -27,14 +27,6 @@ export interface ServiceAnnotation {
   model: ParsedModel           // Associated Prisma model
 }
 
-export interface ServiceMethod {
-  name: string
-  isExposed: boolean
-  requiresAuth: boolean
-  requiresOwnership?: string   // Field to check ownership (e.g., 'userId')
-  rateLimit?: string
-}
-
 /**
  * Parse @service annotation from Prisma model documentation
  * 
@@ -62,7 +54,7 @@ export function parseServiceAnnotation(model: ParsedModel): ServiceAnnotation | 
   // Parse: /// @methods sendPrompt, getHistory, retryFailed
   const methodsMatch = doc.match(/@methods\s+([^\n]+)/)
   const methods = methodsMatch 
-    ? methodsMatch[1].split(',').map(m => m.trim()).filter(Boolean)
+    ? methodsMatch[1].split(',').map(m => m.trim().split(/\s+/)[0]).filter(Boolean)
     : []
   
   // Parse: /// @provider openai
@@ -89,7 +81,7 @@ export function parseServiceAnnotation(model: ParsedModel): ServiceAnnotation | 
 /**
  * Parse all service annotations from schema
  */
-export function parseAllServiceAnnotations(models: ParsedModel[]): ServiceAnnotation[] {
+function parseAllServiceAnnotations(models: ParsedModel[]): ServiceAnnotation[] {
   const services: ServiceAnnotation[] = []
   
   for (const model of models) {
@@ -105,7 +97,7 @@ export function parseAllServiceAnnotations(models: ParsedModel[]): ServiceAnnota
 /**
  * Validate that service file exists
  */
-export function validateServiceFile(annotation: ServiceAnnotation, projectRoot: string): {
+function validateServiceFile(annotation: ServiceAnnotation, projectRoot: string): {
   exists: boolean
   path: string
   error?: string
@@ -129,7 +121,7 @@ export function validateServiceFile(annotation: ServiceAnnotation, projectRoot: 
 /**
  * Generate service file path
  */
-export function getServiceFilePath(annotation: ServiceAnnotation, projectRoot: string): string {
+function getServiceFilePath(annotation: ServiceAnnotation, projectRoot: string): string {
   return path.join(projectRoot, 'src', annotation.serviceFile)
 }
 
@@ -145,7 +137,7 @@ export function getServiceExportName(annotation: ServiceAnnotation): string {
  * @deprecated Use kebabToCamelCase from './utils/naming.js' instead
  * Re-exported for backward compatibility
  */
-export const toCamelCase = kebabToCamelCase
+const toCamelCase = kebabToCamelCase
 
 /**
  * Parse rate limit string to config
@@ -242,7 +234,7 @@ export function inferRoutePath(methodName: string): string {
 /**
  * Check if method name suggests it modifies data
  */
-export function isModifyingMethod(methodName: string): boolean {
+function isModifyingMethod(methodName: string): boolean {
   const lower = methodName.toLowerCase()
   return (
     lower.startsWith('create') ||

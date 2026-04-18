@@ -52,7 +52,7 @@ export function generateChatbotAPI(
  * Generate chat routes
  */
 function generateChatRoutes(config: ProjectConfig, apiConfig: ChatbotAPIConfig): string {
-  const { messageModel, hasOpenAI } = apiConfig
+  const { hasOpenAI } = apiConfig
   
   if (config.framework === 'express') {
     return `/**

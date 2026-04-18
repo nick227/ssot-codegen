@@ -98,7 +98,7 @@ export function deriveProjectName(schemaPath?: string): string {
 /**
  * Get list of all gen-N folders sorted by number
  */
-export function listGenFolders(baseDir: string): string[] {
+function listGenFolders(baseDir: string): string[] {
   const entries = fs.existsSync(baseDir) ? fs.readdirSync(baseDir) : []
   
   const genFolders = entries
@@ -120,7 +120,7 @@ export function listGenFolders(baseDir: string): string[] {
  * @param baseDir Directory containing gen folders
  * @param keepCount Number of recent folders to keep (default: 3)
  */
-export function cleanupOldGenFolders(baseDir: string, keepCount: number = 3): string[] {
+function cleanupOldGenFolders(baseDir: string, keepCount: number = 3): string[] {
   const allFolders = listGenFolders(baseDir)
   
   if (allFolders.length <= keepCount) {

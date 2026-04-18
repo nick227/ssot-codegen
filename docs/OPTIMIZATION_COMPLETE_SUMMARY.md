@@ -156,7 +156,6 @@ export function useConversation(
 - All query files import from shared utility
 
 **Files Changed:**
-- `packages/gen/src/utils/query-helpers.ts` (new)
 - `packages/gen/src/generators/shared/query-helpers.ts` (new)
 - `packages/gen/src/generators/hooks/core-queries-generator.ts`
 - `packages/gen/src/generators/hooks/index.ts`
@@ -261,7 +260,6 @@ import { stableKey } from '../../shared/query-helpers'
 - `packages/gen/src/generators/hooks/react-adapter-generator.ts`
 
 ### Phase 3 (Utilities & Cleanup)
-- `packages/gen/src/utils/query-helpers.ts` (new)
 - `packages/gen/src/generators/shared/query-helpers.ts` (new)
 - `packages/gen/src/generators/hooks/core-queries-generator.ts`
 - `packages/gen/src/generators/hooks/index.ts`

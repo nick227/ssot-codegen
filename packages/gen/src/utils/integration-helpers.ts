@@ -61,7 +61,7 @@ export function getDefaultBaseUrl(): string {
  * Used by both backend controllers and frontend error handling
  * to ensure consistent error structure.
  */
-export interface APIErrorResponse {
+interface APIErrorResponse {
   error: string           // Error code (e.g., 'VALIDATION_ERROR', 'NOT_FOUND')
   message: string         // Human-readable message
   details?: unknown       // Additional details (e.g., Zod errors, stack trace in dev)
@@ -74,7 +74,7 @@ export interface APIErrorResponse {
  * @example
  * createErrorResponse('VALIDATION_ERROR', 'Invalid input', zodErrors, 400)
  */
-export function createErrorResponse(
+function createErrorResponse(
   error: string,
   message: string,
   details?: unknown,
@@ -93,7 +93,7 @@ export function createErrorResponse(
  * 
  * Provides sensible defaults for CORS configuration in generated backend.
  */
-export interface CORSConfig {
+interface CORSConfig {
   origin: string | string[] | ((origin: string) => boolean)
   credentials: boolean
   methods: string[]
@@ -108,7 +108,7 @@ export interface CORSConfig {
  * const corsConfig = getDefaultCORSConfig()
  * // Use in Express: app.use(cors(corsConfig))
  */
-export function getDefaultCORSConfig(): CORSConfig {
+function getDefaultCORSConfig(): CORSConfig {
   const isDevelopment = process.env.NODE_ENV === 'development'
   
   return {
@@ -135,7 +135,7 @@ export function getDefaultCORSConfig(): CORSConfig {
 /**
  * Generate CORS middleware code for Express
  */
-export function generateExpressCORSCode(): string {
+function generateExpressCORSCode(): string {
   const config = getDefaultCORSConfig()
   
   return `// CORS configuration
@@ -155,7 +155,7 @@ app.use(cors(corsOptions))`
 /**
  * Generate CORS middleware code for Fastify
  */
-export function generateFastifyCORSCode(): string {
+function generateFastifyCORSCode(): string {
   const config = getDefaultCORSConfig()
   
   return `// CORS configuration

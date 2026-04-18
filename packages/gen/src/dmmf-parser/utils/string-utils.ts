@@ -15,7 +15,7 @@
  * @param obj - Object to redact
  * @returns Redacted copy safe for logging
  */
-export function redactSensitiveFields(obj: unknown): unknown {
+function redactSensitiveFields(obj: unknown): unknown {
   if (obj === null || obj === undefined) return obj
   if (typeof obj !== 'object') return obj
   
@@ -79,7 +79,7 @@ export function safeStringify(obj: unknown, maxLength = 500): string {
 /**
  * Validate array contains only strings
  */
-export function validateStringArray(arr: readonly any[], context: string): string[] {
+function validateStringArray(arr: readonly any[], context: string): string[] {
   if (!Array.isArray(arr)) {
     throw new Error(`${context} is not an array`)
   }

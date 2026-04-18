@@ -26,7 +26,7 @@ export interface ScaffoldConfig {
   dependencies?: DependencyConfig
 }
 
-export const generatePackageJson = async (cfg: ScaffoldConfig) => {
+const generatePackageJson = async (cfg: ScaffoldConfig) => {
   // Use flexible dependency system
   const depConfig: DependencyConfig = cfg.dependencies || {
     profile: 'standard',  // Default to standard profile
@@ -75,7 +75,7 @@ export const generatePackageJson = async (cfg: ScaffoldConfig) => {
   return pkgPath
 }
 
-export const generateEnvExample = async (cfg: ScaffoldConfig) => {
+const generateEnvExample = async (cfg: ScaffoldConfig) => {
   const content = `# Database
 DATABASE_URL="postgresql://user:password@localhost:5432/dbname?schema=public"
 
@@ -96,7 +96,7 @@ LOG_LEVEL=debug
   return envPath
 }
 
-export const generateGitignore = async (cfg: ScaffoldConfig) => {
+const generateGitignore = async (cfg: ScaffoldConfig) => {
   const content = `# Dependencies
 node_modules/
 .pnp
@@ -147,7 +147,7 @@ prisma/*.db-journal
   return gitignorePath
 }
 
-export const generatePrismaClient = async (cfg: ScaffoldConfig) => {
+const generatePrismaClient = async (cfg: ScaffoldConfig) => {
   const content = `import { PrismaClient } from '@prisma/client'
 
 const globalForPrisma = globalThis as unknown as {
@@ -170,7 +170,7 @@ export default prisma
   return dbPath
 }
 
-export const generateConfig = async (cfg: ScaffoldConfig) => {
+const generateConfig = async (cfg: ScaffoldConfig) => {
   const content = `import { config as loadEnv } from 'dotenv'
 import { z } from 'zod'
 
@@ -218,21 +218,21 @@ export default config
   return configPath
 }
 
-export const generateLogger = async (cfg: ScaffoldConfig) => {
+const generateLogger = async (cfg: ScaffoldConfig) => {
   const content = genLogger(cfg)
   const loggerPath = path.join(cfg.projectRoot, 'src', 'logger.ts')
   await write(loggerPath, content)
   return loggerPath
 }
 
-export const generateRequestLogger = async (cfg: ScaffoldConfig) => {
+const generateRequestLogger = async (cfg: ScaffoldConfig) => {
   const content = genRequestLogger(cfg, cfg.framework)
   const requestLoggerPath = path.join(cfg.projectRoot, 'src', 'request-logger.ts')
   await write(requestLoggerPath, content)
   return requestLoggerPath
 }
 
-export const generateTypeDeclarations = async (cfg: ScaffoldConfig) => {
+const generateTypeDeclarations = async (cfg: ScaffoldConfig) => {
   const content = cfg.framework === 'express' 
     ? generateExpressTypes() 
     : generateFastifyTypes()
@@ -241,7 +241,7 @@ export const generateTypeDeclarations = async (cfg: ScaffoldConfig) => {
   return typesPath
 }
 
-export const generateMiddleware = async (cfg: ScaffoldConfig) => {
+const generateMiddleware = async (cfg: ScaffoldConfig) => {
   const content = cfg.framework === 'express' 
     ? `import type { Request, Response, NextFunction } from 'express'
 import { ZodError } from 'zod'
@@ -433,7 +433,7 @@ function handlePrismaError(
   return middlewarePath
 }
 
-export const generateApp = async (cfg: ScaffoldConfig) => {
+const generateApp = async (cfg: ScaffoldConfig) => {
   const content = cfg.framework === 'express'
     ? `import express from 'express'
 import cors from 'cors'
@@ -566,7 +566,7 @@ export const createApp = async () => {
   return appPath
 }
 
-export const generateServer = async (cfg: ScaffoldConfig) => {
+const generateServer = async (cfg: ScaffoldConfig) => {
   const content = cfg.framework === 'express'
     ? `import { createApp } from './app.js'
 import config from './config.js'
@@ -643,7 +643,7 @@ start()
   return serverPath
 }
 
-export const generateTsConfig = async (cfg: ScaffoldConfig) => {
+const generateTsConfig = async (cfg: ScaffoldConfig) => {
   const content = {
     compilerOptions: {
       target: 'ES2022',
@@ -674,7 +674,7 @@ export const generateTsConfig = async (cfg: ScaffoldConfig) => {
   return tsconfigPath
 }
 
-export const generateReadme = async (cfg: ScaffoldConfig) => {
+const generateReadme = async (cfg: ScaffoldConfig) => {
   const modelsList = cfg.models.map(m => `- ${m}`).join('\n')
   
   const content = `# ${cfg.projectName}
@@ -845,7 +845,7 @@ MIT
   return readmePath
 }
 
-export const scaffoldProject = async (cfg: ScaffoldConfig): Promise<string[]> => {
+const scaffoldProject = async (cfg: ScaffoldConfig): Promise<string[]> => {
   const generatedFiles: string[] = []
 
   console.log(`[scaffold] Generating project files for ${cfg.projectName}...`)

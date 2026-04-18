@@ -6,7 +6,7 @@
 
 import type { ParsedModel } from '../dmmf-parser.js'
 
-export interface JunctionTableConfig {
+interface JunctionTableConfig {
   /** Maximum number of non-relation data fields allowed (default: 2) */
   junctionTableMaxDataFields?: number
   /** System field names to exclude from data field count */
@@ -37,7 +37,7 @@ const DEFAULT_SYSTEM_FIELDS = [
  */
 export function isJunctionTable(
   model: ParsedModel, 
-  config: JunctionTableConfig = {}
+  config: { junctionTableMaxDataFields?: number; systemFieldNames?: string[] } = {}
 ): boolean {
   // Must have 2 or more relation fields
   if (model.relationFields.length < 2) return false

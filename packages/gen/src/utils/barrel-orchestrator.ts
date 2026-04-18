@@ -16,14 +16,14 @@ import {
 } from '@/generators/barrel-generator.js'
 import type { PathsConfig } from '../path-resolver.js'
 
-export interface BarrelWrite {
+interface BarrelWrite {
   path: string
   content: string
   trackId: string
   esmPath: string
 }
 
-export interface GeneratedFilesMap {
+interface GeneratedFilesMap {
   contracts: Map<string, Map<string, string>>
   validators: Map<string, Map<string, string>>
   services: Map<string, string>
@@ -43,9 +43,20 @@ export interface GeneratedFilesMap {
 export function determineBarrelWrites(
   cfg: PathsConfig,
   modelNames: string[],
-  generatedFiles: GeneratedFilesMap,
+  generatedFiles: {
+    contracts: Map<string, Map<string, string>>
+    validators: Map<string, Map<string, string>>
+    services: Map<string, string>
+    controllers: Map<string, string>
+    routes: Map<string, string>
+  },
   esmPathFn: (layer: string, model?: string) => string
-): BarrelWrite[] {
+): Array<{
+  path: string
+  content: string
+  trackId: string
+  esmPath: string
+}> {
   const barrelExt = cfg.barrelExtension || 'js'
   const writes: BarrelWrite[] = []
   
@@ -137,6 +148,78 @@ export function determineBarrelWrites(
         trackId: `routes:${modelName}:index`,
         esmPath: esmPathFn('routes', modelName)
       })
+    }
+  }
+  
+  // Handle service integration controllers (controllers that don't match model name patterns)
+  const processedControllerNames = new Set<string>()
+  for (const modelName of modelNames) {
+    const modelKebab = toKebabCase(modelName)
+    const modelLower = modelName.toLowerCase()
+    const controllerKey1 = `${modelLower}.controller.ts`
+    const controllerKey2 = `${modelKebab}.controller.ts`
+    const controllerScaffold1 = `${modelLower}.controller.scaffold.ts`
+    const controllerScaffold2 = `${modelKebab}.controller.scaffold.ts`
+    if (generatedFiles.controllers.has(controllerKey1)) processedControllerNames.add(controllerKey1)
+    if (generatedFiles.controllers.has(controllerKey2)) processedControllerNames.add(controllerKey2)
+    if (generatedFiles.controllers.has(controllerScaffold1)) processedControllerNames.add(controllerScaffold1)
+    if (generatedFiles.controllers.has(controllerScaffold2)) processedControllerNames.add(controllerScaffold2)
+  }
+
+  // Check for any controller files that weren't processed
+  for (const [controllerFileName] of generatedFiles.controllers) {
+    if (!processedControllerNames.has(controllerFileName) && controllerFileName.endsWith('.controller.ts')) {
+      const controllerName = controllerFileName.replace(/\.controller\.ts$/, '')
+      const controllerKebab = toKebabCase(controllerName)
+      
+      const barrelPath = path.join(cfg.rootDir, 'controllers', controllerKebab, 'index.ts')
+      const alreadyExists = writes.some(w => w.path === barrelPath)
+      
+      if (!alreadyExists) {
+        layerModels.controllers.push(controllerName)
+        writes.push({
+          path: barrelPath,
+          content: generateControllerBarrel(controllerName),
+          trackId: `controllers:${controllerName}:index`,
+          esmPath: esmPathFn('controllers', controllerName)
+        })
+      }
+    }
+  }
+
+  // Handle service integration services
+  const processedServiceNames = new Set<string>()
+  for (const modelName of modelNames) {
+    const modelKebab = toKebabCase(modelName)
+    const modelLower = modelName.toLowerCase()
+    const serviceKey1 = `${modelLower}.service.ts`
+    const serviceKey2 = `${modelKebab}.service.ts`
+    const serviceScaffold1 = `${modelLower}.service.scaffold.ts`
+    const serviceScaffold2 = `${modelKebab}.service.scaffold.ts`
+    if (generatedFiles.services.has(serviceKey1)) processedServiceNames.add(serviceKey1)
+    if (generatedFiles.services.has(serviceKey2)) processedServiceNames.add(serviceKey2)
+    if (generatedFiles.services.has(serviceScaffold1)) processedServiceNames.add(serviceScaffold1)
+    if (generatedFiles.services.has(serviceScaffold2)) processedServiceNames.add(serviceScaffold2)
+  }
+
+  // Check for any service files that weren't processed
+  for (const [serviceFileName] of generatedFiles.services) {
+    if (!processedServiceNames.has(serviceFileName) && serviceFileName.endsWith('.service.ts')) {
+      const serviceName = serviceFileName.replace(/\.service\.ts$/, '')
+      const serviceKebab = toKebabCase(serviceName)
+      
+      const barrelPath = path.join(cfg.rootDir, 'services', serviceKebab, 'index.ts')
+      const alreadyExists = writes.some(w => w.path === barrelPath)
+      
+      if (!alreadyExists) {
+        layerModels.services.push(serviceName)
+        writes.push({
+          path: barrelPath,
+          content: generateServiceBarrel(serviceName),
+          trackId: `services:${serviceName}:index`,
+          esmPath: esmPathFn('services', serviceName)
+        })
+      }
     }
   }
   

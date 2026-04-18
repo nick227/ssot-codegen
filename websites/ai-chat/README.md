@@ -62,10 +62,10 @@ This schema defines a complete AI chat application with:
 
 ```bash
 # Generate this specific project
-npx ssot-gen bulk --config websites/config/bulk-generate.json
+pnpm ssot bulk --config websites/config/bulk-generate.json
 
 # Or generate all projects
-npx ssot-gen bulk
+pnpm ssot bulk
 ```
 
 ### Environment Variables

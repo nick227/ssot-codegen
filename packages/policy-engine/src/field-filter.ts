@@ -21,7 +21,7 @@ export function filterFields(
     write?: string[]
     deny?: string[]
   },
-  context: PolicyContext
+  _context: PolicyContext
 ): AllowedFields {
   const { read = [], write = [], deny = [] } = fieldConfig
   

@@ -8,7 +8,7 @@ import { ErrorSeverity, type IGenerationContext, type IFileBuilder } from '../pi
 /**
  * Validates generated TypeScript code for common syntax errors
  */
-export function validateGeneratedCode(
+function validateGeneratedCode(
   code: string,
   filename: string,
   context: IGenerationContext
@@ -170,4 +170,3 @@ export class FileBuilder implements IFileBuilder {
     }
   }
 }
-

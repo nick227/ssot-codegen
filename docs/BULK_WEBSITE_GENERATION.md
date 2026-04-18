@@ -151,7 +151,7 @@ pnpm ssot bulk --no-parallel
 node packages/cli/dist/cli.js bulk --config websites/config/bulk-generate.json
 ```
 
-**Note:** The CLI package (`@ssot-codegen/cli`) is not published to npm, so use `pnpm ssot` (workspace script) instead of `npx ssot-gen`.
+**Note:** The CLI package (`@ssot-codegen/cli`) is not published to npm, so use `pnpm ssot` (workspace script) instead of `pnpm ssot`.
 
 ---
 
@@ -305,7 +305,7 @@ interface BulkGenerateOptions {
 
 2. **Test Single Generation**
    ```bash
-   npx ssot-gen ui \
+   pnpm ssot ui \
      --schema websites/schemas/my-type/schema.prisma \
      --config websites/schemas/my-type/ui.config.ts \
      --output websites/projects/test
@@ -327,7 +327,7 @@ interface BulkGenerateOptions {
 
 4. **Generate Bulk**
    ```bash
-   npx ssot-gen bulk
+   pnpm ssot bulk
    ```
 
 ---
@@ -368,14 +368,14 @@ interface BulkGenerateOptions {
 
 3. **Generate All Clients**
    ```bash
-   npx ssot-gen bulk --config websites/config/clients.json
+   pnpm ssot bulk --config websites/config/clients.json
    ```
 
 ---
 
 ## 🛠️ CLI Commands
 
-### `npx ssot-gen bulk`
+### `pnpm ssot bulk`
 
 Generate multiple websites from bulk configuration.
 
@@ -388,26 +388,26 @@ Generate multiple websites from bulk configuration.
 **Examples:**
 ```bash
 # Basic usage
-npx ssot-gen bulk
+pnpm ssot bulk
 
 # Custom config
-npx ssot-gen bulk --config my-config.json
+pnpm ssot bulk --config my-config.json
 
 # Preview
-npx ssot-gen bulk --dry-run
+pnpm ssot bulk --dry-run
 
 # Sequential generation
-npx ssot-gen bulk --no-parallel
+pnpm ssot bulk --no-parallel
 ```
 
 ---
 
-### `npx ssot-gen bulk init`
+### `pnpm ssot bulk init`
 
 Initialize bulk generation structure (future).
 
 ```bash
-npx ssot-gen bulk init
+pnpm ssot bulk init
 ```
 
 Creates:
@@ -659,7 +659,7 @@ Generate different versions for dev/staging/prod:
    - Test with `--dry-run`
 
 3. **Generate Websites**
-   - Run `npx ssot-gen bulk`
+   - Run `pnpm ssot bulk`
    - Review generated output
    - Customize as needed
 
@@ -792,7 +792,7 @@ function deepMerge(base: any, override: any): any {
 **Example:**
 ```bash
 # After failed generation
-npx ssot-gen bulk --retry-failed
+pnpm ssot bulk --retry-failed
 
 # Retries only projects that failed:
 # - client-a-blog (schema parse error)
@@ -846,7 +846,7 @@ Projects:
 Compare current vs regenerated output (detect drift)
 
 ```bash
-npx ssot-gen bulk diff --config websites/config/bulk-generate.json
+pnpm ssot bulk diff --config websites/config/bulk-generate.json
 ```
 
 **Output:**
@@ -863,7 +863,7 @@ Comparing generated projects...
 Remove all generated projects safely
 
 ```bash
-npx ssot-gen bulk clean --config websites/config/bulk-generate.json
+pnpm ssot bulk clean --config websites/config/bulk-generate.json
 # Prompts for confirmation
 # Removes only projects listed in config
 ```
@@ -872,7 +872,7 @@ npx ssot-gen bulk clean --config websites/config/bulk-generate.json
 Schema + config dry validation only
 
 ```bash
-npx ssot-gen bulk validate --config websites/config/bulk-generate.json
+pnpm ssot bulk validate --config websites/config/bulk-generate.json
 ```
 
 **Output:**
@@ -1039,7 +1039,7 @@ websites/schematics/
 
 **Example:**
 ```bash
-npx ssot-gen bulk --incremental
+pnpm ssot bulk --incremental
 # Only regenerates projects with changed schemas/configs
 ```
 
@@ -1095,8 +1095,8 @@ npx ssot-gen bulk --incremental
 
 **CLI:**
 ```bash
-npx ssot-gen bulk templates list
-npx ssot-gen bulk templates use blog --output my-blog
+pnpm ssot bulk templates list
+pnpm ssot bulk templates use blog --output my-blog
 ```
 
 ---
@@ -1177,13 +1177,13 @@ npx ssot-gen bulk templates use blog --output my-blog
 **Examples:**
 ```bash
 # Regenerate all projects
-npx ssot-gen bulk regenerate --all
+pnpm ssot bulk regenerate --all
 
 # Update dependencies in all projects
-npx ssot-gen bulk update-deps --all
+pnpm ssot bulk update-deps --all
 
 # Build all projects
-npx ssot-gen bulk build --all
+pnpm ssot bulk build --all
 ```
 
 ---
@@ -1202,7 +1202,7 @@ npx ssot-gen bulk build --all
 
 **Example:**
 ```bash
-npx ssot-gen bulk --json-output report.json
+pnpm ssot bulk --json-output report.json
 # Exit code 0 = success, 1 = failure
 # report.json contains detailed results
 ```

@@ -4,7 +4,6 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { execSync } from 'node:child_process'
 import pc from 'picocolors'
 import type { ProjectConfig } from './prompts.js'
@@ -89,7 +88,7 @@ export async function createProject(config: ProjectConfig): Promise<void> {
       cwd: projectPath,
       stdio: 'inherit'
     })
-  } catch (error) {
+  } catch {
     throw new Error('Failed to install dependencies')
   }
 
@@ -102,7 +101,7 @@ export async function createProject(config: ProjectConfig): Promise<void> {
       cwd: projectPath,
       stdio: 'inherit'
     })
-  } catch (error) {
+  } catch {
     throw new Error('Failed to generate Prisma client')
   }
 
@@ -122,7 +121,7 @@ export async function createProject(config: ProjectConfig): Promise<void> {
         cwd: projectPath,
         stdio: 'inherit'
       })
-    } catch (error) {
+    } catch {
       throw new Error('Failed to generate API code')
     }
   } else {

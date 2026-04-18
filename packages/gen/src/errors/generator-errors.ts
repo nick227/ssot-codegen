@@ -4,7 +4,7 @@
  * Typed errors for better error handling and debugging
  */
 
-export class GeneratorError extends Error {
+class GeneratorError extends Error {
   constructor(
     message: string,
     public readonly phase?: string,
@@ -32,7 +32,7 @@ export class PhaseError extends GeneratorError {
   }
 }
 
-export class ConfigValidationError extends GeneratorError {
+class ConfigValidationError extends GeneratorError {
   constructor(message: string, invalidFields?: string[]) {
     super(
       message,
@@ -43,7 +43,7 @@ export class ConfigValidationError extends GeneratorError {
   }
 }
 
-export class SchemaValidationError extends GeneratorError {
+class SchemaValidationError extends GeneratorError {
   constructor(message: string, schemaPath?: string) {
     super(
       message,

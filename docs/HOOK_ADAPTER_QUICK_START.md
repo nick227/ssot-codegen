@@ -11,7 +11,7 @@
 Hook adapters are automatically generated:
 
 ```bash
-npx ssot-gen ui
+pnpm ssot ui
 ```
 
 **Output:**

@@ -5,7 +5,7 @@
 import { useState, useCallback, useMemo } from 'react'
 import type { TableState, SortParam, FilterParam, SearchParam } from '../types.js'
 
-export interface UseTableStateOptions {
+interface UseTableStateOptions {
   defaultPageSize?: number
   defaultSort?: SortParam[]
 }

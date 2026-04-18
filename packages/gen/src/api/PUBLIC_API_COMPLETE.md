@@ -85,16 +85,9 @@ import { generateFromSchema } from '@ssot-codegen/gen'  // CLI version
 import { generate } from '@ssot-codegen/gen/api'  // Public API version
 ```
 
-### 4. Comprehensive Examples (`api/examples/`)
+### 4. Comprehensive Examples
 
-**7 Real-World Examples:**
-1. `01-basic-usage.ts` - Simplest possible usage
-2. `02-progress-monitoring.ts` - Progress callback patterns
-3. `03-vite-plugin.ts` - Vite build tool integration
-4. `04-ci-cd-integration.ts` - GitHub Actions/GitLab CI
-5. `05-custom-logger.ts` - Winston/Pino integration
-6. `06-watch-mode.ts` - File watching with chokidar
-7. `07-microservices.ts` - Multi-service generation
+Examples are documented in `api/README.md` and the repo docs, and are kept outside the runtime sources.
 
 ### 5. Complete Documentation (`api/README.md`)
 
@@ -306,8 +299,8 @@ pnpm --filter=@ssot-codegen/gen build
 # Run tests
 pnpm --filter=@ssot-codegen/gen test
 
-# Try an example
-node packages/gen/src/api/examples/01-basic-usage.js
+# Review example usage
+cat packages/gen/src/api/README.md
 ```
 
 ---
@@ -322,13 +315,6 @@ packages/gen/src/api/
 ├── README.md                         # Complete documentation
 ├── PUBLIC_API_COMPLETE.md            # This file
 ├── examples/
-│   ├── 01-basic-usage.ts             # Simple example
-│   ├── 02-progress-monitoring.ts     # Progress callbacks
-│   ├── 03-vite-plugin.ts             # Vite integration
-│   ├── 04-ci-cd-integration.ts       # CI/CD pipeline
-│   ├── 05-custom-logger.ts           # Logger integration
-│   ├── 06-watch-mode.ts              # File watching
-│   └── 07-microservices.ts           # Multi-service generation
 └── __tests__/
     └── public-api.test.ts            # API tests
 ```
@@ -342,7 +328,6 @@ packages/gen/src/api/
 - [x] TypeScript types exported
 - [x] Package exports configured
 - [x] Comprehensive documentation
-- [x] 7 real-world examples
 - [x] Test suite created
 - [x] Build passes cleanly
 - [x] No CLI dependencies

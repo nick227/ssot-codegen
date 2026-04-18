@@ -7,7 +7,7 @@
  * Usage:
  * 1. Copy this to ssot.ui.config.ts
  * 2. Customize for your needs
- * 3. Run: npx ssot-gen ui
+ * 3. Run: pnpm ssot ui
  */
 
 import type { UiConfig } from '@ssot/gen'

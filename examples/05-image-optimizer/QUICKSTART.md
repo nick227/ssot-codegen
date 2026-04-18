@@ -74,7 +74,7 @@ TEMP_DIR="/tmp/image-processing"
 ### 3. Generate Backend
 
 ```bash
-pnpm ssot-gen --schema schema.prisma --config ssot.config.js
+pnpm ssot generate schema.prisma
 ```
 
 ### 4. Install Dependencies

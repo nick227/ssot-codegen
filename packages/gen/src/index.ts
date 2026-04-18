@@ -7,6 +7,7 @@
 // Core generation
 export { generateCode } from './code-generator.js'
 export type { CodeGeneratorConfig, GenerationError } from './code-generator.js'
+export { ErrorSeverity } from './code-generator.js'
 
 // Public API
 export * from './api/index.js'
@@ -25,3 +26,7 @@ export * from './analyzers/index.js'
 
 // Plugins
 export * from './plugins/index.js'
+
+// Hook adapter utilities (used by generated UI code)
+export { useModel, createHookRegistry } from './utils/hook-adapter.js'
+export type { HookAdapter } from './utils/hook-adapter.js'

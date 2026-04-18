@@ -24,7 +24,7 @@ import { PhaseError } from '../errors/generator-errors.js'
  * Prevents name collisions and provides clear separation between
  * plugin data and core phase data
  */
-export interface PluginState {
+interface PluginState {
   [pluginName: string]: unknown
 }
 
@@ -94,7 +94,7 @@ export type { PhaseResult } from './types.js'
 /**
  * Strongly-typed phase result builders for common scenarios
  */
-export const PhaseResults = {
+const PhaseResults = {
   success<T = void>(data?: T, filesGenerated = 0): PhaseResult<T> {
     return { success: true, data, filesGenerated }
   },

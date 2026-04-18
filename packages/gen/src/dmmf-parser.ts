@@ -34,14 +34,9 @@
 // ============================================================================
 
 export type {
-  DMMFParserLogger,
-  ParseOptions,
-  PrismaDefaultValue,
   ParsedField,
   ParsedModel,
-  ParsedEnum,
-  ParsedSchema,
-  SchemaValidationResult
+  ParsedSchema
 } from './dmmf-parser/types.js'
 
 // ============================================================================
@@ -63,18 +58,5 @@ export {
 // FIELD UTILITIES
 // ============================================================================
 
-export {
-  getField,
-  getRelationTarget,
-  isOptionalForCreate,
-  isNullable
-} from './dmmf-parser/utils/field-helpers.js'
+export { isOptionalForCreate } from './dmmf-parser/utils/field-helpers.js'
 
-// ============================================================================
-// DEFAULT VALUE HANDLING
-// ============================================================================
-
-export {
-  getDefaultValueString,
-  isClientManagedDefault
-} from './dmmf-parser/defaults/index.js'

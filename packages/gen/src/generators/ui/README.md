@@ -74,13 +74,13 @@ Start with ready-made templates:
 
 ```bash
 # Generate CRUD pages from schema
-npx ssot-gen ui --schema schema.prisma --output ./src
+pnpm ssot ui --schema schema.prisma --output ./src
 
 # Generate from template
-npx ssot-gen ui --template blog --output ./src
+pnpm ssot ui --template blog --output ./src
 
 # Generate from site config
-npx ssot-gen ui --config site.json --schema schema.prisma --output ./src
+pnpm ssot ui --config site.json --schema schema.prisma --output ./src
 ```
 
 ### Programmatic Usage

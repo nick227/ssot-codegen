@@ -16,7 +16,7 @@ import type { Expression, ExpressionContext, EvaluationOptions } from './types.j
 /**
  * Evaluation budget to prevent DOS attacks
  */
-export interface EvaluationBudget {
+interface EvaluationBudget {
   /** Maximum expression tree depth */
   maxDepth: number
   

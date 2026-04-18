@@ -21,7 +21,7 @@ my-project/
 
 **Command:**
 ```bash
-npx ssot-gen ui
+pnpm ssot ui
 ```
 
 **Output:**
@@ -40,7 +40,7 @@ npx ssot-gen ui
 
 **Command:**
 ```bash
-npx ssot-gen ui --template blog
+pnpm ssot ui --template blog
 ```
 
 **Available templates:**
@@ -61,7 +61,7 @@ npx ssot-gen ui --template blog
 
 **Command:**
 ```bash
-npx ssot-gen ui --config ssot.ui.config.ts
+pnpm ssot ui --config ssot.ui.config.ts
 ```
 
 **Output:** Fully customized website
@@ -201,13 +201,13 @@ model User {
 
 #### Option A: Zero Config
 ```bash
-npx ssot-gen ui
+pnpm ssot ui
 ```
 ✅ Gets working CRUD pages immediately
 
 #### Option B: Start with Template
 ```bash
-npx ssot-gen ui --template blog
+pnpm ssot ui --template blog
 ```
 ✅ Gets professional blog structure
 
@@ -215,7 +215,7 @@ npx ssot-gen ui --template blog
 ```bash
 cp node_modules/@ssot/gen/ssot.ui.config.example.ts ssot.ui.config.ts
 # Edit ssot.ui.config.ts
-npx ssot-gen ui --config ssot.ui.config.ts
+pnpm ssot ui --config ssot.ui.config.ts
 ```
 ✅ Gets exactly what you specify
 

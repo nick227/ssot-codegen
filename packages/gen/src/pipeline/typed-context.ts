@@ -160,18 +160,6 @@ export interface FormatCodeOutput {
 }
 
 // ============================================================================
-// PHASE METRICS (Collected by PhaseRunner)
-// ============================================================================
-
-export interface PhaseMetrics {
-  readonly phaseMetrics: Array<{ 
-    phase: string
-    duration: number
-    filesGenerated: number 
-  }>
-}
-
-// ============================================================================
 // EVOLVING CONTEXT TYPES (Type State Pattern)
 // ============================================================================
 
@@ -233,7 +221,14 @@ export type ContextAfterPhase8 = ContextAfterPhase7 & GenerateOpenAPIOutput
  * Requires: Phase 8
  * NOTE: This is where phaseMetrics become available
  */
-export type ContextAfterPhase9 = ContextAfterPhase8 & WriteManifestOutput & PhaseMetrics
+export type ContextAfterPhase9 = ContextAfterPhase8 &
+  WriteManifestOutput & {
+    readonly phaseMetrics: Array<{ 
+      phase: string
+      duration: number
+      filesGenerated: number 
+    }>
+  }
 
 /**
  * Context after Phase 10 (Generate TypeScript Config)
@@ -258,12 +253,12 @@ export type ContextAfterPhase12 = ContextAfterPhase11 & GenerateTestSuiteOutput
  * Requires: Phase 12
  * Final context type with all data
  */
-export type ContextAfterPhase13 = ContextAfterPhase12 & FormatCodeOutput
+type ContextAfterPhase13 = ContextAfterPhase12 & FormatCodeOutput
 
 /**
  * Final complete context type (after all phases)
  */
-export type CompleteContext = ContextAfterPhase13
+type CompleteContext = ContextAfterPhase13
 
 // ============================================================================
 // TYPED PHASE BASE CLASS
@@ -286,7 +281,7 @@ export type CompleteContext = ContextAfterPhase13
  * }
  * ```
  */
-export interface TypedPhase<TRequires extends BaseContext, TProvides extends object> {
+interface TypedPhase<TRequires extends BaseContext, TProvides extends object> {
   /**
    * Execute phase with strongly-typed context
    * 
@@ -313,17 +308,17 @@ export interface TypedPhase<TRequires extends BaseContext, TProvides extends obj
 /**
  * Extract the required context type from a TypedPhase
  */
-export type RequiredContext<T> = T extends TypedPhase<infer R, any> ? R : never
+type RequiredContext<T> = T extends TypedPhase<infer R, any> ? R : never
 
 /**
  * Extract the provided output type from a TypedPhase
  */
-export type ProvidedOutput<T> = T extends TypedPhase<any, infer P> ? P : never
+type ProvidedOutput<T> = T extends TypedPhase<any, infer P> ? P : never
 
 /**
  * Merge required context with provided output to get the next context type
  */
-export type NextContext<T> = T extends TypedPhase<infer R, infer P> 
+type NextContext<T> = T extends TypedPhase<infer R, infer P> 
   ? R & P 
   : never
 

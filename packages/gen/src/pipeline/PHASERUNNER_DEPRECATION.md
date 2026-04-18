@@ -116,7 +116,7 @@ const files = await pipeline.execute()
 
 **Before:**
 ```typescript
-// packages/gen/src/index-new-refactored.ts
+// packages/gen/src/index.ts
 import { PhaseRunner } from '@/pipeline/phase-runner.js'
 import { createAllPhases } from '@/pipeline/phases/index.js'
 
@@ -130,7 +130,7 @@ export async function generateFromSchema(config: GeneratorConfig) {
 
 **After (Adapter):**
 ```typescript
-// packages/gen/src/index-new-refactored.ts
+// packages/gen/src/index.ts
 import { createUnifiedPipeline } from '@/pipeline/unified-pipeline-adapter.js'
 
 export async function generateFromSchema(config: GeneratorConfig) {

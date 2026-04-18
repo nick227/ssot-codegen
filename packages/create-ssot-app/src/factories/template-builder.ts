@@ -5,7 +5,6 @@
  * Eliminates duplication across blog, chatbot, and future templates
  */
 
-import type { ProjectConfig } from '../prompts.js'
 import type { ParsedModel } from '../ui-generator.js'
 import fs from 'node:fs'
 import path from 'node:path'

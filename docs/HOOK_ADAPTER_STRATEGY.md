@@ -502,7 +502,7 @@ function DynamicList({ modelName }: { modelName: string }) {
 Hook adapters are automatically generated when you run:
 
 ```bash
-npx ssot-gen ui
+pnpm ssot ui
 ```
 
 This creates:

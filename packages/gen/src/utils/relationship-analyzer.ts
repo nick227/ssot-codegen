@@ -5,7 +5,7 @@
 import type { ParsedModel, ParsedField, ParsedSchema } from '../dmmf-parser.js'
 import { isJunctionTable, isJunctionTableSimple } from './junction-table.js'
 
-export interface RelationshipInfo {
+interface RelationshipInfo {
   field: ParsedField
   targetModel: ParsedModel
   isManyToMany: boolean
@@ -16,8 +16,22 @@ export interface RelationshipInfo {
 
 export interface ModelAnalysis {
   model: ParsedModel
-  relationships: RelationshipInfo[]
-  autoIncludeRelations: RelationshipInfo[]
+  relationships: Array<{
+    field: ParsedField
+    targetModel: ParsedModel
+    isManyToMany: boolean
+    isOneToMany: boolean
+    isManyToOne: boolean
+    shouldAutoInclude: boolean
+  }>
+  autoIncludeRelations: Array<{
+    field: ParsedField
+    targetModel: ParsedModel
+    isManyToMany: boolean
+    isOneToMany: boolean
+    isManyToOne: boolean
+    shouldAutoInclude: boolean
+  }>
   hasPublishedField: boolean
   hasSlugField: boolean
   isJunctionTable: boolean
@@ -148,7 +162,7 @@ function detectSpecialFields(model: ParsedModel): ModelAnalysis['specialFields']
 /**
  * Generate Prisma include statement for relationships
  */
-export function generateIncludeStatement(analysis: ModelAnalysis): string {
+function generateIncludeStatement(analysis: ModelAnalysis): string {
   if (analysis.autoIncludeRelations.length === 0) {
     return ''
   }

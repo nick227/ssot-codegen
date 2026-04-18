@@ -421,14 +421,14 @@ export const appTemplate = (models: string[], serviceNames?: string[], hasPlugin
   // Add service route imports
   const serviceImports = serviceNames && serviceNames.length > 0
     ? serviceNames
-        .map(s => `import { ${toCamelCase(s.replace(/-/g, ''))}Router } from './routes/${s}/index.js'`)
+        .map(s => `import { ${toCamelCase(s)}Router } from './routes/${s}/index.js'`)
         .join('\n')
     : ''
   
   // Add service route registrations
   const serviceRegistrations = serviceNames && serviceNames.length > 0
     ? serviceNames
-        .map(s => `  app.use(\`\${config.api.prefix}/${s}\`, ${toCamelCase(s.replace(/-/g, ''))}Router)`)
+        .map(s => `  app.use(\`\${config.api.prefix}/${s}\`, ${toCamelCase(s)}Router)`)
         .join('\n')
     : ''
   

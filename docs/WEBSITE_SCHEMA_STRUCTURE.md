@@ -424,10 +424,10 @@ websites/schemas/{type}/
 **Usage:**
 ```bash
 # Generate single website
-npx ssot-gen ui --schema websites/schemas/blog/schema.prisma --config websites/schemas/blog/ui.config.ts
+pnpm ssot ui --schema websites/schemas/blog/schema.prisma --config websites/schemas/blog/ui.config.ts
 
 # Generate multiple websites
-npx ssot-gen bulk --config websites/config/bulk-generate.json
+pnpm ssot bulk --config websites/config/bulk-generate.json
 ```
 
 ---
@@ -561,7 +561,7 @@ websites/
 
 **Generate:**
 ```bash
-npx ssot-gen ui \
+pnpm ssot ui \
   --schema websites/schemas/blog/schema.prisma \
   --config websites/schemas/blog/ui.config.ts \
   --output websites/projects/my-blog

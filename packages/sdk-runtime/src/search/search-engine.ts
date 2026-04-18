@@ -5,16 +5,16 @@
  */
 
 export interface SearchConfig<T = any> {
-  fields: SearchFieldConfig[]
+  fields: Array<SearchFieldConfig<T>>
   ranking?: RankingConfig
   preprocessor?: (query: string) => string
 }
 
-export interface SearchFieldConfig {
+export interface SearchFieldConfig<T = any> {
   name: string
   weight: number
   matchTypes: MatchType[]
-  getter?: (record: any) => string
+  getter?: (record: T) => string
 }
 
 export interface RankingConfig {

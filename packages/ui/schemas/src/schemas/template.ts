@@ -6,14 +6,7 @@
  */
 
 import { z } from 'zod'
-import {
-  ExpressionSchema,
-  ComputedFieldSchema,
-  VisibilityConditionSchema,
-  EnabledConditionSchema,
-  ReadPermissionSchema,
-  WritePermissionSchema
-} from './expressions.js'
+import { ExpressionSchema } from './expressions.js'
 
 // ============================================================================
 // Common Types
@@ -105,15 +98,15 @@ export const FieldDefSchema = z.object({
   sanitizePolicy: z.string().optional(), // Required if format is 'html'
   
   // NEW: Expression support
-  computed: ComputedFieldSchema.optional(),         // Computed field value
-  visibleWhen: VisibilityConditionSchema.optional(), // Conditional visibility
-  enabledWhen: EnabledConditionSchema.optional(),   // Conditional enabled state
+  computed: ExpressionSchema.optional(),             // Computed field value
+  visibleWhen: ExpressionSchema.optional(),          // Conditional visibility
+  enabledWhen: ExpressionSchema.optional(),          // Conditional enabled state
   
   // NEW: Field-level permissions
   readRoles: z.array(z.string()).optional(),        // Roles that can read
   writeRoles: z.array(z.string()).optional(),       // Roles that can write
-  readPermission: ReadPermissionSchema.optional(),  // Expression-based read permission
-  writePermission: WritePermissionSchema.optional() // Expression-based write permission
+  readPermission: ExpressionSchema.optional(),      // Expression-based read permission
+  writePermission: ExpressionSchema.optional()      // Expression-based write permission
 })
 
 export const RelatedSectionSchema = z.object({
@@ -162,9 +155,9 @@ export const FormFieldDefSchema = z.object({
   placeholder: z.string().optional(),
   
   // NEW: Expression support
-  defaultValue: ExpressionSchema.optional(),        // Computed default value
-  visibleWhen: VisibilityConditionSchema.optional(), // Conditional visibility
-  enabledWhen: EnabledConditionSchema.optional(),   // Conditional enabled state
+  defaultValue: ExpressionSchema.optional(),         // Computed default value
+  visibleWhen: ExpressionSchema.optional(),          // Conditional visibility
+  enabledWhen: ExpressionSchema.optional()           // Conditional enabled state
   
   // NEW: Field-level permissions
   readRoles: z.array(z.string()).optional(),        // Roles that can read
@@ -341,4 +334,3 @@ export function validateTemplateRules(template: Template): string[] {
   
   return warnings
 }
-

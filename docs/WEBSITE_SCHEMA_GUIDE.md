@@ -41,7 +41,7 @@ export default {
 ### 2. Generate Single Website
 
 ```bash
-npx ssot-gen ui \
+pnpm ssot ui \
   --schema websites/schemas/my-blog/schema.prisma \
   --config websites/schemas/my-blog/ui.config.ts \
   --output websites/projects/my-blog
@@ -80,7 +80,7 @@ npx ssot-gen ui \
 
 **Generate:**
 ```bash
-npx ssot-gen bulk --config websites/config/bulk-generate.json
+pnpm ssot bulk --config websites/config/bulk-generate.json
 ```
 
 ---

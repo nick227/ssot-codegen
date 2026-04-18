@@ -471,7 +471,7 @@ Type errors now appear at **compile time** with clear messages pointing to the e
 ### Optional Enhancements
 
 1. **Switch Default to Typed Phases**
-   - Update `index-new-refactored.ts` to use `createAllTypedPhases()`
+   - Update `index.ts` to use `createAllTypedPhases()`
    - Keep legacy phases as opt-in
    - Benefit: All new projects get compile-time safety
 
@@ -490,7 +490,7 @@ Type errors now appear at **compile time** with clear messages pointing to the e
 The typed phase system is **ready for production use**. To enable:
 
 ```ts
-// In index-new-refactored.ts:
+// In index.ts:
 import { createAllTypedPhases } from './generator/phases/index.typed.js'
 
 // Replace:

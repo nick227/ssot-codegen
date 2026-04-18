@@ -15,7 +15,7 @@ pnpm build
 pnpm ssot bulk --config websites/config/bulk-generate.json
 ```
 
-**NOT:** `npx ssot-gen` (this won't work - package isn't published)
+Do not use npm exec or npx for this CLI; it is not published. Use `pnpm ssot`.
 
 ---
 

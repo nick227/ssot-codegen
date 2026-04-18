@@ -3,12 +3,12 @@
  * Extracted from code-generator.ts for better organization
  */
 
-import type { ParsedSchema, ParsedModel } from '../dmmf-parser.js'
+import type { ParsedSchema } from '../dmmf-parser.js'
 import type { ServiceAnnotation } from '../service-linker.js'
 import type { UnifiedModelAnalysis } from '../analyzers/index.js'
 
 // Re-export types that are used by the pipeline
-export type { ParsedSchema, ParsedModel }
+export type { ParsedSchema }
 
 /**
  * Error severity levels for generation issues

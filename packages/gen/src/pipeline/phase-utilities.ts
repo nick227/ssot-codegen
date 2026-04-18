@@ -23,7 +23,7 @@ const writeLimit = pLimit(FILE_WRITE_CONCURRENCY)
 /**
  * File I/O utilities
  */
-export const ensureDir = async (p: string): Promise<void> => {
+const ensureDir = async (p: string): Promise<void> => {
   await fs.promises.mkdir(p, { recursive: true })
 }
 

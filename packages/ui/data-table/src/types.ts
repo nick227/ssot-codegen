@@ -37,7 +37,7 @@ export interface FilterParam {
   value: any
 }
 
-export type FilterOperator =
+type FilterOperator =
   | 'eq'
   | 'ne'
   | 'in'
@@ -61,7 +61,7 @@ export interface ErrorShape {
   details?: unknown
 }
 
-export type NestedInclude = boolean | { include?: Record<string, NestedInclude> }
+type NestedInclude = boolean | { include?: Record<string, NestedInclude> }
 
 /**
  * DataTable Component Props

@@ -30,7 +30,7 @@ export interface ExpressionContext {
 /**
  * Base expression type - all expressions extend from this
  */
-export interface BaseExpression {
+interface BaseExpression {
   type: string
 }
 

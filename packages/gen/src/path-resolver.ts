@@ -15,13 +15,13 @@ export interface PathsConfig {
    */
   barrelExtension?: 'js' | 'none' | 'ts'
 }
-export interface FileId { layer: string; model?: string; file?: string }
+interface FileId { layer: string; model?: string; file?: string }
 const posix = (s:string) => s.replace(/\\/g, '/')
 
 /**
  * Generate filesystem path for a file
  */
-export const filePath = (cfg: PathsConfig, id: FileId) => {
+const filePath = (cfg: PathsConfig, id: FileId) => {
   const layer = cfg.layers[id.layer] || id.layer
   const parts = [cfg.rootDir, layer]
   if (cfg.perModelSubfolders && id.model) parts.push(id.model.toLowerCase())
@@ -34,7 +34,11 @@ export const filePath = (cfg: PathsConfig, id: FileId) => {
  * 
  * @throws Error with context if layer mapping not found
  */
-export const esmImport = (cfg: PathsConfig, id: FileId, preferBarrel=true) => {
+export const esmImport = (
+  cfg: PathsConfig,
+  id: { layer: string; model?: string; file?: string },
+  preferBarrel=true
+) => {
   try {
     const layer = cfg.layers[id.layer] || id.layer
     const parts = [cfg.alias, layer]
@@ -59,7 +63,7 @@ export const esmImport = (cfg: PathsConfig, id: FileId, preferBarrel=true) => {
   }
 }
 
-export const barrelIds = (id: FileId) => {
+const barrelIds = (id: FileId) => {
   const layerBarrel: FileId = { layer: id.layer }
   const modelBarrel: FileId = id.model ? { layer: id.layer, model: id.model } : layerBarrel
   return { layerBarrel, modelBarrel }

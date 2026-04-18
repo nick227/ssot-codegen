@@ -65,7 +65,7 @@ export function toKebabCase(str: string): string {
  * toPascalCase("userService") // "UserService"
  * toPascalCase("user") // "User"
  */
-export function toPascalCase(str: string): string {
+function toPascalCase(str: string): string {
   if (!str) return str
   
   // Handle kebab-case
@@ -88,7 +88,7 @@ export function toPascalCase(str: string): string {
  * toSnakeCase("userService") // "user_service"
  * toSnakeCase("APIResponse") // "api_response"
  */
-export function toSnakeCase(str: string): string {
+function toSnakeCase(str: string): string {
   if (!str) return str
   
   return str
@@ -146,7 +146,7 @@ export function pluralize(word: string): string {
  * singularize("categories") // "category"
  * singularize("children") // "child"
  */
-export function singularize(word: string): string {
+function singularize(word: string): string {
   if (!word) return word
   
   const irregulars: Record<string, string> = {

@@ -79,10 +79,10 @@ pages: [{
 cd examples/ai-chat-complete
 
 # Generate complete project
-npx ssot-gen generate schema.prisma --config ssot.config.ts --output ./generated
+pnpm ssot generate schema.prisma --output ./generated
 
 # Generate UI
-npx ssot-gen ui --config ssot.ui.config.ts --output ./generated/src
+pnpm ssot ui --config ssot.ui.config.ts --output ./generated/src
 ```
 
 ### Step 2: Setup Environment

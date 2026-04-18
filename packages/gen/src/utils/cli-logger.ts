@@ -8,13 +8,13 @@ import { performance } from 'node:perf_hooks'
 
 export type LogLevel = 'silent' | 'minimal' | 'normal' | 'verbose' | 'debug'
 
-export interface LoggerConfig {
+interface LoggerConfig {
   level: LogLevel
   useColors: boolean
   showTimestamps: boolean
 }
 
-export interface GenerationPhase {
+interface GenerationPhase {
   name: string
   startTime: number
   endTime?: number
@@ -22,7 +22,7 @@ export interface GenerationPhase {
   warnings?: string[]
 }
 
-export interface ModelProgress {
+interface ModelProgress {
   modelName: string
   phase: 'parsing' | 'generating' | 'writing' | 'complete'
   filesGenerated: number
@@ -37,7 +37,11 @@ export class CLILogger {
   private startTime: number = 0
   private warnings: string[] = []
   
-  constructor(config: Partial<LoggerConfig> = {}) {
+  constructor(config: {
+    level?: LogLevel
+    useColors?: boolean
+    showTimestamps?: boolean
+  } = {}) {
     this.config = {
       level: config.level || 'normal',
       useColors: config.useColors ?? true,
@@ -326,7 +330,11 @@ export class CLILogger {
 /**
  * Create logger instance
  */
-export function createLogger(config?: Partial<LoggerConfig>): CLILogger {
+export function createLogger(config?: {
+  level?: LogLevel
+  useColors?: boolean
+  showTimestamps?: boolean
+}): CLILogger {
   return new CLILogger(config)
 }
 

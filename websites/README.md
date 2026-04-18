@@ -21,7 +21,7 @@ websites/
 
 ## Generating Projects
 
-**Important:** The CLI package is not published to npm. Use `pnpm ssot` instead of `npx ssot-gen`.
+**Important:** The CLI package is not published to npm. Use `pnpm ssot` from the repo root.
 
 ### Build CLI First (First Time Only)
 

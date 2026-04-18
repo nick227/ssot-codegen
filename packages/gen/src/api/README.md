@@ -449,7 +449,7 @@ try {
 
 ## Migration from Old API
 
-### Before (index-new-refactored.ts)
+### Before (index.ts)
 
 ```ts
 import { generateFromSchema } from '@ssot-codegen/gen'

@@ -60,7 +60,7 @@ export class WebSocketTransport<T> implements DataClient<T> {
       this.ws.onclose = () => {
         this.handleDisconnect()
       }
-    } catch (error) {
+    } catch {
       this.handleDisconnect()
     }
   }
@@ -186,15 +186,15 @@ export class WebSocketTransport<T> implements DataClient<T> {
     return this.request<T | null>('get', { id })
   }
 
-  async create(data: unknown): Promise<T> {
+  async create(_data: unknown): Promise<T> {
     throw new Error('Use HTTP transport for mutations')
   }
 
-  async update(id: string | number, data: unknown): Promise<T> {
+  async update(_id: string | number, _data: unknown): Promise<T> {
     throw new Error('Use HTTP transport for mutations')
   }
 
-  async delete(id: string | number): Promise<boolean> {
+  async delete(_id: string | number): Promise<boolean> {
     throw new Error('Use HTTP transport for mutations')
   }
 

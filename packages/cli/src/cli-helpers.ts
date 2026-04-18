@@ -9,7 +9,7 @@ import { existsSync, readdirSync, statSync, writeFileSync, readFileSync } from '
 import { execSync } from 'child_process'
 import chalk from 'chalk'
 
-export interface SchemaResolutionResult {
+interface SchemaResolutionResult {
   schemaPath: string
   isExample: boolean
   exampleName?: string
@@ -95,7 +95,7 @@ export function resolveSchemaArg(schemaArg: string | undefined): SchemaResolutio
   process.exit(1)
 }
 
-export interface PostGenOptions {
+interface PostGenOptions {
   outputDir: string
   schemaPath: string
   runTests: boolean
@@ -316,9 +316,6 @@ LOG_LEVEL=info
     // Frontend files (src/main.tsx, src/App.tsx) validation is skipped until after pnpm install
     console.log(chalk.gray('\n  🔍 Validating TypeScript compilation...'))
     try {
-      // Check if frontend files exist (indicates UI was generated)
-      const hasFrontendFiles = existsSync(join(outputDir, 'src', 'main.tsx')) || existsSync(join(outputDir, 'src', 'App.tsx'))
-      
       execSync('npx tsc --noEmit', {
         cwd: outputDir,
         stdio: 'pipe',
@@ -465,7 +462,7 @@ LOG_LEVEL=info
  * 2. Check that package.json is valid
  * 3. Check that TypeScript compiles (if applicable)
  */
-export async function runSmokeTest(outputDir: string, schemaPath: string): Promise<boolean> {
+export async function runSmokeTest(outputDir: string, _schemaPath: string): Promise<boolean> {
   console.log(chalk.blue('\n🧪 Running smoke test...\n'))
   
   try {

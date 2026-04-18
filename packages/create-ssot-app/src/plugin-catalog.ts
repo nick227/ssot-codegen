@@ -420,7 +420,7 @@ export function getRequiredEnvVars(pluginIds: string[]): Map<string, string[]> {
 /**
  * Validate plugin selection (check for conflicts, missing requirements, etc.)
  */
-export interface PluginValidationResult {
+interface PluginValidationResult {
   valid: boolean
   warnings: string[]
   errors: string[]

@@ -30,19 +30,10 @@ export class ConfigValidationError extends Error {
 /**
  * Validation warning (non-blocking)
  */
-export interface ConfigValidationWarning {
+interface ConfigValidationWarning {
   field: string
   message: string
   suggestion: string
-}
-
-/**
- * Validation result
- */
-export interface ConfigValidationResult {
-  valid: boolean
-  errors: ConfigValidationError[]
-  warnings: ConfigValidationWarning[]
 }
 
 /**
@@ -78,7 +69,11 @@ export class ConfigValidator {
    * Validate config and return detailed result
    * Use this for testing or when you need warnings
    */
-  static validateDetailed(config: CodeGeneratorConfig): ConfigValidationResult {
+  static validateDetailed(config: CodeGeneratorConfig): {
+    valid: boolean
+    errors: ConfigValidationError[]
+    warnings: ConfigValidationWarning[]
+  } {
     const errors: ConfigValidationError[] = []
     const warnings: ConfigValidationWarning[] = []
     

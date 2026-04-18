@@ -185,7 +185,7 @@ function getZodDefault(field: ParsedField): string | undefined {
 /**
  * Get field type for DTO
  */
-export function getFieldTypeForDTO(field: ParsedField, optional: boolean = false): string {
+function getFieldTypeForDTO(field: ParsedField, optional: boolean = false): string {
   const tsType = mapPrismaToTypeScript(field)
   const optionalMarker = optional || (!field.isRequired || field.hasDefaultValue) ? '?' : ''
   

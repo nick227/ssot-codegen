@@ -41,8 +41,8 @@ pnpm ssot bulk --config websites/config/bulk-generate.json
 # Option 2: Run CLI directly
 node packages/cli/dist/cli.js bulk --config websites/config/bulk-generate.json
 
-# Option 3: Use pnpm exec (if CLI is built)
-pnpm exec ssot-gen bulk --config websites/config/bulk-generate.json
+# Option 3: Use the linked binary (if you ran pnpm link --global)
+ssot bulk --config websites/config/bulk-generate.json
 ```
 
 This will:

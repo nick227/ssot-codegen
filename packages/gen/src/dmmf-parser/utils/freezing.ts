@@ -14,7 +14,7 @@
  * @param visited - Set of already-frozen objects (for circular reference handling)
  * @returns The frozen object
  */
-export function deepFreeze<T>(obj: T, visited = new WeakSet()): T {
+function deepFreeze<T>(obj: T, visited = new WeakSet()): T {
   // Skip primitives and null
   if (obj === null || typeof obj !== 'object') return obj
   

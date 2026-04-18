@@ -31,7 +31,7 @@ This example demonstrates how to build a production-ready image conversion and o
 
 ```bash
 # From the examples/05-image-optimizer directory
-pnpm ssot-gen --schema schema.prisma --enable-media
+pnpm ssot generate schema.prisma
 ```
 
 ### 2. Configure Environment

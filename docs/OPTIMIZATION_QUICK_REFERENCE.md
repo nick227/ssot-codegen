@@ -47,7 +47,6 @@
 - `packages/gen/src/generators/hooks/react-adapter-generator.ts` - Hook generation
 
 ### Utilities
-- `packages/gen/src/utils/query-helpers.ts` - stableKey utility
 - `packages/gen/src/utils/hook-adapter.ts` - Hook adapter logic
 
 ### Generated Files

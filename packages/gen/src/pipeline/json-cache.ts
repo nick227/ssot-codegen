@@ -18,7 +18,7 @@
 /**
  * Stringification options
  */
-export interface StringifyOptions {
+interface StringifyOptions {
   indent?: number | string
   replacer?: (key: string, value: unknown) => unknown
 }
@@ -58,7 +58,10 @@ function getCacheKey(options?: StringifyOptions): string {
  * - Subsequent calls: instant return from cache
  * - Cache is auto-GC'd when obj is no longer referenced
  */
-export function stringifyWithCache(obj: object, options?: StringifyOptions): string {
+export function stringifyWithCache(
+  obj: object,
+  options?: { indent?: number | string; replacer?: (key: string, value: unknown) => unknown }
+): string {
   const cacheKey = getCacheKey(options)
   
   // Check if we have a cache for this object
@@ -94,7 +97,7 @@ export function stringifyWithCache(obj: object, options?: StringifyOptions): str
  * Clear the entire cache (for testing)
  * In production, this is never needed - WeakMap auto-GCs
  */
-export function clearStringifyCache(): void {
+function clearStringifyCache(): void {
   // WeakMap doesn't have a clear() method
   // In tests, just create a new WeakMap by re-importing the module
   // This function exists for API completeness
@@ -107,7 +110,7 @@ export function clearStringifyCache(): void {
  * @param obj - Object to pre-cache
  * @param options - Stringify options to use
  */
-export function prewarmStringifyCache(obj: object, options?: StringifyOptions): void {
+function prewarmStringifyCache(obj: object, options?: StringifyOptions): void {
   stringifyWithCache(obj, options)
 }
 
@@ -115,7 +118,7 @@ export function prewarmStringifyCache(obj: object, options?: StringifyOptions): 
  * Get cache statistics (for monitoring/debugging)
  * Note: WeakMap doesn't expose size, so this is approximate
  */
-export function getStringifyCacheStats(): { supported: boolean } {
+function getStringifyCacheStats(): { supported: boolean } {
   return {
     supported: typeof WeakMap !== 'undefined'
   }
@@ -129,7 +132,7 @@ export function getStringifyCacheStats(): { supported: boolean } {
  * @param options - Stringify options
  * @returns Array of stringified results
  */
-export function stringifyBatch(
+function stringifyBatch(
   objects: object[],
   options?: StringifyOptions
 ): string[] {
@@ -139,14 +142,14 @@ export function stringifyBatch(
 /**
  * Convenience wrapper for common use case: indent=2
  */
-export function stringifyPretty(obj: object): string {
+function stringifyPretty(obj: object): string {
   return stringifyWithCache(obj, { indent: 2 })
 }
 
 /**
  * Convenience wrapper for compact JSON (no indent)
  */
-export function stringifyCompact(obj: object): string {
+function stringifyCompact(obj: object): string {
   return stringifyWithCache(obj, { indent: 0 })
 }
 

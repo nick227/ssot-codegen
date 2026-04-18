@@ -216,7 +216,7 @@ async function testChatIntegration() {
     
     console.log('🚀 Next Steps:')
     console.log(`   1. Review generated files in ${testOutputDir}`)
-    console.log('   2. Run: npx ssot-gen ui --template chat')
+    console.log('   2. Run: pnpm ssot ui --template chat')
     console.log('   3. Test the complete application\n')
     
   } catch (error) {

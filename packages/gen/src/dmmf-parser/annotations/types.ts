@@ -117,14 +117,6 @@ export type ModelAnnotation =
   | SearchAnnotation
 
 /**
- * Parsed model with annotations
- */
-export interface AnnotatedModel {
-  name: string
-  annotations: ModelAnnotation[]
-}
-
-/**
  * Validation result
  */
 export interface AnnotationValidationResult {

@@ -132,7 +132,7 @@ export async function generateV3UI(
 /**
  * Generate mount point (single file that renders entire app!)
  */
-function generateMountPoint(config: ProjectConfig): string {
+function generateMountPoint(_config: ProjectConfig): string {
   return `'use client'
 
 /**
@@ -181,7 +181,7 @@ export default function Page({ params }: { params: { slug: string[] } }) {
 /**
  * Generate adapter configuration
  */
-function generateAdapterConfig(config: ProjectConfig): string {
+function generateAdapterConfig(_config: ProjectConfig): string {
   return `/**
  * Adapter Configuration
  * 

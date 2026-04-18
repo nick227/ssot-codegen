@@ -31,7 +31,7 @@ export class HybridDataClient<T> implements DataClient<T> {
     if (this.ws?.hasSubscription('list')) {
       try {
         return await this.ws.list(params)
-      } catch (error) {
+      } catch {
         // Fall back to HTTP on error
       }
     }
@@ -43,7 +43,7 @@ export class HybridDataClient<T> implements DataClient<T> {
     if (this.ws?.hasSubscription(`item:${id}`)) {
       try {
         return await this.ws.get(id)
-      } catch (error) {
+      } catch {
         // Fall back to HTTP on error
       }
     }

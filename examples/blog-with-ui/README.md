@@ -26,7 +26,7 @@ blog-with-ui/
 
 ```bash
 # Generate from schema only (zero config)
-npx ssot-gen ui --schema schema.prisma --output ./generated
+pnpm ssot ui --schema schema.prisma --output ./generated
 ```
 
 Gets you working CRUD pages immediately!
@@ -35,7 +35,7 @@ Gets you working CRUD pages immediately!
 
 ```bash
 # Generate with full configuration
-npx ssot-gen ui --schema schema.prisma --config ssot.ui.config.ts --output ./generated
+pnpm ssot ui --schema schema.prisma --config ssot.ui.config.ts --output ./generated
 ```
 
 Gets you:
@@ -49,7 +49,7 @@ Gets you:
 
 ```bash
 # See what files would be generated
-npx ssot-gen ui --schema schema.prisma --config ssot.ui.config.ts --dry-run
+pnpm ssot ui --schema schema.prisma --config ssot.ui.config.ts --dry-run
 ```
 
 ## 📦 What Gets Generated

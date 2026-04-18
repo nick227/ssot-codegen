@@ -138,7 +138,7 @@ export function registerBulkCommand(program: Command): void {
         // Generate report
         if (!options.dryRun) {
           const reportPath = join(process.cwd(), 'bulk-report.txt')
-          const report = generateBulkReport(results, reportPath)
+          generateBulkReport(results, reportPath)
           console.log(`\n📄 Report saved to: ${reportPath}`)
         }
         

@@ -27,7 +27,7 @@ import { toKebabCase } from '@/utils/naming.js'
  * File entry - unified structure for all file types
  * NO string-based IDs - use the object itself as identity
  */
-export interface FileEntry {
+interface FileEntry {
   layer: 'contracts' | 'validators' | 'services' | 'controllers' | 'routes' | 'sdk' | 'hooks' | 'registry' | 'other'
   modelName?: string        // For model-specific files
   filename: string          // Final filename
@@ -38,7 +38,7 @@ export interface FileEntry {
 /**
  * Writer statistics
  */
-export interface WriterStats {
+interface WriterStats {
   filesWritten: number
   bytesWritten: number
   duration: number
@@ -79,9 +79,20 @@ function trackPath(absolutePath: string, esmPath: string): void {
  * - Better progress tracking
  */
 export async function writeFilesOptimized(
-  entries: FileEntry[],
+  entries: Array<{
+    layer: 'contracts' | 'validators' | 'services' | 'controllers' | 'routes' | 'sdk' | 'hooks' | 'registry' | 'other'
+    modelName?: string
+    filename: string
+    content: string
+    subdir?: string
+  }>,
   cfg: PathsConfig
-): Promise<WriterStats> {
+): Promise<{
+  filesWritten: number
+  bytesWritten: number
+  duration: number
+  pathsTracked: number
+}> {
   // Upfront invariant checks
   if (!cfg || !cfg.rootDir) {
     throw new Error('Invalid PathsConfig: rootDir is required')
@@ -212,7 +223,13 @@ export interface GeneratedFiles {
  * BEFORE: 5 separate for-of loops
  * AFTER:  1 function that builds unified array
  */
-export function flattenGeneratedFiles(files: GeneratedFiles): FileEntry[] {
+export function flattenGeneratedFiles(files: GeneratedFiles): Array<{
+  layer: 'contracts' | 'validators' | 'services' | 'controllers' | 'routes' | 'sdk' | 'hooks' | 'registry' | 'other'
+  modelName?: string
+  filename: string
+  content: string
+  subdir?: string
+}> {
   const entries: FileEntry[] = []
   
   // Contracts (nested map: model -> filename -> content)

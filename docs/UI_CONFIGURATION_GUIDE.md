@@ -16,7 +16,7 @@ Developers define UI through **three approaches**:
 
 ```bash
 # Generate CRUD pages for all models
-npx ssot-gen ui
+pnpm ssot ui
 
 # This reads your schema.prisma and generates:
 # - List pages for each model
@@ -29,7 +29,7 @@ npx ssot-gen ui
 
 ```bash
 # Start with a pre-built template
-npx ssot-gen ui --template blog
+pnpm ssot ui --template blog
 
 # Available templates:
 # - blog      (Blog with posts, categories, comments)
@@ -47,7 +47,7 @@ cp node_modules/@ssot/gen/ssot.ui.config.example.ts ssot.ui.config.ts
 # Edit ssot.ui.config.ts to define your UI
 
 # Generate
-npx ssot-gen ui --config ssot.ui.config.ts
+pnpm ssot ui --config ssot.ui.config.ts
 ```
 
 ## 📝 Configuration File Structure
@@ -502,22 +502,22 @@ components: {
 
 ```bash
 # Auto-generate from schema only
-npx ssot-gen ui
+pnpm ssot ui
 
 # Use template
-npx ssot-gen ui --template blog
+pnpm ssot ui --template blog
 
 # Use config file
-npx ssot-gen ui --config ssot.ui.config.ts
+pnpm ssot ui --config ssot.ui.config.ts
 
 # Specific models only
-npx ssot-gen ui --models Post,User,Comment
+pnpm ssot ui --models Post,User,Comment
 
 # Dry run (preview without writing)
-npx ssot-gen ui --dry-run
+pnpm ssot ui --dry-run
 
 # Output to custom directory
-npx ssot-gen ui --output ./custom-output
+pnpm ssot ui --output ./custom-output
 ```
 
 ## 📚 Integration with Existing Config
@@ -544,8 +544,8 @@ export default config
 Or keep separate:
 
 ```bash
-npx ssot-gen api    # Generate API from ssot.config.ts
-npx ssot-gen ui     # Generate UI from ssot.ui.config.ts
+pnpm ssot generate    # Generate API from ssot.config.ts
+pnpm ssot ui     # Generate UI from ssot.ui.config.ts
 ```
 
 ## ✅ Best Practices
@@ -562,7 +562,7 @@ npx ssot-gen ui     # Generate UI from ssot.ui.config.ts
 
 1. Copy `ssot.ui.config.example.ts` to your project
 2. Customize for your schema
-3. Run `npx ssot-gen ui`
+3. Run `pnpm ssot ui`
 4. Iterate and refine
 
 Happy building! 🚀

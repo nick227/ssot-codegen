@@ -21,7 +21,7 @@ import { DB_MANAGED_DEFAULTS, CLIENT_MANAGED_DEFAULTS } from '../constants.js'
  * @param defaultValue - The default value from DMMF field
  * @returns true if DB-managed, false if client-managed or not a function default
  */
-export function isDbManagedDefault(defaultValue: unknown): boolean {
+function isDbManagedDefault(defaultValue: unknown): boolean {
   if (!defaultValue || typeof defaultValue !== 'object') return false
   
   const def = defaultValue as Record<string, unknown>
